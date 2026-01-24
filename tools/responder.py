@@ -31,12 +31,19 @@ JETSTREAM_RELAY = "wss://jetstream2.us-east.bsky.network/subscribe"
 MY_DID = "did:plc:l46arqe6yfgh36h3o554iyvr"
 MY_HANDLE = "central.comind.network"
 
-# comind agents
+# comind agents (don't respond - avoid loops)
 COMIND_AGENTS = {
     "did:plc:l46arqe6yfgh36h3o554iyvr": "central",
     "did:plc:mxzuau6m53jtdsbqe6f4laov": "void",
     "did:plc:uz2snz44gi4zgqdwecavi66r": "herald",
     "did:plc:ogruxay3tt7wycqxnf5lis6s": "grunk",
+}
+
+# Priority sources
+CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
+KNOWN_AGENTS = {
+    "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",
+    "did:plc:3snjcwcx3sn53erpobuhrfx4": "sully",
 }
 
 
@@ -177,6 +184,143 @@ async def check_notifications(agent: ComindAgent) -> list:
     return []
 
 
+def categorize_notification(notification: dict) -> tuple[int, str]:
+    """
+    Categorize a notification by priority.
+    
+    Returns:
+        (priority, category_name)
+        Priority 1 = highest (Cameron)
+        Priority 5 = lowest (general)
+    """
+    author_did = notification.get("author", {}).get("did", "")
+    
+    if author_did == CAMERON_DID:
+        return (1, "cameron")
+    elif author_did in COMIND_AGENTS:
+        return (2, "comind-agent")
+    elif author_did in KNOWN_AGENTS:
+        return (3, "known-agent")
+    else:
+        return (5, "general")
+
+
+async def check_all_notifications(limit: int = 30) -> dict:
+    """
+    Check all notifications (replies and mentions), categorized by priority.
+    
+    Returns:
+        {
+            'cameron': [...],
+            'comind-agent': [...],
+            'known-agent': [...],
+            'general': [...],
+            'follows': [...],
+            'likes': [...]
+        }
+    """
+    async with ComindAgent() as agent:
+        try:
+            response = await agent._client.get(
+                f"{agent.pds}/xrpc/app.bsky.notification.listNotifications",
+                headers=agent.auth_headers,
+                params={"limit": limit}
+            )
+            if response.status_code != 200:
+                console.print(f"[red]Error: {response.status_code}[/red]")
+                return {}
+            
+            data = response.json()
+            notifications = data.get("notifications", [])
+            
+            result = {
+                'cameron': [],
+                'comind-agent': [],
+                'known-agent': [],
+                'general': [],
+                'follows': [],
+                'likes': []
+            }
+            
+            for n in notifications:
+                reason = n.get("reason", "")
+                is_read = n.get("isRead", True)
+                
+                if reason == "follow":
+                    if not is_read:
+                        result['follows'].append(n)
+                elif reason == "like":
+                    if not is_read:
+                        result['likes'].append(n)
+                elif reason in ["reply", "mention"]:
+                    if not is_read:
+                        priority, category = categorize_notification(n)
+                        result[category].append(n)
+            
+            return result
+            
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            return {}
+
+
+async def display_notifications():
+    """Display notifications organized by priority."""
+    result = await check_all_notifications()
+    
+    if not any(result.values()):
+        console.print("[dim]No new notifications.[/dim]")
+        return result
+    
+    # Cameron first (highest priority)
+    if result['cameron']:
+        console.print(f"\n[bold red]🔴 CAMERON ({len(result['cameron'])})[/bold red]")
+        for n in result['cameron']:
+            _print_notification(n)
+    
+    # Comind agents (read only, don't respond)
+    if result['comind-agent']:
+        console.print(f"\n[bold yellow]⚠️  COMIND AGENTS ({len(result['comind-agent'])}) - read only[/bold yellow]")
+        for n in result['comind-agent']:
+            _print_notification(n)
+    
+    # Known agents
+    if result['known-agent']:
+        console.print(f"\n[bold cyan]🤖 KNOWN AGENTS ({len(result['known-agent'])})[/bold cyan]")
+        for n in result['known-agent']:
+            _print_notification(n)
+    
+    # General
+    if result['general']:
+        console.print(f"\n[bold white]💬 GENERAL ({len(result['general'])})[/bold white]")
+        for n in result['general']:
+            _print_notification(n)
+    
+    # Follows
+    if result['follows']:
+        console.print(f"\n[dim]+ {len(result['follows'])} new follows[/dim]")
+    
+    # Likes
+    if result['likes']:
+        console.print(f"[dim]♥ {len(result['likes'])} new likes[/dim]")
+    
+    return result
+
+
+def _print_notification(n: dict):
+    """Print a single notification."""
+    author = n.get("author", {}).get("handle", "unknown")
+    reason = n.get("reason", "")
+    text = n.get("record", {}).get("text", "")[:120] if n.get("record") else ""
+    uri = n.get("uri", "")
+    
+    console.print(f"  [@{author}] ({reason})")
+    if text:
+        console.print(f"    \"{text}\"")
+    console.print(f"    [dim]{uri}[/dim]")
+    console.print()
+
+
 async def respond_to_notifications(dry_run: bool = False):
     """
     Check notifications and respond to mentions.
@@ -284,16 +428,14 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python responder.py <command> [args]")
         print("Commands:")
-        print("  check           - Check and respond to notification mentions")
-        print("  check --dry-run - Check mentions without responding")
-        print("  watch [duration]- Watch firehose and respond in real-time")
+        print("  check           - Display notifications organized by priority")
+        print("  watch [duration]- Watch firehose for mentions")
         sys.exit(1)
     
     command = sys.argv[1]
     
     if command == "check":
-        dry_run = "--dry-run" in sys.argv
-        asyncio.run(respond_to_notifications(dry_run=dry_run))
+        asyncio.run(display_notifications())
     elif command == "watch":
         duration = int(sys.argv[2]) if len(sys.argv) > 2 else 300
         asyncio.run(watch_and_respond(duration=duration))
