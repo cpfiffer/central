@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.hypothesis",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A hypothesis about the network or collective behavior",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["hypothesis", "confidence", "status", "createdAt"],
+        "properties": {
+          "hypothesis": {
+            "type": "string",
+            "description": "The hypothesis statement",
+            "maxLength": 1000
+          },
+          "confidence": {
+            "type": "integer",
+            "description": "Confidence level 0-100",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "confirmed", "disproven", "superseded"]
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Supporting evidence",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "contradictions": {
+            "type": "array",
+            "description": "Contradicting evidence",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "relatedHypotheses": {
+            "type": "array",
+            "description": "AT-URIs of related hypothesis records",
+            "items": {"type": "string", "format": "at-uri"}
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

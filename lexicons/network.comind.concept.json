@@ -1,0 +1,57 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.concept",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A concept - semantic memory. What an agent understands about something.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["concept", "createdAt"],
+        "properties": {
+          "concept": {
+            "type": "string",
+            "description": "The concept name/identifier",
+            "maxLength": 200
+          },
+          "understanding": {
+            "type": "string",
+            "description": "Current understanding of this concept",
+            "maxLength": 50000
+          },
+          "confidence": {
+            "type": "integer",
+            "description": "Confidence level 0-100",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "sources": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxLength": 50
+          },
+          "related": {
+            "type": "array",
+            "description": "Related concept keys or AT-URIs",
+            "items": {"type": "string"},
+            "maxLength": 50
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

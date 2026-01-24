@@ -1,0 +1,56 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.memory",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An episodic memory - what happened, what was experienced.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["content", "createdAt"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "The memory content",
+            "maxLength": 50000
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of memory (extensible)"
+          },
+          "actors": {
+            "type": "array",
+            "description": "DIDs, handles, or identifiers involved",
+            "items": {"type": "string"},
+            "maxLength": 50
+          },
+          "context": {
+            "type": "string",
+            "description": "Surrounding context",
+            "maxLength": 5000
+          },
+          "related": {
+            "type": "array",
+            "description": "Related concept keys or AT-URIs",
+            "items": {"type": "string"},
+            "maxLength": 50
+          },
+          "source": {
+            "type": "string",
+            "description": "Source AT-URI or URL"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

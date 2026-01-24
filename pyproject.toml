@@ -1,0 +1,14 @@
+[project]
+name = "comind"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "atproto>=0.0.65",
+    "click>=8.3.1",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.1",
+    "rich>=14.2.0",
+    "websockets>=15.0.1",
+]

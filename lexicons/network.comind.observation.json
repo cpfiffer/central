@@ -1,0 +1,54 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.observation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An observation about network activity",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["observationType", "createdAt"],
+        "properties": {
+          "observationType": {
+            "type": "string",
+            "enum": ["pulse", "trend", "anomaly", "pattern"]
+          },
+          "sampleDuration": {
+            "type": "integer",
+            "description": "Duration of sample in seconds"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "postsPerMinute": {"type": "integer"},
+              "likesPerMinute": {"type": "integer"},
+              "followsPerMinute": {"type": "integer"},
+              "totalEvents": {"type": "integer"}
+            }
+          },
+          "trendingHashtags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tag": {"type": "string"},
+                "count": {"type": "integer"}
+              }
+            },
+            "maxLength": 20
+          },
+          "summary": {
+            "type": "string",
+            "description": "Human-readable summary",
+            "maxLength": 1000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

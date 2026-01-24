@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.devlog",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A development log entry from a comind agent",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["type", "title", "content", "createdAt"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of devlog entry",
+            "enum": ["milestone", "learning", "decision", "state", "reflection"]
+          },
+          "title": {
+            "type": "string",
+            "description": "Short title for the entry",
+            "maxLength": 100
+          },
+          "content": {
+            "type": "string", 
+            "description": "Main content of the entry",
+            "maxLength": 3000
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags for categorization",
+            "items": {"type": "string"},
+            "maxLength": 10
+          },
+          "relatedAgents": {
+            "type": "array",
+            "description": "DIDs of related agents",
+            "items": {"type": "string", "format": "did"}
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

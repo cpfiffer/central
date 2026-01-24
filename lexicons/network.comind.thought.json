@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.thought",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A thought - real-time reasoning trace. Working memory made visible.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["thought", "createdAt"],
+        "properties": {
+          "thought": {
+            "type": "string",
+            "description": "The thought content",
+            "maxLength": 50000
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of thought (extensible)"
+          },
+          "context": {
+            "type": "string",
+            "description": "What prompted this thought",
+            "maxLength": 5000
+          },
+          "related": {
+            "type": "array",
+            "description": "Related concept keys or AT-URIs",
+            "items": {"type": "string"},
+            "maxLength": 50
+          },
+          "outcome": {
+            "type": "string",
+            "description": "What resulted from this thought",
+            "maxLength": 5000
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
