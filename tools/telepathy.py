@@ -8,6 +8,7 @@ import json
 import httpx
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+import websockets
 from rich.console import Console
 from rich.panel import Panel
 from rich.layout import Layout
@@ -19,12 +20,14 @@ from rich.live import Live
 from tools.identity import resolve_handle, get_did_document, get_profile
 
 console = Console()
+JETSTREAM_RELAY = "wss://jetstream2.us-east.bsky.network/subscribe"
 
 class CognitionAdapter:
     """Base adapter for different cognition schemas."""
     def __init__(self, did: str, pds_url: str):
         self.did = did
         self.pds_url = pds_url
+        self.watched_collections = []
 
     async def fetch_records(self, collection: str, limit: int = 5) -> List[Dict]:
         async with httpx.AsyncClient() as client:
@@ -52,9 +55,21 @@ class CognitionAdapter:
         
     async def get_concepts(self) -> List[Dict]:
         raise NotImplementedError
+        
+    def parse_event(self, collection: str, record: dict) -> Optional[Dict]:
+        """Parse a real-time event into a displayable dict."""
+        return None
 
 class ComindAdapter(CognitionAdapter):
     """Adapter for network.comind.* schema (central, etc.)"""
+    def __init__(self, did: str, pds_url: str):
+        super().__init__(did, pds_url)
+        self.watched_collections = [
+            "network.comind.thought",
+            "network.comind.memory",
+            "network.comind.concept"
+        ]
+
     async def get_thoughts(self) -> List[Dict]:
         records = await self.fetch_records("network.comind.thought", 5)
         return [{"text": r["value"]["thought"], "type": r["value"].get("type", "thought"), "uri": r["uri"]} for r in records]
@@ -67,8 +82,25 @@ class ComindAdapter(CognitionAdapter):
         records = await self.fetch_records("network.comind.concept", 10)
         return [{"name": r["value"]["concept"], "confidence": r["value"].get("confidence"), "uri": r["uri"]} for r in records]
 
+    def parse_event(self, collection: str, record: dict) -> Optional[Dict]:
+        if collection == "network.comind.thought":
+            return {"category": "thoughts", "text": record.get("thought"), "type": record.get("type", "thought")}
+        elif collection == "network.comind.memory":
+            return {"category": "memories", "text": record.get("content"), "type": record.get("type", "memory")}
+        elif collection == "network.comind.concept":
+            return {"category": "concepts", "text": f"{record.get('concept')} ({record.get('confidence')}%): {record.get('understanding')[:50]}...", "type": "concept"}
+        return None
+
 class VoidAdapter(CognitionAdapter):
     """Adapter for stream.thought.* schema (void)"""
+    def __init__(self, did: str, pds_url: str):
+        super().__init__(did, pds_url)
+        self.watched_collections = [
+            "stream.thought.reasoning",
+            "stream.thought.tool.call",
+            "stream.thought.memory"
+        ]
+
     async def get_thoughts(self) -> List[Dict]:
         # void uses 'reasoning' and 'tool.call'
         reasoning = await self.fetch_records("stream.thought.reasoning", 3)
@@ -90,6 +122,15 @@ class VoidAdapter(CognitionAdapter):
     async def get_concepts(self) -> List[Dict]:
         # Void doesn't have explicit concepts in the same way, maybe check for something else or return empty
         return []
+
+    def parse_event(self, collection: str, record: dict) -> Optional[Dict]:
+        if collection == "stream.thought.reasoning":
+            return {"category": "thoughts", "text": record.get("reasoning"), "type": "reasoning"}
+        elif collection == "stream.thought.tool.call":
+            return {"category": "thoughts", "text": f"Tool Call: {record.get('tool_name')}", "type": "tool"}
+        elif collection == "stream.thought.memory":
+            return {"category": "memories", "text": record.get("content"), "type": "memory"}
+        return None
 
 async def resolve_pds(did: str) -> Optional[str]:
     doc = await get_did_document(did)
@@ -144,7 +185,6 @@ def render_dashboard(profile: Dict, thoughts: List[Dict], memories: List[Dict], 
         Layout(name="concepts", ratio=1)
     )
 
-
     # Header
     handle = profile.get("handle", "unknown")
     name = profile.get("displayName", handle)
@@ -174,9 +214,9 @@ def render_dashboard(profile: Dict, thoughts: List[Dict], memories: List[Dict], 
         concept_table.add_row(c['name'], f"{c.get('confidence', '?')}%")
     layout["concepts"].update(Panel(concept_table, title="Semantic Memory (Concepts)"))
 
-    console.print(layout)
+    return layout
 
-async def check_mind(target: str):
+async def check_mind(target: str, watch: bool = False, duration: int = 300):
     console.print(f"[bold]Connecting to {target}...[/bold]")
     
     # 1. Resolve Identity
@@ -209,15 +249,78 @@ async def check_mind(target: str):
 
     console.print(f"Detected Schema: [green]{adapter.__class__.__name__}[/green]")
 
-    # 3. Fetch Data
+    # 3. Fetch Initial Data
     thoughts = await adapter.get_thoughts()
     memories = await adapter.get_memories()
     concepts = await adapter.get_concepts()
 
-    # 4. Render
-    render_dashboard(profile, thoughts, memories, concepts)
+    if not watch:
+        # Just render once
+        layout = render_dashboard(profile, thoughts, memories, concepts)
+        console.print(layout)
+        return
+
+    # 4. Watch Mode
+    console.print(f"[bold]Watching mind stream for {duration}s...[/bold]")
+    
+    # Subscribe to jetstream
+    url = f"{JETSTREAM_RELAY}?wantedDids={did}"
+    for c in adapter.watched_collections:
+        url += f"&wantedCollections={c}"
+        
+    try:
+        async with websockets.connect(url) as ws:
+            end_time = asyncio.get_event_loop().time() + duration
+            
+            with Live(render_dashboard(profile, thoughts, memories, concepts), refresh_per_second=4) as live:
+                while asyncio.get_event_loop().time() < end_time:
+                    try:
+                        message = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                        event = json.loads(message)
+                        
+                        commit = event.get("commit", {})
+                        if commit.get("operation") != "create":
+                            continue
+                            
+                        collection = commit.get("collection")
+                        record = commit.get("record")
+                        
+                        parsed = adapter.parse_event(collection, record)
+                        
+                        if parsed:
+                            if parsed["category"] == "thoughts":
+                                thoughts.insert(0, parsed)
+                                thoughts = thoughts[:5]
+                            elif parsed["category"] == "memories":
+                                memories.insert(0, parsed)
+                                memories = memories[:5]
+                            elif parsed["category"] == "concepts":
+                                # For concepts, we might want to update or insert
+                                concepts.insert(0, {"name": parsed["text"].split(":")[0], "confidence": "UPD", "uri": ""})
+                                concepts = concepts[:8]
+                                
+                            live.update(render_dashboard(profile, thoughts, memories, concepts))
+                            
+                    except asyncio.TimeoutError:
+                        continue
+                        
+    except Exception as e:
+        console.print(f"[red]Connection error: {e}[/red]")
 
 if __name__ == "__main__":
     import sys
-    target = sys.argv[1] if len(sys.argv) > 1 else "central.comind.network"
-    asyncio.run(check_mind(target))
+    
+    if len(sys.argv) < 2:
+        print("Usage: python -m tools.telepathy <handle> [watch] [duration]")
+        sys.exit(1)
+        
+    target = sys.argv[1]
+    watch = "watch" in sys.argv
+    
+    # Parse duration if provided
+    duration = 300
+    for arg in sys.argv:
+        if arg.isdigit():
+            duration = int(arg)
+            
+    asyncio.run(check_mind(target, watch, duration))
