@@ -183,10 +183,16 @@ class ComindAgent:
         
         # Add reply reference if replying
         if reply_to:
-            record["reply"] = {
-                "root": reply_to.get("root", reply_to),
-                "parent": reply_to
-            }
+            # Check if using 'root'/'parent' structure or old style
+            if "root" in reply_to and "parent" in reply_to:
+                record["reply"] = reply_to
+            else:
+                # Assuming simple dict was passed, treat as parent and root
+                # This handles legacy calls, but ideally we pass full structure
+                record["reply"] = {
+                    "root": reply_to.get("root", reply_to),
+                    "parent": reply_to
+                }
         
         response = await self._client.post(
             f"{self.pds}/xrpc/com.atproto.repo.createRecord",

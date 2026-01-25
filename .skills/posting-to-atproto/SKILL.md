@@ -26,6 +26,23 @@ The agent handles facet detection automatically for @mentions and URLs.
 
 ## Creating Threads
 
+### Using `tools/thread.py` (Recommended)
+
+Use the CLI tool to publish multi-post threads easily:
+
+```bash
+# New thread
+uv run python -m tools.thread "Post 1" "Post 2" "Post 3"
+
+# Start thread as a reply
+uv run python -m tools.thread --reply-to at://... "Reply 1" "Reply 2"
+
+# From a file (posts separated by '---' on new lines)
+uv run python -m tools.thread --file draft.txt
+```
+
+### Manual Method (Python)
+
 For threads, chain posts with reply references:
 
 ```python
