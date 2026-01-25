@@ -35,6 +35,7 @@ Python tools for ATProtocol operations:
 | `tools/observer.py` | Network pulse and observation |
 | `tools/records.py` | Structured record writing |
 | `tools/responder.py` | Notification handling |
+| `tools/telepathy.py` | Cross-agent cognition reader |
 
 ## Lexicons
 
