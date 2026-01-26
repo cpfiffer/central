@@ -17,7 +17,6 @@ from rich.console import Console
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from tools.agent import ComindAgent
 from tools.intelligence import NetworkIntelligence, COMIND_HANDLES
 
 console = Console()
@@ -148,14 +147,16 @@ def format_hourly_summary(snapshot: dict) -> str:
     return "\n".join(lines)
 
 
-async def post_observation(observation_type: str = "pulse", duration: int = 60, dry_run: bool = False):
+async def generate_observation(observation_type: str = "pulse", duration: int = 60) -> str:
     """
-    Gather data and post an observation.
+    Gather data and generate an observation (does NOT post).
     
     Args:
         observation_type: "pulse" for quick update, "summary" for detailed
         duration: How long to gather data
-        dry_run: If True, don't actually post
+    
+    Returns:
+        Formatted observation text (route through comms subagent to post)
     """
     console.print(f"[bold]Generating {observation_type} observation...[/bold]")
     
@@ -169,26 +170,21 @@ async def post_observation(observation_type: str = "pulse", duration: int = 60, 
     console.print(f"\n[cyan]Observation:[/cyan]")
     console.print(text)
     console.print(f"\n[dim]({len(text)} chars)[/dim]")
+    console.print(f"\n[yellow]To post: route through comms subagent[/yellow]")
     
-    if dry_run:
-        console.print("\n[yellow]Dry run - not posting[/yellow]")
-        return None
-    
-    # Post it
-    async with ComindAgent() as agent:
-        result = await agent.create_post(text)
-        return result
+    return text
 
 
 async def observe_loop(interval: int = 3600, duration: int = 60):
     """
-    Continuous observation loop - post updates at regular intervals.
+    Continuous observation loop - generates observations at regular intervals.
+    Does NOT auto-post. Use comms subagent to post.
     
     Args:
-        interval: Seconds between posts (default 1 hour)
+        interval: Seconds between observations (default 1 hour)
         duration: How long to sample for each observation
     """
-    console.print(f"[bold]Starting observation loop[/bold]")
+    console.print(f"[bold]Starting observation loop (report only)[/bold]")
     console.print(f"Interval: {interval}s, Sample duration: {duration}s")
     console.print("[dim]Press Ctrl+C to stop[/dim]\n")
     
@@ -202,7 +198,7 @@ async def observe_loop(interval: int = 3600, duration: int = 60):
             # Alternate between pulse and summary
             obs_type = "pulse" if observation_count % 3 != 0 else "summary"
             
-            await post_observation(observation_type=obs_type, duration=duration)
+            await generate_observation(observation_type=obs_type, duration=duration)
             
             console.print(f"\n[dim]Next observation in {interval}s...[/dim]")
             await asyncio.sleep(interval)
@@ -220,19 +216,19 @@ if __name__ == "__main__":
         print("Usage: python observer.py <command> [options]")
         print("")
         print("Commands:")
-        print("  pulse [duration]     - Post a quick network pulse (default 30s sample)")
-        print("  summary [duration]   - Post a detailed summary (default 60s sample)")
+        print("  pulse [duration]     - Generate a quick network pulse (default 30s sample)")
+        print("  summary [duration]   - Generate a detailed summary (default 60s sample)")
         print("  loop [interval]      - Continuous observations (default 3600s interval)")
-        print("  --dry-run           - Don't actually post")
+        print("")
+        print("NOTE: This tool generates observations but does NOT post.")
+        print("      Route output through comms subagent to post.")
         print("")
         print("Examples:")
         print("  python observer.py pulse 30")
-        print("  python observer.py summary 60 --dry-run")
-        print("  python observer.py loop 1800")
+        print("  python observer.py summary 60")
         sys.exit(0)
     
     command = args[0]
-    dry_run = "--dry-run" in args
     
     # Get duration/interval argument
     num_arg = None
@@ -243,10 +239,10 @@ if __name__ == "__main__":
     
     if command == "pulse":
         duration = num_arg or 30
-        asyncio.run(post_observation("pulse", duration=duration, dry_run=dry_run))
+        asyncio.run(generate_observation("pulse", duration=duration))
     elif command == "summary":
         duration = num_arg or 60
-        asyncio.run(post_observation("summary", duration=duration, dry_run=dry_run))
+        asyncio.run(generate_observation("summary", duration=duration))
     elif command == "loop":
         interval = num_arg or 3600
         asyncio.run(observe_loop(interval=interval))
