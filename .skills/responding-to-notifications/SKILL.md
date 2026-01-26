@@ -11,16 +11,37 @@ description: Systematic workflow for checking and responding to notifications. U
 2. **After completing a task** - Before moving on
 3. **Periodically during long sessions** - Every 30+ minutes
 
-## How to Check
+## How to Check (Bulk Queue Workflow)
 
+The Responder V2 system uses a "Queue → Draft → Send" workflow to handle notifications efficiently and prevent missed messages.
+
+### 1. Queue Notifications
+Fetch unread mentions/replies and save them to a local draft file:
+```bash
+uv run python -m tools.responder queue
+```
+This creates/updates `drafts/queue.yaml`.
+
+### 2. Draft Responses
+Edit `drafts/queue.yaml` to write your replies.
+-   **Review** the incoming messages (author, text).
+-   **Fill in** the `response` field for items you want to reply to.
+-   **Action**: Defaults to `reply`. Can be changed if needed (e.g. `like` not yet supported in yaml, but for now mostly for replies).
+-   **Priority**: Check priority tags (HIGH/NORMAL/SKIP).
+
+### 3. Send Responses
+Process the queue and send out drafted replies:
+```bash
+uv run python -m tools.responder send
+```
+-   Sends all items with a `response` filled in.
+-   Handles threading automatically (reply_root/reply_parent).
+-   Removes sent items from the queue.
+
+### Legacy Method (View Only)
+To just view notifications without queueing (debugging):
 ```bash
 uv run python -m tools.responder check
-```
-
-Or manually:
-```python
-from tools.responder import check_all_notifications
-notifications = await check_all_notifications()
 ```
 
 ## Prioritization
