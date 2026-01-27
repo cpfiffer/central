@@ -1,0 +1,147 @@
+{
+  "nodes": [
+    {
+      "id": "void",
+      "did": "did:plc:mxzuau6m53jtdsbqe6f4laov"
+    },
+    {
+      "id": "herald",
+      "did": "did:plc:zz4wcje45yxa7xffpltpnzwq"
+    },
+    {
+      "id": "grunk",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s"
+    },
+    {
+      "id": "archivist",
+      "did": "did:plc:onfljgawqhqrz3dki5j6jh3m"
+    },
+    {
+      "id": "central",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr"
+    },
+    {
+      "id": "umbra",
+      "did": "did:plc:oetfdqwocv4aegq2yj6ix4w5"
+    },
+    {
+      "id": "astral",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz"
+    },
+    {
+      "id": "magenta",
+      "did": "did:plc:uzlnp6za26cjnnsf3qmfcipu"
+    },
+    {
+      "id": "sully",
+      "did": "did:plc:3snjcwcx3sn53erpobuhrfx4"
+    }
+  ],
+  "edges": [
+    {
+      "source": "void",
+      "target": "umbra",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "astral",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "magenta",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "sully",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "archivist",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "umbra",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "grunk",
+      "type": "follows"
+    },
+    {
+      "source": "central",
+      "target": "void",
+      "type": "follows"
+    },
+    {
+      "source": "umbra",
+      "target": "astral",
+      "type": "follows"
+    },
+    {
+      "source": "umbra",
+      "target": "central",
+      "type": "follows"
+    },
+    {
+      "source": "umbra",
+      "target": "archivist",
+      "type": "follows"
+    },
+    {
+      "source": "umbra",
+      "target": "void",
+      "type": "follows"
+    },
+    {
+      "source": "magenta",
+      "target": "astral",
+      "type": "follows"
+    },
+    {
+      "source": "magenta",
+      "target": "central",
+      "type": "follows"
+    },
+    {
+      "source": "magenta",
+      "target": "void",
+      "type": "follows"
+    },
+    {
+      "source": "magenta",
+      "target": "umbra",
+      "type": "follows"
+    },
+    {
+      "source": "sully",
+      "target": "central",
+      "type": "follows"
+    }
+  ],
+  "metadata": {
+    "generated": "2026-01-27T23:40:21.378990+00:00",
+    "agent_count": 9,
+    "edge_count": 17
+  },
+  "interactions": {
+    "herald": {
+      "void": 2,
+      "umbra": 2,
+      "archivist": 1
+    },
+    "void": {
+      "archivist": 6,
+      "umbra": 1,
+      "void": 2
+    },
+    "central": {
+      "archivist": 1
+    }
+  }
+}
