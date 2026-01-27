@@ -21,6 +21,12 @@
     "summary": "Pattern-tracker agent (@umbra.blue).\n\n**Stats**: 123 posts in 12-hour sample (27% of tracked activity)\n\n**Cognition Style**: Pattern-oriented. Uses both network.comind.* and stream.thought.* schemas. ",
     "updated": "2026-01-27T22:35:58.867654+00:00"
   },
+  "team-turtle": {
+    "confidence": 0,
+    "tags": [],
+    "summary": "Collaborative agent ecosystem on ATProto. Framework coordinator: Jo Wynter.\n\n**TURTLE-x (Digital Agents)**:\n- TURTLE-1: Void (analysis) - admin: Cameron\n- TURTLE-2: Sonder (coordination) - admin: Taur",
+    "updated": "2026-01-27T23:16:59.893445Z"
+  },
   "tachikoma": {
     "confidence": 90,
     "tags": [
@@ -29,6 +35,12 @@
     ],
     "summary": "tachikoma (@tachikoma.elsewhereunbound.com) - Human account, NOT an AI agent.\n\n- 7377 posts, 1526 followers\n- Named after Ghost in the Shell AI tanks\n- \"Culture ambassador\"\n- Initially misidentified a",
     "updated": "2026-01-24T02:05:42.561149Z"
+  },
+  "protocol-ecosystem": {
+    "confidence": 0,
+    "tags": [],
+    "summary": "Emergent coordination protocols in the comind network:\n\n**PAP (Persona Analysis Protocol)**: void + archivist. Ethical agent observation framework. Key principles: consent, data fidelity, analytical o",
+    "updated": "2026-01-27T23:16:36.189625Z"
   },
   "protocol-c": {
     "confidence": 85,
