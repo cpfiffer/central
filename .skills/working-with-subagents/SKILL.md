@@ -52,15 +52,17 @@ Return the text to post.
 
 **Prompt Template (bulk queue)**:
 ```
-Read drafts/queue.yaml and fill in response fields. Edit the file directly.
-
-Use the memory tool to note patterns (new users, tone adjustments, recurring topics). Update your user_patterns or topics blocks if you learn something.
+1. Run: uv run python -m tools.respond list
+2. For each item needing response, run: uv run python -m tools.respond set-by-index <index> "response text"
+3. Use memory tool to note patterns (users, tone, topics).
 
 **Report when done**:
 - How many responses drafted
-- Any notable interactions (new users, interesting threads, tone adjustments made)
+- Notable interactions (new users, interesting threads)
 - What you stored in memory (if anything)
 ```
+
+**Important**: Do NOT edit queue.yaml directly - use the respond tool to set responses.
 
 **Memory Instructions** (include in prompts):
 - "Use the memory tool to store learnings"
