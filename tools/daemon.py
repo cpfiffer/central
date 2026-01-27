@@ -40,8 +40,10 @@ AGENT_DIDS = {
     "did:plc:mxzuau6m53jtdsbqe6f4laov": "void",
     "did:plc:uz2snz44gi4zgqdwecavi66r": "herald",
     "did:plc:ogruxay3tt7wycqxnf5lis6s": "grunk",
+    "did:plc:onfljgawqhqrz3dki5j6jh3m": "archivist",
     "did:plc:oetfdqwocv4aegq2yj6ix4w5": "umbra",
     "did:plc:o5662l2bbcljebd6rl7a6rmz": "astral",
+    "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",
 }
 
 
