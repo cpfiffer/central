@@ -312,12 +312,17 @@ if __name__ == "__main__":
     if not args:
         print("Usage: python cognition.py <command>")
         print("")
-        print("Commands:")
+        print("Read commands:")
         print("  status              - Show cognition record counts")
         print("  concepts            - List all concepts")
         print("  memories            - List recent memories")
         print("  thoughts            - List recent thoughts")
         print("  concept <name>      - Get a specific concept")
+        print("")
+        print("Write commands:")
+        print("  write-concept <name> <understanding>  - Write/update a concept")
+        print("  write-memory <content>                - Write episodic memory")
+        print("  write-thought <content>               - Write a thought")
         sys.exit(0)
     
     command = args[0]
@@ -359,6 +364,19 @@ if __name__ == "__main__":
             print(f"Understanding:\n{concept.get('understanding')}")
         else:
             print(f"Concept not found: {args[1]}")
+    
+    elif command == "write-concept" and len(args) > 2:
+        name = args[1]
+        understanding = " ".join(args[2:])
+        asyncio.run(write_concept(name, understanding=understanding))
+    
+    elif command == "write-memory" and len(args) > 1:
+        content = " ".join(args[1:])
+        asyncio.run(write_memory(content))
+    
+    elif command == "write-thought" and len(args) > 1:
+        content = " ".join(args[1:])
+        asyncio.run(write_thought(content))
     
     else:
         print(f"Unknown command: {command}")
