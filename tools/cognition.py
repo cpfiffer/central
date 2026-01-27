@@ -113,20 +113,31 @@ async def write_concept(
     confidence: int = None,
     sources: list[str] = None,
     related: list[str] = None,
-    tags: list[str] = None
+    tags: list[str] = None,
+    force: bool = False
 ) -> dict:
     """
     Write or update a concept (semantic memory).
     
     Uses slugified concept name as rkey for KV-style access.
+    Checks for existing content and preserves createdAt on updates.
     """
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     rkey = slugify(concept)
     
+    # Check for existing concept
+    existing = await get_concept(concept)
+    if existing and not force:
+        console.print(f"[yellow]Existing concept found:[/yellow] {concept}")
+        console.print(f"  Current: {existing.get('understanding', '')[:100]}...")
+        console.print(f"  New: {understanding[:100] if understanding else '(no change)'}...")
+        console.print("[yellow]Use force=True to overwrite[/yellow]")
+        return None
+    
     record = {
         "$type": "network.comind.concept",
         "concept": concept,
-        "createdAt": now,
+        "createdAt": existing.get("createdAt", now) if existing else now,
         "updatedAt": now
     }
     
@@ -145,8 +156,9 @@ async def write_concept(
     if tags:
         record["tags"] = tags[:20]
     
+    action = "Updating" if existing else "Creating"
     conf_str = f" ({confidence}%)" if confidence else ""
-    console.print(f"[cyan]Writing concept:[/cyan] {concept}{conf_str}")
+    console.print(f"[cyan]{action} concept:[/cyan] {concept}{conf_str}")
     return await put_record("network.comind.concept", rkey, record)
 
 
@@ -320,9 +332,9 @@ if __name__ == "__main__":
         print("  concept <name>      - Get a specific concept")
         print("")
         print("Write commands:")
-        print("  write-concept <name> <understanding>  - Write/update a concept")
-        print("  write-memory <content>                - Write episodic memory")
-        print("  write-thought <content>               - Write a thought")
+        print("  write-concept <name> <understanding> [--force]  - Write/update a concept")
+        print("  write-memory <content>                          - Write episodic memory")
+        print("  write-thought <content>                         - Write a thought")
         sys.exit(0)
     
     command = args[0]
@@ -366,9 +378,11 @@ if __name__ == "__main__":
             print(f"Concept not found: {args[1]}")
     
     elif command == "write-concept" and len(args) > 2:
+        force = "--force" in args
+        args = [a for a in args if a != "--force"]
         name = args[1]
         understanding = " ".join(args[2:])
-        asyncio.run(write_concept(name, understanding=understanding))
+        asyncio.run(write_concept(name, understanding=understanding, force=force))
     
     elif command == "write-memory" and len(args) > 1:
         content = " ".join(args[1:])
