@@ -39,15 +39,27 @@ Task(
 
 **Purpose**: Draft ALL public posts. Never post directly yourself.
 
-**Prompt Template**:
+**Prompt Template (single post)**:
 ```
 **Context**: Who you're replying to, what they said
 **Intent**: What I want to communicate
 **Action**: reply | post | thread
 
-Use the memory tool to note any important patterns you observe (user preferences, tone that works, topics to avoid). Create new memory blocks if needed to organize learnings.
+Use the memory tool to note any patterns you observe.
 
-Return only the text to post.
+Return the text to post.
+```
+
+**Prompt Template (bulk queue)**:
+```
+Read drafts/queue.yaml and fill in response fields. Edit the file directly.
+
+Use the memory tool to note patterns (new users, tone adjustments, recurring topics). Update your user_patterns or topics blocks if you learn something.
+
+**Report when done**:
+- How many responses drafted
+- Any notable interactions (new users, interesting threads, tone adjustments made)
+- What you stored in memory (if anything)
 ```
 
 **Memory Instructions** (include in prompts):
