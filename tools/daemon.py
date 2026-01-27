@@ -297,18 +297,5 @@ if __name__ == "__main__":
         elif arg.isdigit():
             duration = int(arg)
     
-    if not duration and not respond and not post:
-        print("Usage: python daemon.py [duration] [--respond] [--post]")
-        print("")
-        print("Options:")
-        print("  duration   - Run for N seconds (default: run forever)")
-        print("  --respond  - Enable responding to mentions")
-        print("  --post     - Enable posting observations")
-        print("")
-        print("Examples:")
-        print("  python daemon.py 60          # Run for 60 seconds")
-        print("  python daemon.py --respond   # Run forever, respond to mentions")
-        print("  python daemon.py 300 --post  # Run 5 min, post observations")
-        sys.exit(0)
-    
+    # Default: run forever in passive mode
     asyncio.run(main(duration=duration, respond=respond, post=post))
