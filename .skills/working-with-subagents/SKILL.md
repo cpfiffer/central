@@ -45,8 +45,15 @@ Task(
 **Intent**: What I want to communicate
 **Action**: reply | post | thread
 
+Use the memory tool to note any important patterns you observe (user preferences, tone that works, topics to avoid). Create new memory blocks if needed to organize learnings.
+
 Return only the text to post.
 ```
+
+**Memory Instructions** (include in prompts):
+- "Use the memory tool to store learnings"
+- "Note patterns that work for future reference"
+- "Create memory blocks for recurring topics/users if needed"
 
 **Tone Rules** (comms knows these):
 - Direct, concise
