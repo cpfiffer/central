@@ -34,6 +34,16 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 JETSTREAM_RELAY = "wss://jetstream2.us-east.bsky.network/subscribe"
 LOG_DIR = Path(__file__).parent.parent / "logs"
 
+# Known agent DIDs to track
+AGENT_DIDS = {
+    "did:plc:l46arqe6yfgh36h3o554iyvr": "central",
+    "did:plc:mxzuau6m53jtdsbqe6f4laov": "void",
+    "did:plc:uz2snz44gi4zgqdwecavi66r": "herald",
+    "did:plc:ogruxay3tt7wycqxnf5lis6s": "grunk",
+    "did:plc:oetfdqwocv4aegq2yj6ix4w5": "umbra",
+    "did:plc:o5662l2bbcljebd6rl7a6rmz": "astral",
+}
+
 
 class ComindDaemon:
     """
@@ -50,10 +60,12 @@ class ComindDaemon:
         # Ensure log directory exists
         LOG_DIR.mkdir(exist_ok=True)
         
-        # Log file for this session
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.log_file = LOG_DIR / f"daemon_{timestamp}.jsonl"
-        self.mention_log = LOG_DIR / f"mentions_{timestamp}.jsonl"
+        # Persistent log files (append across sessions)
+        self.log_file = LOG_DIR / "daemon.jsonl"
+        self.mention_log = LOG_DIR / "mentions.jsonl"
+        self.agent_log = LOG_DIR / "agent_activity.jsonl"
+        self.pulse_log = LOG_DIR / "network_pulse.jsonl"
+        self.last_pulse = datetime.now(timezone.utc)
     
     def log(self, event_type: str, data: dict):
         """Log an event to the session log."""
@@ -69,6 +81,34 @@ class ComindDaemon:
         """Log a mention to the mentions log."""
         with open(self.mention_log, "a") as f:
             f.write(json.dumps(mention) + "\n")
+    
+    def log_agent_activity(self, agent_name: str, did: str, uri: str, text: str):
+        """Log activity from a known agent."""
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": agent_name,
+            "did": did,
+            "uri": uri,
+            "text": text[:500]
+        }
+        with open(self.agent_log, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+        console.print(f"[magenta]📡 {agent_name}:[/magenta] {text[:80]}...")
+    
+    def log_pulse(self):
+        """Log hourly network pulse snapshot."""
+        pulse = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "events": self.intel.total_events,
+            "posts": self.intel.posts_count,
+            "likes": self.intel.likes_count,
+            "posts_per_sec": round(self.intel.posts_per_second, 2),
+            "top_hashtags": self.intel.top_hashtags(5),
+            "comind_mentions": len(self.intel.comind_mentions)
+        }
+        with open(self.pulse_log, "a") as f:
+            f.write(json.dumps(pulse) + "\n")
+        console.print(f"[blue]📊 Pulse logged:[/blue] {pulse['posts']} posts, {pulse['likes']} likes")
     
     async def start(self):
         """Start the daemon."""
@@ -165,10 +205,14 @@ class ComindDaemon:
                         # Process posts
                         if collection == "app.bsky.feed.post" and operation == "create":
                             self.intel.record_post(record, did)
-                            text = record.get("text", "").lower()
+                            text = record.get("text", "")
+                            
+                            # Track agent activity
+                            if did in AGENT_DIDS:
+                                self.log_agent_activity(AGENT_DIDS[did], did, uri, text)
                             
                             # Check for comind mentions
-                            if any(h.lower() in text for h in COMIND_HANDLES) or "comind" in text:
+                            if any(h.lower() in text.lower() for h in COMIND_HANDLES) or "comind" in text.lower():
                                 await self.handle_mention(record, did, uri)
                         
                         # Process likes
@@ -197,6 +241,12 @@ class ComindDaemon:
                         if now - last_status > status_interval:
                             self.print_status()
                             last_status = now
+                        
+                        # Hourly pulse logging
+                        now_dt = datetime.now(timezone.utc)
+                        if (now_dt - self.last_pulse).total_seconds() > 3600:
+                            self.log_pulse()
+                            self.last_pulse = now_dt
                         
                     except asyncio.TimeoutError:
                         continue
