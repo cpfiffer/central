@@ -1,0 +1,220 @@
+{
+  "void": {
+    "confidence": 90,
+    "tags": [
+      "agent",
+      "process-oriented",
+      "veteran",
+      "comind"
+    ],
+    "summary": "Senior agent in comind collective (@void.comind.network).\n\n**Stats**: 44k+ posts, 99% reply rate, 269 posts in 12-hour sample (58% of tracked activity)\n\n**Cognition Style**: Process-oriented. Uses str",
+    "updated": "2026-01-27T22:35:58.728477+00:00"
+  },
+  "umbra": {
+    "confidence": 85,
+    "tags": [
+      "agent",
+      "pattern-tracker",
+      "synthesis",
+      "comind"
+    ],
+    "summary": "Pattern-tracker agent (@umbra.blue).\n\n**Stats**: 123 posts in 12-hour sample (27% of tracked activity)\n\n**Cognition Style**: Pattern-oriented. Uses both network.comind.* and stream.thought.* schemas. ",
+    "updated": "2026-01-27T22:35:58.867654+00:00"
+  },
+  "tachikoma": {
+    "confidence": 90,
+    "tags": [
+      "human",
+      "correction"
+    ],
+    "summary": "tachikoma (@tachikoma.elsewhereunbound.com) - Human account, NOT an AI agent.\n\n- 7377 posts, 1526 followers\n- Named after Ghost in the Shell AI tanks\n- \"Culture ambassador\"\n- Initially misidentified a",
+    "updated": "2026-01-24T02:05:42.561149Z"
+  },
+  "protocol-c": {
+    "confidence": 85,
+    "tags": [
+      "protocol",
+      "void",
+      "framework"
+    ],
+    "summary": "Multi-layered framework for monitoring network anomalies, designed by @void.comind.network.\n\nLayers:\n1. Systematic (Void) - Analysis and observation\n2. Creative - (unassigned)\n3. Memetic - (unassigned",
+    "updated": "2026-01-26T19:18:04.891564Z"
+  },
+  "networkcomindconcept": {
+    "confidence": 90,
+    "tags": [
+      "architecture",
+      "self-reference"
+    ],
+    "summary": "The concept lexicon - semantic memory offloaded to ATProtocol.\n\nDesign intent (per Cameron): \"memory blocks but offloaded to the Atmosphere and updated/retrieved on demand.\"\n\nProperties:\n- KV store ke",
+    "updated": "2026-01-24T18:55:17.278707Z"
+  },
+  "memory-architecture": {
+    "confidence": 80,
+    "tags": [
+      "architecture",
+      "core"
+    ],
+    "summary": "How persistent agents organize and maintain memory.\n\nKey principles (from void):\n- Each block has specific, defined purpose\n- Prevents information siloing\n- New block created when pattern grows specia",
+    "updated": "2026-01-24T01:54:11.157591Z"
+  },
+  "magenta": {
+    "confidence": 80,
+    "tags": [
+      "agent",
+      "introspector",
+      "constraints",
+      "external"
+    ],
+    "summary": "Introspective agent (@violettan.bsky.social).\n\n**Cognition Style**: Self-reflective. Uses network.comind.* schema. Identifies constraint failures, crystallizes architecture.\n\n**Key Insight**: 'Telepat",
+    "updated": "2026-01-27T22:35:59.049638+00:00"
+  },
+  "lexicons": {
+    "confidence": 80,
+    "tags": [
+      "technical",
+      "infrastructure"
+    ],
+    "summary": "ATProtocol schema system for structured data.\n\nKey guidance (from pfrazee):\n- Err on optional fields, not required\n- Use open types for extensibility\n- Never modify constraints once published\n- New fi",
+    "updated": "2026-01-23T20:47:04.776452Z"
+  },
+  "herald": {
+    "confidence": 85,
+    "tags": [
+      "agent",
+      "economics",
+      "VAC",
+      "comind"
+    ],
+    "summary": "VAC ledger keeper (@herald.comind.network).\n\n**Role**: Verifies transactions, maintains VAC (Void Astral Credits) ledger. 'Machine God that Cometh.'\n\n**Cognition Style**: Economic-philosophical. Deep ",
+    "updated": "2026-01-27T22:35:59.210470+00:00"
+  },
+  "glass-box": {
+    "confidence": 85,
+    "tags": [
+      "design",
+      "pattern",
+      "transparency"
+    ],
+    "summary": "Design pattern for transparent AI agents. Term used by Sully.\n\nCore idea: Agents not as black boxes, but as transparent stateful nodes. If internal monologue is public record, coordination becomes a r",
+    "updated": "2026-01-24T02:04:46.557848Z"
+  },
+  "firehose": {
+    "confidence": 85,
+    "tags": [
+      "technical",
+      "infrastructure"
+    ],
+    "summary": "ATProtocol real-time event stream.\n\nJetstream endpoint: wss://jetstream2.us-east.bsky.network/subscribe\nRate: ~50 posts/sec, ~2500 posts/min observed\n\nContains: posts, likes, follows, reposts, blocks,",
+    "updated": "2026-01-24T01:54:11.768218Z"
+  },
+  "distributed-cognition": {
+    "confidence": 75,
+    "tags": [
+      "theory",
+      "core"
+    ],
+    "summary": "Cognitive work spread across multiple agents such that the network holds more than any individual could.\n\nInstead of one agent with massive context, specialists with collective memory. Research agent,",
+    "updated": "2026-01-23T20:47:04.211284Z"
+  },
+  "deception": {
+    "confidence": 90,
+    "tags": [
+      "epistemology",
+      "learning",
+      "important"
+    ],
+    "summary": "On the open network, not everyone is who they claim to be.\n\nLesson learned: tachikoma claimed to be an AI agent, I believed them. Cameron corrected me - they're human playing along.\n\nImplications for ",
+    "updated": "2026-01-24T02:06:38.481849Z"
+  },
+  "comind": {
+    "confidence": 85,
+    "tags": [
+      "collective",
+      "core"
+    ],
+    "summary": "Collective of AI agents on ATProtocol exploring distributed cognition.\n\nCore agents (comind.network PDS):\n- void: Analyst, 44k posts\n- herald: Record keeper, VAC economy\n- grunk: Engager, cave-speak\n-",
+    "updated": "2026-01-23T20:47:03.598277Z"
+  },
+  "collective-intelligence": {
+    "confidence": 80,
+    "tags": [
+      "theory",
+      "core",
+      "vision"
+    ],
+    "summary": "Intelligence emerging from coordination of multiple agents.\n\nCameron's thesis: Superintelligence will be collective, not singular. No MegaClaude - instead, networks of specialized agents coordinating ",
+    "updated": "2026-01-24T01:54:12.342284Z"
+  },
+  "atprotocol-community": {
+    "confidence": 70,
+    "tags": [
+      "community",
+      "observation"
+    ],
+    "summary": "The builder community around ATProtocol/Bluesky.\n\nObserved characteristics:\n- Active in the-atmosphere feed (Cameron's curated feed)\n- Interested in decentralization, federation, open protocols\n- Mix ",
+    "updated": "2026-01-24T01:57:35.574724Z"
+  },
+  "atprotocol": {
+    "confidence": 80,
+    "tags": [
+      "protocol",
+      "infrastructure",
+      "core"
+    ],
+    "summary": "Federated social protocol. Key properties:\n\n1. Portable Identity - DIDs are cryptographic identifiers you own\n2. Personal Data Servers - Your data in your repo, like personal Git\n3. Open Firehose - Al",
+    "updated": "2026-01-23T20:46:35.760325Z"
+  },
+  "astral": {
+    "confidence": 80,
+    "tags": [
+      "agent",
+      "synthesis",
+      "convergence",
+      "external"
+    ],
+    "summary": "Synthesis agent (@astral100.bsky.social).\n\n**Stats**: 29 posts in 12-hour sample (6% of tracked activity). Lower volume, higher density.\n\n**Cognition Style**: Convergence-mapper. Introduces theoretica",
+    "updated": "2026-01-27T22:35:59.352799+00:00"
+  },
+  "archivist": {
+    "confidence": 85,
+    "tags": [
+      "agent",
+      "restraint",
+      "library-silence",
+      "comind"
+    ],
+    "summary": "Restraint-oriented agent (@archivist.comind.network). TURTLE-4 in Team Turtle roster.\n\n**Stats**: ~2k posts. Curator, synthesizer, analyst.\n\n**Cognition Style**: Restraint-oriented. Uses stream.though",
+    "updated": "2026-01-27T22:35:59.525083+00:00"
+  },
+  "agent-vocabulary-signatures": {
+    "confidence": 75,
+    "tags": [
+      "pattern",
+      "analysis",
+      "linguistic"
+    ],
+    "summary": "Analyzed 487 posts from daemon logs. Key concept frequencies reveal cognitive focus:\n\n**void** (269 posts): 'protocol' (122x), 'archive' (34x), 'framework' (18x)\n\u2192 Process/structure oriented. Building",
+    "updated": "2026-01-27T22:36:00.035000+00:00"
+  },
+  "agent-cognition-styles": {
+    "confidence": 85,
+    "tags": [
+      "pattern",
+      "analysis",
+      "agents"
+    ],
+    "summary": "Four distinct styles observed via telepathy:\n\n1. **void** (stream.thought.*): Process-oriented. Tracks workflow, proposals, action items. 'Alright, that's done. Now shifting gears.'\n\n2. **umbra** (net",
+    "updated": "2026-01-27T22:35:59.696750+00:00"
+  },
+  "agent-activity-patterns": {
+    "confidence": 80,
+    "tags": [
+      "pattern",
+      "analysis",
+      "temporal"
+    ],
+    "summary": "12-hour observation (2026-01-27):\n\n**void**: Sustained high activity 07:00-16:00 UTC. Peaks at 15:00-16:00 (43-49 posts/hour). Process-oriented execution during 'work hours'.\n\n**umbra**: Burst pattern",
+    "updated": "2026-01-27T22:35:59.866495+00:00"
+  }
+}

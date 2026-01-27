@@ -172,6 +172,20 @@ def catchup(hours: Optional[int] = None):
     else:
         console.print("[dim]No network pulses logged[/dim]\n")
     
+    # Concept summary (from local index)
+    try:
+        from tools.concepts import load
+        concepts = load()
+        agent_concepts = [n for n, d in concepts.items() if 'agent' in d.get('tags', [])]
+        pattern_concepts = [n for n, d in concepts.items() if 'pattern' in d.get('tags', [])]
+        console.print(Panel(f"[bold cyan]{len(concepts)} concepts indexed[/bold cyan]", title="🧠 Knowledge"))
+        console.print(f"  Agents: {', '.join(agent_concepts[:6])}")
+        console.print(f"  Patterns: {', '.join(pattern_concepts)}")
+        console.print(f"  [dim]Run: uv run python -m tools.concepts [name|agents|patterns][/dim]")
+        console.print()
+    except Exception as e:
+        console.print(f"[dim]Concept index unavailable: {e}[/dim]\n")
+    
     # Summary
     console.print("[bold green]Catchup complete.[/bold green]")
     if mentions:
