@@ -18,19 +18,45 @@ console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
 
-# Reuse prioritization from old responder
+# Priority system (matches daemon.py)
 CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
 COMIND_AGENTS = {
     "did:plc:l46arqe6yfgh36h3o554iyvr": "central",
     "did:plc:mxzuau6m53jtdsbqe6f4laov": "void",
     "did:plc:uz2snz44gi4zgqdwecavi66r": "herald",
     "did:plc:ogruxay3tt7wycqxnf5lis6s": "grunk",
+    "did:plc:onfljgawqhqrz3dki5j6jh3m": "archivist",
+    "did:plc:oetfdqwocv4aegq2yj6ix4w5": "umbra",
+    "did:plc:o5662l2bbcljebd6rl7a6rmz": "astral",
+    "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",
 }
 
-def get_priority(author_did):
-    if author_did == CAMERON_DID: return "HIGH (Cameron)"
-    if author_did in COMIND_AGENTS: return "SKIP (Comind Agent)"
-    return "NORMAL"
+HIGH_PRIORITY_KEYWORDS = [
+    "help", "feedback", "bug", "broken", "issue", "error",
+    "how do", "can you", "what is", "why",
+]
+
+PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "SKIP": 4}
+
+def get_priority(author_did: str, text: str = "") -> str:
+    """Determine priority level for a notification."""
+    # Critical: Cameron
+    if author_did == CAMERON_DID:
+        return "CRITICAL"
+    
+    # Comind agents: Skip unless direct question to me
+    if author_did in COMIND_AGENTS:
+        if "@central" in text.lower() and "?" in text:
+            return "MEDIUM"
+        return "SKIP"
+    
+    # High: Questions or keywords from humans
+    text_lower = text.lower()
+    if "?" in text or any(kw in text_lower for kw in HIGH_PRIORITY_KEYWORDS):
+        return "HIGH"
+    
+    # Medium: General human mention
+    return "MEDIUM"
 
 async def queue_notifications(limit=50):
     """Fetch notifications and append to queue.yaml."""
@@ -91,10 +117,13 @@ async def queue_notifications(limit=50):
             their_uri = n["uri"]
             their_cid = n["cid"]
             
+            text = record.get("text", "")
+            priority = get_priority(n["author"]["did"], text)
+            
             entry = {
-                "priority": get_priority(n["author"]["did"]),
+                "priority": priority,
                 "author": n["author"]["handle"],
-                "text": record.get("text", ""),
+                "text": text,
                 "uri": their_uri,
                 "cid": their_cid,
                 "reply_root": their_root, # Pass this through
@@ -105,6 +134,9 @@ async def queue_notifications(limit=50):
             
             queue.insert(0, entry) # Newest first? Or append? Let's prepend.
             count += 1
+        
+        # Sort queue by priority (CRITICAL first, SKIP last)
+        queue.sort(key=lambda x: PRIORITY_ORDER.get(x.get("priority", "MEDIUM"), 2))
             
         with open(DRAFTS_FILE, "w") as f:
             yaml.dump(queue, f, sort_keys=False, indent=2)

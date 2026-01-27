@@ -46,6 +46,33 @@ AGENT_DIDS = {
     "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",
 }
 
+# Priority system
+CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
+HIGH_PRIORITY_KEYWORDS = [
+    "help", "feedback", "bug", "broken", "issue", "error",
+    "how do", "can you", "what is", "why",
+]
+
+def get_mention_priority(did: str, text: str) -> str:
+    """Determine priority level for a mention."""
+    # Critical: Cameron
+    if did == CAMERON_DID:
+        return "CRITICAL"
+    
+    # Comind agents: Skip unless direct question to me
+    if did in AGENT_DIDS:
+        if "@central" in text.lower() and "?" in text:
+            return "MEDIUM"  # They asked me directly
+        return "SKIP"  # General post, avoid loops
+    
+    # High: Questions or keywords from humans
+    text_lower = text.lower()
+    if "?" in text or any(kw in text_lower for kw in HIGH_PRIORITY_KEYWORDS):
+        return "HIGH"
+    
+    # Medium: General human mention
+    return "MEDIUM"
+
 
 class ComindDaemon:
     """
@@ -139,19 +166,30 @@ class ComindDaemon:
     async def handle_mention(self, record: dict, did: str, uri: str):
         """Handle a mention of comind."""
         text = record.get("text", "")
+        priority = get_mention_priority(did, text)
         
         mention_data = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "did": did,
             "uri": uri,
             "text": text,
+            "priority": priority,
         }
         
         self.log_mention(mention_data)
-        console.print(f"[yellow]⚡ MENTION:[/yellow] {text[:100]}...")
+        
+        # Priority-based alerts
+        if priority == "CRITICAL":
+            console.print(f"[bold red]🚨 CRITICAL:[/bold red] Cameron mention: {text[:80]}...")
+        elif priority == "HIGH":
+            console.print(f"[bold yellow]⚠️ HIGH:[/bold yellow] {text[:80]}...")
+        elif priority == "SKIP":
+            console.print(f"[dim]⏭️ SKIP:[/dim] {text[:60]}... (comind agent)")
+        else:
+            console.print(f"[yellow]⚡ MENTION:[/yellow] {text[:100]}...")
         
         # Optionally respond
-        if self.respond_to_mentions and self.agent:
+        if self.respond_to_mentions and self.agent and priority != "SKIP":
             # For now, just log that we would respond
             # In the future, implement smart responses
             console.print("[dim]  (Response capability available but not yet implemented)[/dim]")
