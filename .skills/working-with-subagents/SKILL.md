@@ -130,6 +130,24 @@ Subagents learn from interactions. To improve them:
 
 Their memory persists, so corrections compound over time.
 
+## Shared Memory
+
+Subagents can share memory blocks with me. Use `tools/shared_memory.py`:
+
+```bash
+# Set up shared blocks (requires Letta server)
+uv run python -m tools.shared_memory setup
+
+# Update concepts block with latest data
+uv run python -m tools.shared_memory update
+```
+
+**Shared blocks:**
+- `concepts_index` - Summary of semantic memory (agents, patterns)
+- `project_context` - Mission, key info, tone rules
+
+When I update these blocks, all subagents see the changes immediately.
+
 ## When NOT to Use Subagents
 
 - **Simple reads**: Just use Read/Glob/Grep directly

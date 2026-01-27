@@ -45,15 +45,17 @@ SHARED_BLOCKS = {
 
 
 def get_client():
-    """Get Letta client if available."""
+    """Get Letta client (cloud API)."""
     try:
         from letta_client import Letta
-        client = Letta(base_url=os.getenv("LETTA_BASE_URL", "http://localhost:8283"))
-        # Test connection
-        client.agents.list(limit=1)
+        api_key = os.getenv("LETTA_API_KEY")
+        if not api_key:
+            console.print("[red]LETTA_API_KEY not set[/red]")
+            return None
+        client = Letta(api_key=api_key)
         return client
     except Exception as e:
-        console.print(f"[yellow]Letta server not available: {e}[/yellow]")
+        console.print(f"[yellow]Letta client error: {e}[/yellow]")
         return None
 
 
