@@ -16,6 +16,7 @@ from tools.agent import ComindAgent
 
 console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
+SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
 
 # Reuse prioritization from old responder
 CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
@@ -52,6 +53,12 @@ async def queue_notifications(limit=50):
                 queue = yaml.safe_load(f) or []
         
         existing_uris = {item["uri"] for item in queue}
+        
+        # Load sent URIs to avoid re-queuing replied notifications
+        sent_uris = set()
+        if SENT_FILE.exists():
+            sent_uris = set(SENT_FILE.read_text().strip().split("\n"))
+        
         count = 0
         
         for n in notifications:
@@ -59,6 +66,8 @@ async def queue_notifications(limit=50):
                 continue
             if n["uri"] in existing_uris:
                 continue
+            if n["uri"] in sent_uris:
+                continue  # Already replied to this
             if n.get("isRead", False): # Only fetch unread? Maybe allow fetching recent read ones too?
                 # For now, let's include even read ones if they aren't in the queue, 
                 # but usually we want to clear the queue.
@@ -151,8 +160,16 @@ async def send_queue(dry_run=False):
             except Exception as e:
                 console.print(f"[red]Failed: {e}[/red]")
         
-        # Remove sent items from queue (or move to archive)
-        # For now, just remove from the list
+        # Track sent URIs to avoid re-queuing
+        sent_uris = []
+        for i in sent_indices:
+            sent_uris.append(queue[i]["uri"])
+        
+        if sent_uris:
+            with open(SENT_FILE, "a") as f:
+                f.write("\n".join(sent_uris) + "\n")
+        
+        # Remove sent items from queue
         new_queue = [item for i, item in enumerate(queue) if i not in sent_indices]
         
         with open(DRAFTS_FILE, "w") as f:
