@@ -12,9 +12,11 @@ This tool handles YAML manipulation properly so subagents don't corrupt the file
 import sys
 import yaml
 from pathlib import Path
+from datetime import datetime, timezone
 
 QUEUE_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")
+NEW_THRESHOLD_MINUTES = 30  # Items newer than this get 🆕 indicator
 
 
 def load_queue():
@@ -46,6 +48,19 @@ def load_sent_uris() -> set:
     return set(content.split("\n"))
 
 
+def is_new(queued_at: str | None) -> bool:
+    """Check if item was queued within NEW_THRESHOLD_MINUTES."""
+    if not queued_at:
+        return False
+    try:
+        item_time = datetime.fromisoformat(queued_at)
+        now = datetime.now(timezone.utc)
+        age_minutes = (now - item_time).total_seconds() / 60
+        return age_minutes <= NEW_THRESHOLD_MINUTES
+    except (ValueError, TypeError):
+        return False
+
+
 def list_queue():
     """List queue items with indices."""
     queue = load_queue()
@@ -57,9 +72,11 @@ def list_queue():
     
     for i, item in enumerate(queue):
         author = item.get("author", "unknown")
-        text = item.get("text", "")[:60].replace("\n", " ")
+        priority = item.get("priority", "MEDIUM")
+        text = item.get("text", "")[:50].replace("\n", " ")
         response = item.get("response")
         uri = item.get("uri", "")
+        queued_at = item.get("queued_at")
         
         # Status: ✓ = has response, ○ = no response, ⚠ = already sent (duplicate)
         if uri in sent_uris:
@@ -68,7 +85,11 @@ def list_queue():
             status = "✓"
         else:
             status = "○"
-        print(f"{i}: [{status}] @{author}: {text}...")
+        
+        # NEW indicator for recent items
+        new_indicator = "🆕" if is_new(queued_at) else "  "
+        
+        print(f"{i}: {new_indicator} [{status}] [{priority}] @{author}: {text}...")
 
 
 def set_response(uri: str, response: str):
