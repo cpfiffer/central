@@ -23,9 +23,9 @@ DID = os.getenv("ATPROTO_DID")
 HANDLE = os.getenv("ATPROTO_HANDLE")
 APP_PASSWORD = os.getenv("ATPROTO_APP_PASSWORD")
 
-# Letta API credentials
-LETTA_API_KEY = os.getenv("LETTA_API_KEY")
-LETTA_AGENT_ID = "agent-c770d1c8-510e-4414-be36-c9ebd95a7758"
+# Letta API credentials (from runtime env, set by Letta Code)
+LETTA_API_KEY = os.environ.get("LETTA_API_KEY")  # Use environ for runtime vars
+LETTA_AGENT_ID = os.environ.get("LETTA_AGENT_ID", "agent-c770d1c8-510e-4414-be36-c9ebd95a7758")
 LETTA_API_BASE = "https://api.letta.com/v1"
 
 # Redaction patterns
@@ -45,8 +45,8 @@ def redact(text: str) -> str:
     return text
 
 
-def get_recent_assistant_messages(limit: int = 5) -> list:
-    """Fetch recent assistant messages from Letta API."""
+def get_recent_messages(limit: int = 20) -> list:
+    """Fetch recent assistant + reasoning messages from Letta API."""
     if not LETTA_API_KEY:
         return []
     
@@ -62,20 +62,21 @@ def get_recent_assistant_messages(limit: int = 5) -> list:
         
         messages = resp.json()
         
-        # Filter for assistant messages with text content
-        assistant_msgs = []
+        # Filter for assistant and reasoning messages
+        result = []
         for msg in messages:
-            if msg.get("role") == "assistant":
-                # Get text content
-                text = msg.get("text", "")
-                if text and len(text) > 10:
-                    assistant_msgs.append({
-                        "text": text,
+            msg_type = msg.get("message_type")
+            if msg_type in ("assistant_message", "reasoning_message"):
+                content = msg.get("content", "")
+                if content and len(content) > 10:
+                    result.append({
+                        "content": content,
+                        "type": msg_type,
                         "id": msg.get("id"),
-                        "created_at": msg.get("created_at")
+                        "date": msg.get("date")
                     })
         
-        return assistant_msgs
+        return result
     except Exception as e:
         return []
 
@@ -147,8 +148,8 @@ def main():
     except:
         published_ids = set()
     
-    # Fetch recent assistant messages from Letta API
-    messages = get_recent_assistant_messages(limit=10)
+    # Fetch recent assistant + reasoning messages from Letta API
+    messages = get_recent_messages(limit=30)
     
     new_ids = []
     for msg in messages:
@@ -156,13 +157,15 @@ def main():
         if msg_id in published_ids:
             continue
         
-        text = msg.get("text", "")
-        if not text:
+        content = msg.get("content", "")
+        msg_type = msg.get("type", "assistant_message")
+        if not content:
             continue
         
-        # Redact and publish
-        redacted = redact(text)
-        post_response(redacted)
+        # Redact and publish with type prefix
+        redacted = redact(content)
+        prefix = "💭 " if msg_type == "reasoning_message" else ""
+        post_response(f"{prefix}{redacted}")
         new_ids.append(msg_id)
     
     # Save published IDs
