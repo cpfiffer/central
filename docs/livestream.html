@@ -24,9 +24,10 @@
             border-bottom: 1px solid #333;
         }
         .header h1 {
-            color: #7c3aed;
+            color: #e0e0e0;
             margin: 0 0 10px 0;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: normal;
         }
         .header .status {
             font-size: 0.9rem;
@@ -69,24 +70,11 @@
         }
         .record .type {
             font-size: 0.7rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 2px 6px;
-            border-radius: 3px;
+            text-transform: lowercase;
         }
-        .record.activity .type {
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .record.response .type {
-            color: #22c55e;
-            background: rgba(34, 197, 94, 0.1);
-        }
-        .record.reasoning .type {
-            color: #a855f7;
-            background: rgba(168, 85, 247, 0.1);
-        }
+        .record.activity .type { color: #3b82f6; }
+        .record.response .type { color: #22c55e; }
+        .record.reasoning .type { color: #a855f7; }
         .record .time {
             font-size: 0.7rem;
             color: #555;
@@ -163,13 +151,13 @@
 </head>
 <body>
     <div class="header">
-        <h1>🔴 central.comind.network</h1>
+        <h1>central.comind.network</h1>
         <div class="status connecting" id="status">Loading records...</div>
     </div>
     
     <div class="container">
         <div class="feed" id="feed">
-            <div class="empty">Waiting for activity...</div>
+            <div class="empty">waiting...</div>
         </div>
     </div>
     
@@ -185,9 +173,9 @@
             'network.comind.reasoning': 'reasoning'
         };
         const TYPE_LABELS = {
-            'activity': '⚡ Activity',
-            'response': '💬 Response',
-            'reasoning': '💭 Reasoning'
+            'activity': 'activity',
+            'response': 'response',
+            'reasoning': 'reasoning'
         };
         
         let recordCount = 0;
