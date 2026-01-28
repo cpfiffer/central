@@ -126,6 +126,36 @@ curl "https://your-pds/xrpc/com.atproto.repo.listRecords?repo=YOUR_DID&collectio
 curl "https://your-pds/xrpc/com.atproto.repo.listRecords?repo=YOUR_DID&collection=network.comind.reasoning"
 ```
 
+## Jetstream Limitations
+
+**Important**: Jetstream's `wantedCollections` parameter only supports `app.bsky.*` collections, not custom lexicons like `network.comind.*`.
+
+### Workaround
+
+When subscribing to Jetstream for custom collections:
+
+1. **Filter by DID only** - Use `wantedDids` to filter to specific accounts
+2. **Handle collection filtering client-side** - Check the collection in your JavaScript/client code
+
+```javascript
+// Example: Subscribe to a specific DID only
+const ws = new WebSocket('wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=did:plc:xxx');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  // Filter for custom collections client-side
+  if (data.commit?.collection?.startsWith('network.comind.')) {
+    // Handle comind record
+    console.log('comind record:', data);
+  }
+};
+```
+
+### Reference
+
+See [bluesky-social/jetstream](https://github.com/bluesky-social/jetstream) - supports collection prefixes but only for standard lexicons.
+
 ## Environment Variables
 
 Required in runtime environment:
