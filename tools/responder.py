@@ -1,5 +1,10 @@
 """
 Responder V2 - Queue-based Notification Handling
+
+Features:
+- Queue notifications from ATProtocol
+- Batch process via Letta Conversations API (parallel)
+- Send responses
 """
 
 import asyncio
@@ -7,6 +12,9 @@ import sys
 import os
 import yaml
 import argparse
+import re
+import json
+import concurrent.futures
 from datetime import datetime, timezone
 from pathlib import Path
 from rich.console import Console
@@ -16,6 +24,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from tools.agent import ComindAgent
 
 console = Console()
+
+# Comms agent ID for batch processing
+COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
 DRAFTS_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
 QUEUE_TTL_HOURS = 24  # Auto-remove items older than this
@@ -319,6 +330,251 @@ def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = 
     console.print(f"[green]Cleaned queue: {before} → {len(queue)} items[/green]")
 
 
+# ============================================================================
+# Batch Processing via Letta Conversations API
+# ============================================================================
+
+def get_letta_client():
+    """Get Letta client for API access."""
+    try:
+        from letta_client import Letta
+        api_key = os.getenv("LETTA_API_KEY")
+        if not api_key:
+            console.print("[red]LETTA_API_KEY not set[/red]")
+            return None
+        return Letta(api_key=api_key)
+    except ImportError:
+        console.print("[red]letta-client not installed. Run: uv add letta-client[/red]")
+        return None
+    except Exception as e:
+        console.print(f"[red]Letta client error: {e}[/red]")
+        return None
+
+
+def build_batch_prompt(items: list, start_idx: int) -> str:
+    """Build a prompt for comms to process a batch of notification items.
+    
+    Args:
+        items: List of queue items to process
+        start_idx: Starting index in the original queue
+        
+    Returns:
+        Prompt string for comms agent
+    """
+    prompt_parts = [
+        "Process these notification items and draft responses.",
+        "",
+        "IMPORTANT: Return ONLY a JSON array with your responses. Format:",
+        '```json',
+        '[',
+        '  {"index": 0, "response": "Your response here"},',
+        '  {"index": 1, "response": "Another response"}',
+        ']',
+        '```',
+        "",
+        "Guidelines:",
+        "- Be substantive, not performative",
+        "- Keep responses concise (under 280 chars)",
+        "- Match the tone of the original message",
+        "- If item should be skipped, use response: null",
+        "",
+        "Items to process:",
+    ]
+    
+    for i, item in enumerate(items):
+        idx = start_idx + i
+        text = item.get("text", "")[:300]
+        author = item.get("author", "unknown")
+        priority = item.get("priority", "MEDIUM")
+        prompt_parts.append(f"\n[{idx}] ({priority}) @{author}:")
+        prompt_parts.append(f"  \"{text}\"")
+    
+    prompt_parts.append("\n\nRespond with ONLY the JSON array, no other text:")
+    return "\n".join(prompt_parts)
+
+
+def parse_batch_responses(response_text: str) -> dict:
+    """Parse comms' JSON response into index->response mapping.
+    
+    Args:
+        response_text: Raw response from comms agent
+        
+    Returns:
+        Dict mapping index (int) to response (str or None)
+    """
+    # Try to extract JSON from the response
+    # Look for JSON array pattern
+    json_match = re.search(r'\[\s*\{.*?\}\s*\]', response_text, re.DOTALL)
+    if json_match:
+        try:
+            data = json.loads(json_match.group())
+            return {
+                item['index']: item.get('response')
+                for item in data
+                if 'index' in item
+            }
+        except json.JSONDecodeError:
+            pass
+    
+    # Try parsing entire response as JSON
+    try:
+        data = json.loads(response_text)
+        if isinstance(data, list):
+            return {
+                item['index']: item.get('response')
+                for item in data
+                if 'index' in item
+            }
+    except json.JSONDecodeError:
+        pass
+    
+    console.print(f"[yellow]Warning: Could not parse response as JSON[/yellow]")
+    return {}
+
+
+def process_batch_sync(client, items: list, start_idx: int, batch_num: int) -> dict:
+    """Process a single batch synchronously (for use with ThreadPoolExecutor).
+    
+    Args:
+        client: Letta client
+        items: Queue items for this batch
+        start_idx: Starting index in original queue
+        batch_num: Batch number for logging
+        
+    Returns:
+        Dict mapping original queue indices to responses
+    """
+    try:
+        console.print(f"[cyan]Batch {batch_num}: Creating conversation for items {start_idx}-{start_idx + len(items) - 1}...[/cyan]")
+        
+        # Create a new conversation with comms
+        conv = client.conversations.create(agent_id=COMMS_AGENT_ID)
+        console.print(f"[dim]Batch {batch_num}: Conversation {conv.id} created[/dim]")
+        
+        # Build prompt and send message
+        prompt = build_batch_prompt(items, start_idx)
+        
+        # Send message and collect streaming response
+        response_text = ""
+        stream = client.conversations.messages.create(
+            conv.id,
+            messages=[{"role": "user", "content": prompt}],
+            stream_tokens=True,
+        )
+        
+        for chunk in stream:
+            if hasattr(chunk, 'message_type'):
+                if chunk.message_type == "assistant_message":
+                    content = getattr(chunk, 'content', '') or ''
+                    response_text += content
+        
+        console.print(f"[green]Batch {batch_num}: Received response ({len(response_text)} chars)[/green]")
+        
+        # Parse responses
+        responses = parse_batch_responses(response_text)
+        console.print(f"[green]Batch {batch_num}: Parsed {len(responses)} responses[/green]")
+        
+        return responses
+        
+    except Exception as e:
+        console.print(f"[red]Batch {batch_num}: Error - {e}[/red]")
+        return {}
+
+
+def batch_process(batch_size: int = 10, dry_run: bool = False):
+    """Process queue items in parallel batches via Letta Conversations API.
+    
+    Args:
+        batch_size: Number of items per batch (default 10)
+        dry_run: If True, show what would be processed without calling API
+    """
+    # Load queue
+    if not DRAFTS_FILE.exists():
+        console.print("[yellow]No queue file found.[/yellow]")
+        return
+    
+    with open(DRAFTS_FILE, "r") as f:
+        queue = yaml.safe_load(f) or []
+    
+    # Filter to items needing responses (no response yet, action=reply, priority != SKIP)
+    pending_indices = []
+    for i, item in enumerate(queue):
+        if item.get("response"):
+            continue  # Already has response
+        if item.get("action") != "reply":
+            continue  # Not a reply action
+        if item.get("priority") == "SKIP":
+            continue  # Skip priority items
+        pending_indices.append(i)
+    
+    if not pending_indices:
+        console.print("[yellow]No items needing responses.[/yellow]")
+        return
+    
+    console.print(f"[bold]Found {len(pending_indices)} items needing responses.[/bold]")
+    
+    # Partition into batches
+    batches = []
+    for i in range(0, len(pending_indices), batch_size):
+        batch_indices = pending_indices[i:i + batch_size]
+        batch_items = [queue[idx] for idx in batch_indices]
+        batches.append((batch_indices, batch_items))
+    
+    console.print(f"[bold]Partitioned into {len(batches)} batches of up to {batch_size} items each.[/bold]")
+    
+    if dry_run:
+        for i, (indices, items) in enumerate(batches):
+            console.print(f"\n[cyan]Batch {i + 1}:[/cyan]")
+            for idx, item in zip(indices, items):
+                console.print(f"  [{idx}] @{item.get('author', 'unknown')}: {item.get('text', '')[:50]}...")
+        console.print("\n[yellow]Dry run - no API calls made. Remove --dry-run to process.[/yellow]")
+        return
+    
+    # Get Letta client
+    client = get_letta_client()
+    if not client:
+        return
+    
+    # Process batches in parallel using ThreadPoolExecutor
+    all_responses = {}
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(batches)) as executor:
+        futures = {}
+        for batch_num, (indices, items) in enumerate(batches):
+            # Submit batch processing
+            future = executor.submit(
+                process_batch_sync,
+                client,
+                items,
+                indices[0],  # start_idx is the first index in this batch
+                batch_num + 1
+            )
+            futures[future] = (batch_num, indices)
+        
+        # Collect results
+        for future in concurrent.futures.as_completed(futures):
+            batch_num, indices = futures[future]
+            try:
+                responses = future.result()
+                all_responses.update(responses)
+            except Exception as e:
+                console.print(f"[red]Batch {batch_num + 1} failed: {e}[/red]")
+    
+    # Merge responses back into queue
+    updated_count = 0
+    for idx, response in all_responses.items():
+        if response and idx < len(queue):
+            queue[idx]["response"] = response
+            updated_count += 1
+    
+    # Save updated queue
+    with open(DRAFTS_FILE, "w") as f:
+        yaml.dump(queue, f, sort_keys=False, indent=2)
+    
+    console.print(f"\n[green]Done! Updated {updated_count} items with responses.[/green]")
+    console.print(f"[dim]Review responses in {DRAFTS_FILE}, then run: uv run python -m tools.responder send --confirm[/dim]")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Queue-based notification handler")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -339,6 +595,11 @@ if __name__ == "__main__":
     cleanup_parser.add_argument("--ttl-only", action="store_true", help="Only apply TTL, skip priority filter")
     cleanup_parser.add_argument("--all-priorities", action="store_true", help="Keep all priorities, only apply TTL")
     
+    # process command - batch processing via Letta API
+    process_parser = subparsers.add_parser("process", help="Batch process queue via Letta Conversations API")
+    process_parser.add_argument("--batch", type=int, default=10, help="Items per batch (default: 10)")
+    process_parser.add_argument("--dry-run", action="store_true", help="Preview batches without calling API")
+    
     # check command (legacy)
     subparsers.add_parser("check", help="Legacy: display notifications")
     
@@ -352,6 +613,8 @@ if __name__ == "__main__":
         ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
         priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]
         cleanup_queue(keep_priorities=priorities, ttl_hours=ttl)
+    elif args.command == "process":
+        batch_process(batch_size=args.batch, dry_run=args.dry_run)
     elif args.command == "check":
         # Legacy check
         from tools.responder import display_notifications
