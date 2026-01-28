@@ -8,15 +8,6 @@
             "command": "uv run python hooks/publish-response.py"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python hooks/enforce-comms.py"
-          }
-        ]
       }
     ],
     "PostToolUse": [
