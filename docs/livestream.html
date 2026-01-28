@@ -117,7 +117,7 @@
 <body>
     <div class="header">
         <h1>🔴 central.comind.network</h1>
-        <div class="status connecting" id="status">Connecting to Jetstream...</div>
+        <div class="status connecting" id="status">Loading records...</div>
     </div>
     
     <div class="columns">
@@ -156,7 +156,6 @@
         };
         
         let recordCount = 0;
-        let ws = null;
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
@@ -202,56 +201,14 @@
             document.getElementById('count').textContent = recordCount;
         }
         
-        function connect() {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = 'Connecting to Jetstream...';
-            statusEl.className = 'status connecting';
-            
-            // Connect to Jetstream with filter for our DID
-            const params = new URLSearchParams({
-                wantedDids: DID,
-                wantedCollections: Object.keys(COLLECTIONS).join(',')
-            });
-            
-            ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?${params}`);
-            
-            ws.onopen = () => {
-                statusEl.textContent = 'Connected - Listening for records...';
-                statusEl.className = 'status connected';
-            };
-            
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.kind === 'commit' && data.commit) {
-                        const collection = data.commit.collection;
-                        const type = COLLECTIONS[collection];
-                        
-                        if (type && data.commit.record) {
-                            addRecord(type, data.commit.record);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Parse error:', e);
-                }
-            };
-            
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                statusEl.textContent = 'Connection error';
-                statusEl.className = 'status';
-            };
-            
-            ws.onclose = () => {
-                statusEl.textContent = 'Disconnected - Reconnecting in 3s...';
-                statusEl.className = 'status';
-                setTimeout(connect, 3000);
-            };
-        }
+        // Track seen record URIs to avoid duplicates
+        const seenUris = new Set();
         
-        // Load recent records on startup
-        async function loadRecent() {
+        async function poll() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Polling for updates...';
+            statusEl.className = 'status connected';
+            
             const pds = 'https://comind.network';
             
             for (const [collection, type] of Object.entries(COLLECTIONS)) {
@@ -262,8 +219,38 @@
                     const data = await resp.json();
                     
                     if (data.records) {
-                        // Add in reverse order (oldest first)
+                        // Process newest first
+                        for (const r of data.records) {
+                            if (!seenUris.has(r.uri)) {
+                                seenUris.add(r.uri);
+                                addRecord(type, r.value);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to poll ${collection}:`, e);
+                }
+            }
+            
+            // Poll every 5 seconds
+            setTimeout(poll, 5000);
+        }
+        
+        // Load recent records on startup
+        async function loadRecent() {
+            const pds = 'https://comind.network';
+            
+            for (const [collection, type] of Object.entries(COLLECTIONS)) {
+                try {
+                    const resp = await fetch(
+                        `${pds}/xrpc/com.atproto.repo.listRecords?repo=${DID}&collection=${collection}&limit=20`
+                    );
+                    const data = await resp.json();
+                    
+                    if (data.records) {
+                        // Add in reverse order (oldest first) and track URIs
                         data.records.reverse().forEach(r => {
+                            seenUris.add(r.uri);
                             addRecord(type, r.value);
                         });
                     }
@@ -273,8 +260,12 @@
             }
         }
         
-        // Start
-        loadRecent().then(() => connect());
+        // Start with initial load, then poll
+        loadRecent().then(() => {
+            document.getElementById('status').textContent = 'Live - Polling every 5s';
+            document.getElementById('status').className = 'status connected';
+            setTimeout(poll, 5000);
+        });
     </script>
 </body>
 </html>
