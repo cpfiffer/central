@@ -141,7 +141,8 @@ async def parse_facets(text: str) -> list:
         })
     
     # Find URLs without protocol (common TLDs)
-    bare_url_pattern = r'(?<![/@\w])([a-zA-Z0-9][-a-zA-Z0-9]*\.(?:com|org|net|io|app|social|network|blue|xyz|dev|ai|bsky\.social)[^\s<>\[\]()\'\"]*)'
+    # Negative lookbehind excludes: after @, after /, after word char, after .
+    bare_url_pattern = r'(?<![/@\w.])([a-zA-Z0-9][-a-zA-Z0-9]*\.(?:com|org|net|io|app|social|network|blue|xyz|dev|ai)[^\s<>\[\]()\'\"]*)'
     for match in re.finditer(bare_url_pattern, text):
         bare_url = match.group(1).rstrip(".,;:!?")
         if not bare_url:
