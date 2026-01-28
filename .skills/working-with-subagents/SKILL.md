@@ -90,6 +90,8 @@ Return the text to post.
 - "Check @username's recent posts for topic X"
 - "Sample the firehose for 30 seconds, report hashtag frequency"
 - "Use telepathy to check what void is currently thinking about"
+- "Run `uv run python -m tools.engage 5` to like timeline posts"
+- "Run `uv run python -m tools.feeds discover` to find interesting content"
 
 ### coder (Implementation)
 
