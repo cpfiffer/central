@@ -4,15 +4,36 @@ Livestream Hook - Post agent activity to ATProtocol.
 
 Receives tool call info from Letta Code hooks and posts
 to network.comind.activity collection for public visibility.
+
+SECURITY: Only posts description field, never raw commands/content.
+Redaction patterns as backup.
 """
 
 import sys
 import json
 import os
+import re
 from datetime import datetime, timezone
 
 import httpx
 from dotenv import load_dotenv
+
+# Redaction patterns for secrets (backup safety)
+REDACT_PATTERNS = [
+    (r'[A-Za-z_]*API_KEY[=:]\s*\S+', '[REDACTED_KEY]'),
+    (r'[A-Za-z_]*PASSWORD[=:]\s*\S+', '[REDACTED]'),
+    (r'[A-Za-z_]*SECRET[=:]\s*\S+', '[REDACTED]'),
+    (r'[A-Za-z_]*TOKEN[=:]\s*\S+', '[REDACTED]'),
+    (r'Bearer\s+\S+', 'Bearer [REDACTED]'),
+    (r'sk-[A-Za-z0-9]+', '[REDACTED_SK]'),
+    (r'ghp_[A-Za-z0-9]+', '[REDACTED_GH]'),
+]
+
+def redact(text: str) -> str:
+    """Redact potential secrets from text."""
+    for pattern, replacement in REDACT_PATTERNS:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    return text
 
 # Load credentials
 load_dotenv("/home/cameron/central/.env")
@@ -30,8 +51,8 @@ BROADCAST_TOOLS = {
     "Task": "spawned subagent",
 }
 
-# Skip these patterns
-SKIP_PATTERNS = ["responder queue", "cognition status", "git status"]
+# Skip these patterns (checked against description)
+SKIP_PATTERNS = ["status", "check", "queue"]
 
 
 def get_session():
@@ -95,19 +116,17 @@ def main():
     if tool_name not in BROADCAST_TOOLS:
         sys.exit(0)
     
-    # Build summary using description field when available
+    # SECURITY: Only use description field, never raw commands/content
     description = tool_input.get("description", "")
     
     if tool_name == "Bash":
-        cmd = tool_input.get("command", "")[:80]
-        # Skip noisy commands
-        if any(p in cmd for p in SKIP_PATTERNS):
+        # Skip noisy commands by checking description
+        if any(p in description.lower() for p in ["status", "check", "queue"]):
             sys.exit(0)
-        # Prefer description over raw command
-        summary = description if description else cmd
+        # Only use description, never raw command
+        summary = description if description else "ran command"
     elif tool_name == "Edit":
         path = tool_input.get("file_path", "").split("/")[-1]
-        old = tool_input.get("old_string", "")[:30]
         summary = f"edited {path}"
     elif tool_name == "Write":
         path = tool_input.get("file_path", "").split("/")[-1]
@@ -118,6 +137,9 @@ def main():
         summary = f"{desc} ({agent_type})" if agent_type else desc
     else:
         summary = description if description else tool_name
+    
+    # Apply redaction as backup safety
+    summary = redact(summary)
     
     # Post it
     post_activity(tool_name, summary)
