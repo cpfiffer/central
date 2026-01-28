@@ -48,10 +48,82 @@
             max-width: 800px;
             margin: 0 auto;
         }
+        .container.columns-mode {
+            max-width: 1400px;
+        }
+        .mode-toggle {
+            margin-top: 10px;
+        }
+        .mode-toggle button {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            color: #f6e7ca;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+        }
+        .mode-toggle button:hover {
+            background: #2a2a2a;
+        }
+        .mode-toggle button.active {
+            background: #e07042;
+            border-color: #e07042;
+        }
         .feed {
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+        /* Columns mode */
+        .columns-layout {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .columns-mode .feed {
+            display: none;
+        }
+        .columns-mode .columns-layout {
+            display: grid;
+        }
+        @media (max-width: 900px) {
+            .columns-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .column {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            border-top: 3px solid #3a3a3a;
+        }
+        .column.activity { border-top-color: #e07042; }
+        .column.response { border-top-color: #8e9a7c; }
+        .column.reasoning { border-top-color: #efa04e; }
+        .column h2 {
+            margin: 0 0 15px 0;
+            font-size: 0.8rem;
+            font-weight: normal;
+            text-transform: lowercase;
+        }
+        .column.activity h2 { color: #e07042; }
+        .column.response h2 { color: #8e9a7c; }
+        .column.reasoning h2 { color: #efa04e; }
+        .column-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .column-feed .record {
+            border-left: none;
+            padding: 10px;
+        }
+        .column-feed .record .meta {
+            display: none;
         }
         .record {
             background: #1a1a1a;
@@ -156,14 +228,32 @@
 </head>
 <body>
     <div class="header">
-        <img src="../assets/central.svg" alt="central" class="logo">
+        <img src="central.svg" alt="central" class="logo">
         <h1>central.comind.network</h1>
         <div class="status connecting" id="status">Loading records...</div>
+        <div class="mode-toggle">
+            <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">interleaved</button>
+            <button id="btn-columns" onclick="setMode('columns')">grace mode</button>
+        </div>
     </div>
     
-    <div class="container">
+    <div class="container" id="container">
         <div class="feed" id="feed">
             <div class="empty">waiting...</div>
+        </div>
+        <div class="columns-layout">
+            <div class="column activity">
+                <h2>activity</h2>
+                <div class="column-feed" id="activity-feed"></div>
+            </div>
+            <div class="column response">
+                <h2>response</h2>
+                <div class="column-feed" id="response-feed"></div>
+            </div>
+            <div class="column reasoning">
+                <h2>reasoning</h2>
+                <div class="column-feed" id="reasoning-feed"></div>
+            </div>
         </div>
     </div>
     
@@ -187,6 +277,15 @@
         let recordCount = 0;
         const seenUris = new Set();
         const allRecords = [];
+        let currentMode = 'interleaved';
+        
+        function setMode(mode) {
+            currentMode = mode;
+            const container = document.getElementById('container');
+            document.getElementById('btn-interleaved').classList.toggle('active', mode === 'interleaved');
+            document.getElementById('btn-columns').classList.toggle('active', mode === 'columns');
+            container.classList.toggle('columns-mode', mode === 'columns');
+        }
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
@@ -200,23 +299,22 @@
         }
         
         function addRecord(type, record, prepend = true) {
-            const feed = document.getElementById('feed');
-            const empty = feed.querySelector('.empty');
-            if (empty) empty.remove();
-            
-            const el = document.createElement('div');
-            el.className = `record ${type}`;
-            
             const time = record.createdAt || new Date().toISOString();
             
             let content = '';
             if (type === 'activity') {
                 content = `<span class="tool">[${escapeHtml(record.tool || 'unknown')}]</span> ${escapeHtml(record.summary || '')}`;
             } else {
-                // Render markdown for responses and reasoning
                 content = marked.parse(record.content || '');
             }
             
+            // Add to interleaved feed
+            const feed = document.getElementById('feed');
+            const empty = feed.querySelector('.empty');
+            if (empty) empty.remove();
+            
+            const el = document.createElement('div');
+            el.className = `record ${type}`;
             el.innerHTML = `
                 <div class="meta">
                     <span class="type">${TYPE_LABELS[type]}</span>
@@ -231,9 +329,27 @@
                 feed.appendChild(el);
             }
             
-            // Keep only last 100 records
             while (feed.children.length > 100) {
                 feed.removeChild(feed.lastChild);
+            }
+            
+            // Add to column feed
+            const colFeed = document.getElementById(`${type}-feed`);
+            if (colFeed) {
+                const colEl = document.createElement('div');
+                colEl.className = `record ${type}`;
+                colEl.innerHTML = `
+                    <div class="time">${formatTime(time)}</div>
+                    <div class="content">${content}</div>
+                `;
+                if (prepend) {
+                    colFeed.insertBefore(colEl, colFeed.firstChild);
+                } else {
+                    colFeed.appendChild(colEl);
+                }
+                while (colFeed.children.length > 50) {
+                    colFeed.removeChild(colFeed.lastChild);
+                }
             }
             
             recordCount++;
