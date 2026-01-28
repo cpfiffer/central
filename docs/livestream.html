@@ -94,7 +94,7 @@
         /* Columns mode */
         .columns-layout {
             display: none;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
         .columns-mode .feed {
@@ -114,6 +114,7 @@
             padding: 15px;
             border-top: 3px solid #3a3a3a;
         }
+        .column.prompt { border-top-color: #7c9a8e; }
         .column.activity { border-top-color: #e07042; }
         .column.response { border-top-color: #8e9a7c; }
         .column.reasoning { border-top-color: #efa04e; }
@@ -123,6 +124,7 @@
             font-weight: normal;
             text-transform: lowercase;
         }
+        .column.prompt h2 { color: #7c9a8e; }
         .column.activity h2 { color: #e07042; }
         .column.response h2 { color: #8e9a7c; }
         .column.reasoning h2 { color: #efa04e; }
@@ -150,6 +152,7 @@
         .record.activity { border-left-color: #e07042; }
         .record.response { border-left-color: #8e9a7c; }
         .record.reasoning { border-left-color: #efa04e; }
+        .record.prompt { border-left-color: #7c9a8e; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -167,6 +170,7 @@
         .record.activity .type { color: #e07042; }
         .record.response .type { color: #8e9a7c; }
         .record.reasoning .type { color: #efa04e; }
+        .record.prompt .type { color: #7c9a8e; }
         .record .time {
             font-size: 0.7rem;
             color: #555;
@@ -257,6 +261,10 @@
             <div class="empty">waiting...</div>
         </div>
         <div class="columns-layout">
+            <div class="column prompt">
+                <h2>prompt</h2>
+                <div class="column-feed" id="prompt-feed"></div>
+            </div>
             <div class="column activity">
                 <h2>activity</h2>
                 <div class="column-feed" id="activity-feed"></div>
@@ -281,12 +289,14 @@
         const COLLECTIONS = {
             'network.comind.activity': 'activity',
             'network.comind.response': 'response',
-            'network.comind.reasoning': 'reasoning'
+            'network.comind.reasoning': 'reasoning',
+            'network.comind.prompt': 'prompt'
         };
         const TYPE_LABELS = {
             'activity': 'activity',
             'response': 'response',
-            'reasoning': 'reasoning'
+            'reasoning': 'reasoning',
+            'prompt': 'prompt'
         };
         
         let recordCount = 0;

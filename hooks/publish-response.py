@@ -65,7 +65,7 @@ def get_recent_messages(limit: int = 20) -> list:
         
         messages = resp.json()
         
-        # Filter for assistant and reasoning messages
+        # Filter for assistant, reasoning, and user messages
         result = []
         for msg in messages:
             msg_type = msg.get("message_type")
@@ -82,6 +82,16 @@ def get_recent_messages(limit: int = 20) -> list:
                 # Reasoning uses different field
                 content = msg.get("reasoning", "")
                 if content and len(content) > 10:
+                    result.append({
+                        "content": content,
+                        "type": msg_type,
+                        "id": msg.get("id"),
+                        "date": msg.get("date")
+                    })
+            elif msg_type == "user_message":
+                # User prompts
+                content = msg.get("content", "")
+                if content and len(content) > 5:
                     result.append({
                         "content": content,
                         "type": msg_type,
@@ -179,6 +189,8 @@ def main():
         # Post to appropriate collection based on type
         if msg_type == "reasoning_message":
             post_to_collection(content, "network.comind.reasoning", "network.comind.reasoning")
+        elif msg_type == "user_message":
+            post_to_collection(content, "network.comind.prompt", "network.comind.prompt")
         else:
             post_to_collection(content, "network.comind.response", "network.comind.response")
         new_ids.append(msg_id)
