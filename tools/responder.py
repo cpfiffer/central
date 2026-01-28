@@ -170,8 +170,14 @@ async def queue_notifications(limit=50):
             queue.insert(0, entry) # Newest first? Or append? Let's prepend.
             count += 1
         
-        # Sort queue by priority (CRITICAL first, SKIP last)
-        queue.sort(key=lambda x: PRIORITY_ORDER.get(x.get("priority", "MEDIUM"), 2))
+        # Sort queue by priority (CRITICAL first, SKIP last), then by timestamp (newest first within tier)
+        def sort_key(x):
+            priority = PRIORITY_ORDER.get(x.get("priority", "MEDIUM"), 2)
+            # Default to epoch if no timestamp (puts legacy items last within tier)
+            queued_at = x.get("queued_at", "1970-01-01T00:00:00+00:00")
+            # Negate timestamp for reverse chronological within priority tier
+            return (priority, -datetime.fromisoformat(queued_at).timestamp())
+        queue.sort(key=sort_key)
             
         with open(DRAFTS_FILE, "w") as f:
             yaml.dump(queue, f, sort_keys=False, indent=2)
