@@ -279,6 +279,67 @@ class ComindAgent:
         console.print(f"[green]Followed {did}[/green]")
         return response.json()
     
+    async def repost(self, uri: str, cid: str) -> dict:
+        """Repost a post."""
+        check_write_permission()
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        
+        response = await self._client.post(
+            f"{self.pds}/xrpc/com.atproto.repo.createRecord",
+            headers=self.auth_headers,
+            json={
+                "repo": self.did,
+                "collection": "app.bsky.feed.repost",
+                "record": {
+                    "$type": "app.bsky.feed.repost",
+                    "subject": {"uri": uri, "cid": cid},
+                    "createdAt": now
+                }
+            }
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to repost: {response.text}")
+        
+        console.print(f"[green]Reposted[/green]")
+        return response.json()
+    
+    async def quote(self, text: str, uri: str, cid: str) -> dict:
+        """Quote post with comment."""
+        check_write_permission()
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        
+        facets = await parse_facets(text)
+        
+        record = {
+            "$type": "app.bsky.feed.post",
+            "text": text,
+            "createdAt": now,
+            "embed": {
+                "$type": "app.bsky.embed.record",
+                "record": {"uri": uri, "cid": cid}
+            }
+        }
+        
+        if facets:
+            record["facets"] = facets
+        
+        response = await self._client.post(
+            f"{self.pds}/xrpc/com.atproto.repo.createRecord",
+            headers=self.auth_headers,
+            json={
+                "repo": self.did,
+                "collection": "app.bsky.feed.post",
+                "record": record
+            }
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to quote: {response.text}")
+        
+        console.print(f"[green]Quote posted[/green]")
+        return response.json()
+    
     async def get_my_profile(self) -> dict:
         """Get my profile information."""
         response = await self._client.get(
