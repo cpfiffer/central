@@ -325,6 +325,91 @@ def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = 
     console.print(f"[green]Cleaned queue: {before} → {len(queue)} items[/green]")
 
 
+# ============================================================================
+# Parallel Processing Helper
+# ============================================================================
+
+COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
+
+
+def process_parallel(batch_size: int = 10):
+    """Partition queue and output Task() calls for parallel processing.
+    
+    This generates the Task() calls that the agent should execute in parallel.
+    Since CLI can't invoke Task() directly, this outputs them for copy/paste.
+    
+    Args:
+        batch_size: Number of items per batch (default: 10)
+    """
+    if not DRAFTS_FILE.exists():
+        console.print("[yellow]No queue file found.[/yellow]")
+        return
+    
+    with open(DRAFTS_FILE, "r") as f:
+        queue = yaml.safe_load(f) or []
+    
+    # Filter to items needing responses (no response yet, action=reply, priority != SKIP)
+    pending_indices = []
+    for i, item in enumerate(queue):
+        if item.get("response"):
+            continue  # Already has response
+        if item.get("action") != "reply":
+            continue  # Not a reply action
+        if item.get("priority") == "SKIP":
+            continue  # Skip priority items
+        pending_indices.append(i)
+    
+    if not pending_indices:
+        console.print("[yellow]No items needing responses.[/yellow]")
+        return
+    
+    console.print(f"[bold]Found {len(pending_indices)} items needing responses.[/bold]")
+    
+    # Show items summary
+    console.print("\n[cyan]Items to process:[/cyan]")
+    for idx in pending_indices:
+        item = queue[idx]
+        priority = item.get("priority", "MEDIUM")
+        author = item.get("author", "unknown")
+        text = item.get("text", "")[:40].replace("\n", " ")
+        console.print(f"  [{idx}] ({priority}) @{author}: {text}...")
+    
+    # Partition into batches
+    batches = []
+    for i in range(0, len(pending_indices), batch_size):
+        batch_indices = pending_indices[i:i + batch_size]
+        batches.append(batch_indices)
+    
+    console.print(f"\n[bold]Partitioned into {len(batches)} batches of up to {batch_size} items.[/bold]")
+    
+    # Generate Task() calls
+    console.print("\n[green]Execute these Task() calls in parallel:[/green]")
+    console.print("=" * 60)
+    
+    for batch_num, indices in enumerate(batches):
+        start_idx = indices[0]
+        end_idx = indices[-1]
+        
+        # Build the prompt for comms
+        prompt = (
+            f"Process notification queue items {start_idx}-{end_idx}. "
+            f"Run `uv run python -m tools.respond list` to see the queue. "
+            f"For indices {', '.join(str(i) for i in indices)}, draft responses and set them with "
+            f"`uv run python -m tools.respond set-by-index <index> \"<response>\"`. "
+            f"Guidelines: Be substantive not performative. Keep responses under 280 chars. "
+            f"Match the tone of the original. Skip items that don't warrant a response. "
+            f"**Report**: How many processed, any notable interactions."
+        )
+        
+        # Output the Task() call
+        console.print(f"\n[cyan]# Batch {batch_num + 1}: indices {start_idx}-{end_idx}[/cyan]")
+        console.print(f'Task(agent_id="{COMMS_AGENT_ID}", subagent_type="general-purpose", description="Process batch {batch_num + 1}", prompt="{prompt}")')
+    
+    console.print("\n" + "=" * 60)
+    console.print("\n[yellow]After all Task() calls complete, run:[/yellow]")
+    console.print("  uv run python -m tools.responder send --confirm")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Queue-based notification handler")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -345,6 +430,10 @@ if __name__ == "__main__":
     cleanup_parser.add_argument("--ttl-only", action="store_true", help="Only apply TTL, skip priority filter")
     cleanup_parser.add_argument("--all-priorities", action="store_true", help="Keep all priorities, only apply TTL")
     
+    # process-parallel command
+    parallel_parser = subparsers.add_parser("process-parallel", help="Partition queue and output Task() calls for parallel processing")
+    parallel_parser.add_argument("--batch-size", type=int, default=10, help="Items per batch (default: 10)")
+    
     # check command (legacy)
     subparsers.add_parser("check", help="Legacy: display notifications")
     
@@ -358,6 +447,8 @@ if __name__ == "__main__":
         ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
         priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]
         cleanup_queue(keep_priorities=priorities, ttl_hours=ttl)
+    elif args.command == "process-parallel":
+        process_parallel(batch_size=args.batch_size)
     elif args.command == "check":
         # Legacy check
         from tools.responder import display_notifications
