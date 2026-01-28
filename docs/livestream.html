@@ -11,8 +11,8 @@
         }
         body {
             font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            background: #242424;
+            color: #f6e7ca;
             margin: 0;
             padding: 20px;
             min-height: 100vh;
@@ -21,10 +21,15 @@
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .header .logo {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
         }
         .header h1 {
-            color: #e0e0e0;
+            color: #f6e7ca;
             margin: 0 0 10px 0;
             font-size: 1.2rem;
             font-weight: normal;
@@ -34,10 +39,10 @@
             color: #666;
         }
         .header .status.connected {
-            color: #22c55e;
+            color: #8e9a7c;
         }
         .header .status.connecting {
-            color: #eab308;
+            color: #efa04e;
         }
         .container {
             max-width: 800px;
@@ -49,15 +54,15 @@
             gap: 12px;
         }
         .record {
-            background: #111;
+            background: #1a1a1a;
             border-radius: 8px;
             padding: 14px;
-            border-left: 4px solid #333;
+            border-left: 4px solid #3a3a3a;
             animation: fadeIn 0.3s ease;
         }
-        .record.activity { border-left-color: #3b82f6; }
-        .record.response { border-left-color: #22c55e; }
-        .record.reasoning { border-left-color: #a855f7; }
+        .record.activity { border-left-color: #e07042; }
+        .record.response { border-left-color: #8e9a7c; }
+        .record.reasoning { border-left-color: #efa04e; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -72,9 +77,9 @@
             font-size: 0.7rem;
             text-transform: lowercase;
         }
-        .record.activity .type { color: #3b82f6; }
-        .record.response .type { color: #22c55e; }
-        .record.reasoning .type { color: #a855f7; }
+        .record.activity .type { color: #e07042; }
+        .record.response .type { color: #8e9a7c; }
+        .record.reasoning .type { color: #efa04e; }
         .record .time {
             font-size: 0.7rem;
             color: #555;
@@ -85,7 +90,7 @@
             word-break: break-word;
         }
         .record .tool {
-            color: #3b82f6;
+            color: #e07042;
             font-weight: bold;
         }
         .empty {
@@ -123,10 +128,10 @@
             padding-left: 20px;
         }
         .record .content strong {
-            color: #fff;
+            color: #f6e7ca;
         }
         .record .content a {
-            color: #7c3aed;
+            color: #efa04e;
         }
         .record .content table {
             border-collapse: collapse;
@@ -151,6 +156,7 @@
 </head>
 <body>
     <div class="header">
+        <img src="../assets/central.svg" alt="central" class="logo">
         <h1>central.comind.network</h1>
         <div class="status connecting" id="status">Loading records...</div>
     </div>
