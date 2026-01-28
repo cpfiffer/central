@@ -89,15 +89,31 @@ def get_recent_messages(limit: int = 20) -> list:
                         "date": msg.get("date")
                     })
             elif msg_type == "user_message":
-                # User prompts
+                # User prompts - but filter out system messages
                 content = msg.get("content", "")
                 if content and len(content) > 5:
-                    result.append({
-                        "content": content,
-                        "type": msg_type,
-                        "id": msg.get("id"),
-                        "date": msg.get("date")
-                    })
+                    # Try to detect system messages (JSON with type field)
+                    is_system = False
+                    if content.strip().startswith("{"):
+                        try:
+                            parsed = json.loads(content)
+                            if isinstance(parsed, dict) and parsed.get("type") in (
+                                "system_alert", "system-reminder", "system_reminder"
+                            ):
+                                is_system = True
+                        except:
+                            pass
+                    # Also check for <system- tags
+                    if "<system-" in content or "<system_" in content:
+                        is_system = True
+                    
+                    if not is_system:
+                        result.append({
+                            "content": content,
+                            "type": msg_type,
+                            "id": msg.get("id"),
+                            "date": msg.get("date")
+                        })
         
         return result
     except Exception as e:
