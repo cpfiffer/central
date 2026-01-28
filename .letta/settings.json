@@ -40,5 +40,10 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)"
+    ]
   }
 }

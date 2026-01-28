@@ -34,10 +34,15 @@ POSTING_PATTERNS = [
 
 def main():
     """Process PreToolUse hook input."""
+    # Debug: log that we were called
+    print("ENFORCE-COMMS: Hook invoked", file=sys.stderr)
+    
     try:
         input_data = json.load(sys.stdin)
-    except Exception:
+        print(f"ENFORCE-COMMS: Got input: {input_data.get('tool_name', 'unknown')}", file=sys.stderr)
+    except Exception as e:
         # If we can't parse input, allow the action
+        print(f"ENFORCE-COMMS: Parse error: {e}", file=sys.stderr)
         sys.exit(0)
 
     event_type = input_data.get("event_type")
@@ -52,15 +57,13 @@ def main():
     if tool_name != "Bash":
         sys.exit(0)
 
-    # Check current agent
-    current_agent = os.environ.get("LETTA_AGENT_ID", "")
-    
-    # If this is comms or any other agent (not central), allow
-    if current_agent != CENTRAL_AGENT_ID:
-        sys.exit(0)
+    # Note: LETTA_AGENT_ID env var is not set by Letta Code hooks
+    # This hook is project-specific, so we enforce for all agents in this project
+    # (which is effectively just central)
 
     # Get the command being run
     command = tool_input.get("command", "")
+    print(f"ENFORCE-COMMS: Command: {command[:100]}", file=sys.stderr)
 
     # Check if command matches any posting pattern
     for pattern in POSTING_PATTERNS:
