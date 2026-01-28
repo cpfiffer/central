@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.table import Table
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from tools.agent import ComindAgent
+from tools.agent import ComindAgent, PostResult
 
 console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
@@ -261,6 +261,7 @@ async def send_queue(dry_run=False, confirm=False, force=False):
     # Send
     async with ComindAgent() as agent:
         sent_indices = []
+        failed_items = []
         for i, item in enumerate(queue):
             if not item.get("response") or item.get("action") != "reply":
                 continue
@@ -270,20 +271,35 @@ async def send_queue(dry_run=False, confirm=False, force=False):
                 continue
             
             console.print(f"Replying to @{item['author']}...")
-            try:
-                reply_to = {
-                    "root": item["reply_root"],
-                    "parent": item["reply_parent"]
-                }
-                await agent.create_post(item["response"], reply_to=reply_to)
-                
+            
+            reply_to = {
+                "root": item["reply_root"],
+                "parent": item["reply_parent"]
+            }
+            
+            # Use create_post_with_retry for automatic retry on transient failures
+            result = await agent.create_post_with_retry(item["response"], reply_to=reply_to)
+            
+            if result.success:
                 # Immediately record sent URI (not batched - prevents duplicates on partial failure)
                 _record_sent_uri(item["uri"])
                 sent_uris.add(item["uri"])  # Update in-memory set too
-                
                 sent_indices.append(i)
-            except Exception as e:
-                console.print(f"[red]Failed: {e}[/red]")
+                console.print(f"[green]Sent reply to @{item['author']}[/green]")
+            else:
+                # Log detailed failure info
+                console.print(f"[red]Failed to reply to @{item['author']}[/red]")
+                console.print(f"[red]  Error type: {result.error_type}[/red]")
+                console.print(f"[red]  Message: {result.error_message}[/red]")
+                console.print(f"[red]  Retryable: {result.retryable}[/red]")
+                if result.retry_after_seconds:
+                    console.print(f"[yellow]  Retry after: {result.retry_after_seconds}s[/yellow]")
+                failed_items.append({
+                    "author": item["author"],
+                    "error_type": result.error_type,
+                    "error_message": result.error_message,
+                    "retryable": result.retryable
+                })
         
         # Remove sent items from queue
         new_queue = [item for i, item in enumerate(queue) if i not in sent_indices]
@@ -292,6 +308,14 @@ async def send_queue(dry_run=False, confirm=False, force=False):
             yaml.dump(new_queue, f, sort_keys=False, indent=2)
             
         console.print(f"[green]Sent {len(sent_indices)} replies. Queue updated.[/green]")
+        
+        # Report failures summary
+        if failed_items:
+            console.print(f"\n[red]Failed to send {len(failed_items)} replies:[/red]")
+            for fail in failed_items:
+                retryable_status = "[retryable]" if fail["retryable"] else "[not retryable]"
+                console.print(f"  - @{fail['author']}: {fail['error_type']} {retryable_status}")
+            console.print("\n[yellow]To debug failures, message comms directly or check error logs.[/yellow]")
 
 def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = None):
     """Remove low-priority and/or old items from queue.

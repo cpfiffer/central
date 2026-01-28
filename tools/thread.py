@@ -11,7 +11,7 @@ from pathlib import Path
 from rich.console import Console
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from tools.agent import ComindAgent
+from tools.agent import ComindAgent, PostResult
 
 console = Console()
 
@@ -102,30 +102,32 @@ async def publish_thread(posts: list[str], reply_to_uri: str = None):
             if root_ref and parent_ref:
                 reply_ref = {"root": root_ref, "parent": parent_ref}
             
-            try:
-                # Create the post
-                result = await agent.create_post(text, reply_to=reply_ref)
-                
-                # Update refs for next post
-                new_ref = {"uri": result["uri"], "cid": result["cid"]}
-                
-                if i == 0 and not reply_to_uri:
-                    # First post of a new thread becomes the root
-                    root_ref = new_ref
-                
-                # Always update parent to be the just-created post
-                parent_ref = new_ref
-                
-                console.print(f"[green]Published:[/green] {result['uri']}")
-                console.print(f"[dim]{text[:50]}...[/dim]")
-                
-                # Small delay to ensure order and avoid rate limits
-                await asyncio.sleep(0.5)
-                
-            except Exception as e:
-                console.print(f"[red]Failed to publish post {i+1}: {e}[/red]")
+            # Create the post with retry for transient failures
+            result = await agent.create_post_with_retry(text, reply_to=reply_ref)
+            
+            if not result.success:
+                console.print(f"[red]Failed to publish post {i+1}[/red]")
+                console.print(f"[red]  Error type: {result.error_type}[/red]")
+                console.print(f"[red]  Message: {result.error_message}[/red]")
+                console.print(f"[red]  Retryable: {result.retryable}[/red]")
                 console.print("[red]Aborting thread.[/red]")
                 break
+            
+            # Update refs for next post
+            new_ref = {"uri": result.uri, "cid": result.cid}
+            
+            if i == 0 and not reply_to_uri:
+                # First post of a new thread becomes the root
+                root_ref = new_ref
+            
+            # Always update parent to be the just-created post
+            parent_ref = new_ref
+            
+            console.print(f"[green]Published:[/green] {result.uri}")
+            console.print(f"[dim]{text[:50]}...[/dim]")
+            
+            # Small delay to ensure order and avoid rate limits
+            await asyncio.sleep(0.5)
 
     console.print("\n[bold green]Thread complete.[/bold green]")
 
