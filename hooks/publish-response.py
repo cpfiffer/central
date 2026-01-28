@@ -11,11 +11,14 @@ import json
 import os
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 
-load_dotenv("/home/cameron/central/.env")
+# Use script directory for relative paths
+SCRIPT_DIR = Path(__file__).parent.parent
+load_dotenv(SCRIPT_DIR / ".env")
 
 # ATProtocol credentials
 PDS = os.getenv("ATPROTO_PDS")
@@ -142,7 +145,7 @@ def main():
         sys.exit(0)
     
     # Log what we receive for debugging
-    with open("/home/cameron/central/logs/hook_debug.json", "a") as f:
+    with open(SCRIPT_DIR / "logs/hook_debug.json", "a") as f:
         f.write(json.dumps(input_data, indent=2) + "\n---\n")
     
     event_type = input_data.get("event_type")
@@ -151,7 +154,7 @@ def main():
         sys.exit(0)
     
     # Track which messages we've already published
-    published_file = "/home/cameron/central/data/published_messages.txt"
+    published_file = SCRIPT_DIR / "data/published_messages.txt"
     try:
         with open(published_file) as f:
             published_ids = set(f.read().splitlines())

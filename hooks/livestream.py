@@ -36,8 +36,9 @@ def redact(text: str) -> str:
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     return text
 
-# Load credentials
-load_dotenv("/home/cameron/central/.env")
+# Load credentials - use script directory or env var
+SCRIPT_DIR = Path(__file__).parent.parent
+load_dotenv(SCRIPT_DIR / ".env")
 
 PDS = os.getenv("ATPROTO_PDS")
 DID = os.getenv("ATPROTO_DID")
@@ -192,7 +193,7 @@ def main():
         sys.exit(0)
     
     # Log for debugging
-    with open("/home/cameron/central/logs/hook_activity_debug.json", "a") as f:
+    with open(SCRIPT_DIR / "logs/hook_activity_debug.json", "a") as f:
         f.write(json.dumps(input_data, indent=2) + "\n---\n")
     
     event_type = input_data.get("event_type")
