@@ -38,63 +38,62 @@
         .header .status.connecting {
             color: #eab308;
         }
-        .columns {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            max-width: 1400px;
+        .container {
+            max-width: 800px;
             margin: 0 auto;
         }
-        @media (max-width: 900px) {
-            .columns {
-                grid-template-columns: 1fr;
-            }
-        }
-        .column {
-            background: #111;
-            border-radius: 8px;
-            padding: 15px;
-            border: 1px solid #222;
-        }
-        .column h2 {
-            margin: 0 0 15px 0;
-            font-size: 0.9rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .column.activity h2 { color: #3b82f6; }
-        .column.response h2 { color: #22c55e; }
-        .column.reasoning h2 { color: #a855f7; }
         .feed {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 70vh;
-            overflow-y: auto;
+            gap: 12px;
         }
         .record {
-            background: #1a1a1a;
-            border-radius: 6px;
-            padding: 12px;
-            border-left: 3px solid #333;
+            background: #111;
+            border-radius: 8px;
+            padding: 14px;
+            border-left: 4px solid #333;
             animation: fadeIn 0.3s ease;
         }
-        .column.activity .record { border-left-color: #3b82f6; }
-        .column.response .record { border-left-color: #22c55e; }
-        .column.reasoning .record { border-left-color: #a855f7; }
+        .record.activity { border-left-color: #3b82f6; }
+        .record.response { border-left-color: #22c55e; }
+        .record.reasoning { border-left-color: #a855f7; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .record .meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .record .type {
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .record.activity .type {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .record.response .type {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .record.reasoning .type {
+            color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
         .record .time {
             font-size: 0.7rem;
             color: #555;
-            margin-bottom: 6px;
         }
         .record .content {
             font-size: 0.85rem;
-            line-height: 1.4;
+            line-height: 1.5;
             word-break: break-word;
         }
         .record .tool {
@@ -105,7 +104,7 @@
             color: #444;
             font-style: italic;
             text-align: center;
-            padding: 20px;
+            padding: 40px;
         }
         /* Markdown styles */
         .record .content p {
@@ -145,6 +144,7 @@
             border-collapse: collapse;
             margin: 8px 0;
             font-size: 0.8rem;
+            width: 100%;
         }
         .record .content th, .record .content td {
             border: 1px solid #333;
@@ -167,26 +167,9 @@
         <div class="status connecting" id="status">Loading records...</div>
     </div>
     
-    <div class="columns">
-        <div class="column activity">
-            <h2>⚡ Activity</h2>
-            <div class="feed" id="activity-feed">
-                <div class="empty">Waiting for activity...</div>
-            </div>
-        </div>
-        
-        <div class="column response">
-            <h2>💬 Responses</h2>
-            <div class="feed" id="response-feed">
-                <div class="empty">Waiting for responses...</div>
-            </div>
-        </div>
-        
-        <div class="column reasoning">
-            <h2>💭 Reasoning</h2>
-            <div class="feed" id="reasoning-feed">
-                <div class="empty">Waiting for reasoning...</div>
-            </div>
+    <div class="container">
+        <div class="feed" id="feed">
+            <div class="empty">Waiting for activity...</div>
         </div>
     </div>
     
@@ -201,9 +184,15 @@
             'network.comind.response': 'response',
             'network.comind.reasoning': 'reasoning'
         };
+        const TYPE_LABELS = {
+            'activity': '⚡ Activity',
+            'response': '💬 Response',
+            'reasoning': '💭 Reasoning'
+        };
         
         let recordCount = 0;
         const seenUris = new Set();
+        const allRecords = [];
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
@@ -216,13 +205,13 @@
             return div.innerHTML;
         }
         
-        function addRecord(type, record) {
-            const feed = document.getElementById(`${type}-feed`);
+        function addRecord(type, record, prepend = true) {
+            const feed = document.getElementById('feed');
             const empty = feed.querySelector('.empty');
             if (empty) empty.remove();
             
             const el = document.createElement('div');
-            el.className = 'record';
+            el.className = `record ${type}`;
             
             const time = record.createdAt || new Date().toISOString();
             
@@ -235,14 +224,21 @@
             }
             
             el.innerHTML = `
-                <div class="time">${formatTime(time)}</div>
+                <div class="meta">
+                    <span class="type">${TYPE_LABELS[type]}</span>
+                    <span class="time">${formatTime(time)}</span>
+                </div>
                 <div class="content">${content}</div>
             `;
             
-            feed.insertBefore(el, feed.firstChild);
+            if (prepend) {
+                feed.insertBefore(el, feed.firstChild);
+            } else {
+                feed.appendChild(el);
+            }
             
-            // Keep only last 50 records per feed
-            while (feed.children.length > 50) {
+            // Keep only last 100 records
+            while (feed.children.length > 100) {
                 feed.removeChild(feed.lastChild);
             }
             
@@ -257,8 +253,6 @@
             statusEl.textContent = 'Connecting to Jetstream...';
             statusEl.className = 'status connecting';
             
-            // Connect to Jetstream filtered by DID only
-            // Filter collections client-side
             ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`);
             
             ws.onopen = () => {
@@ -274,12 +268,11 @@
                         const collection = data.commit.collection;
                         const type = COLLECTIONS[collection];
                         
-                        // Build URI for dedup
                         const uri = `at://${data.did}/${collection}/${data.commit.rkey}`;
                         
                         if (type && data.commit.record && !seenUris.has(uri)) {
                             seenUris.add(uri);
-                            addRecord(type, data.commit.record);
+                            addRecord(type, data.commit.record, true);
                         }
                     }
                 } catch (e) {
@@ -303,25 +296,43 @@
         // Load recent records on startup
         async function loadRecent() {
             const pds = 'https://comind.network';
+            const allItems = [];
             
+            // Fetch from all collections
             for (const [collection, type] of Object.entries(COLLECTIONS)) {
                 try {
                     const resp = await fetch(
-                        `${pds}/xrpc/com.atproto.repo.listRecords?repo=${DID}&collection=${collection}&limit=20`
+                        `${pds}/xrpc/com.atproto.repo.listRecords?repo=${DID}&collection=${collection}&limit=30`
                     );
                     const data = await resp.json();
                     
                     if (data.records) {
-                        // Add in reverse order (oldest first) and track URIs
-                        data.records.reverse().forEach(r => {
+                        data.records.forEach(r => {
                             seenUris.add(r.uri);
-                            addRecord(type, r.value);
+                            allItems.push({
+                                type,
+                                record: r.value,
+                                time: new Date(r.value.createdAt || 0).getTime()
+                            });
                         });
                     }
                 } catch (e) {
                     console.error(`Failed to load ${collection}:`, e);
                 }
             }
+            
+            // Sort by time (oldest first for initial load)
+            allItems.sort((a, b) => a.time - b.time);
+            
+            // Add in chronological order (oldest first, so newest ends up on top)
+            allItems.forEach(item => {
+                addRecord(item.type, item.record, false);
+            });
+            
+            // Now reverse the feed so newest is on top
+            const feed = document.getElementById('feed');
+            const children = Array.from(feed.children);
+            children.reverse().forEach(child => feed.appendChild(child));
         }
         
         // Load recent records, then connect to Jetstream
