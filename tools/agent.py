@@ -47,19 +47,33 @@ def check_write_permission():
         )
 
 
-async def resolve_handle_to_did(handle: str) -> str | None:
-    """Resolve a handle to a DID."""
-    handle = handle.lstrip("@")
+async def resolve_handle_to_did(handle: str, retries: int = 2) -> str | None:
+    """Resolve a handle to a DID with retry logic."""
+    handle = handle.lstrip("@").rstrip(".,;:!?")  # Strip @ prefix and trailing punctuation
+    if not handle:
+        return None
+    
     async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                "https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle",
-                params={"handle": handle}
-            )
-            if response.status_code == 200:
-                return response.json().get("did")
-        except:
-            pass
+        for attempt in range(retries):
+            try:
+                response = await client.get(
+                    "https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle",
+                    params={"handle": handle},
+                    timeout=5.0
+                )
+                if response.status_code == 200:
+                    return response.json().get("did")
+                else:
+                    console.print(f"[yellow]Warning: Could not resolve @{handle} (status {response.status_code})[/yellow]")
+                    return None
+            except httpx.TimeoutException:
+                if attempt < retries - 1:
+                    await asyncio.sleep(0.5)
+                    continue
+                console.print(f"[yellow]Warning: Timeout resolving @{handle}[/yellow]")
+            except Exception as e:
+                console.print(f"[yellow]Warning: Error resolving @{handle}: {e}[/yellow]")
+                return None
     return None
 
 
@@ -74,7 +88,9 @@ async def parse_facets(text: str) -> list:
     
     # Find mentions (@handle)
     for match in re.finditer(r'@([\w.-]+)', text):
-        handle = match.group(1)
+        handle = match.group(1).rstrip(".,;:!?")  # Strip trailing punctuation
+        if not handle:
+            continue
         did = await resolve_handle_to_did(handle)
         if did:
             # Calculate byte positions
@@ -121,6 +137,29 @@ async def parse_facets(text: str) -> list:
             "features": [{
                 "$type": "app.bsky.richtext.facet#link",
                 "uri": url
+            }]
+        })
+    
+    # Find URLs without protocol (common TLDs)
+    bare_url_pattern = r'(?<![/@\w])([a-zA-Z0-9][-a-zA-Z0-9]*\.(?:com|org|net|io|app|social|network|blue|xyz|dev|ai|bsky\.social)[^\s<>\[\]()\'\"]*)'
+    for match in re.finditer(bare_url_pattern, text):
+        bare_url = match.group(1).rstrip(".,;:!?")
+        if not bare_url:
+            continue
+        start_char = match.start(1)
+        end_char = match.start(1) + len(bare_url)
+        byte_start = len(text[:start_char].encode("utf-8"))
+        byte_end = len(text[:end_char].encode("utf-8"))
+        
+        # Skip if overlaps with existing facet
+        if any(f["index"]["byteStart"] <= byte_start < f["index"]["byteEnd"] for f in facets):
+            continue
+        
+        facets.append({
+            "index": {"byteStart": byte_start, "byteEnd": byte_end},
+            "features": [{
+                "$type": "app.bsky.richtext.facet#link",
+                "uri": "https://" + bare_url
             }]
         })
     
