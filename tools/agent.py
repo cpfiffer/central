@@ -11,12 +11,90 @@ This module enables comind to participate in the ATProtocol network:
 import os
 import re
 import asyncio
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import httpx
 from dotenv import load_dotenv
 from rich.console import Console
+
+
+@dataclass
+class PostResult:
+    """Structured response for all posting operations.
+    
+    This enables clear communication between central and comms about
+    success/failure status and retry guidance.
+    """
+    success: bool
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    
+    # On success
+    uri: Optional[str] = None
+    cid: Optional[str] = None
+    
+    # On failure
+    error_type: Optional[str] = None  # "auth", "rate_limit", "validation", "network", "unknown"
+    error_message: Optional[str] = None
+    http_status: Optional[int] = None
+    
+    # Retry guidance
+    retryable: bool = False
+    retry_after_seconds: Optional[int] = None
+    
+    # Context
+    text_preview: Optional[str] = None  # First 50 chars for debugging
+    raw_response: Optional[str] = None  # Full response for debugging
+    
+    def __str__(self) -> str:
+        if self.success:
+            return f"PostResult(success=True, uri={self.uri})"
+        return f"PostResult(success=False, error_type={self.error_type}, error_message={self.error_message}, retryable={self.retryable})"
+    
+    def to_dict(self) -> dict:
+        """Convert to dict for JSON serialization."""
+        return {
+            "success": self.success,
+            "timestamp": self.timestamp,
+            "uri": self.uri,
+            "cid": self.cid,
+            "error_type": self.error_type,
+            "error_message": self.error_message,
+            "http_status": self.http_status,
+            "retryable": self.retryable,
+            "retry_after_seconds": self.retry_after_seconds,
+            "text_preview": self.text_preview,
+            "raw_response": self.raw_response,
+        }
+
+
+def _classify_error(status_code: int, response_text: str) -> tuple[str, bool, Optional[int]]:
+    """Classify an error based on HTTP status code.
+    
+    Returns: (error_type, retryable, retry_after_seconds)
+    """
+    if status_code in (401, 403):
+        return ("auth", False, None)
+    elif status_code == 429:
+        # Try to parse Retry-After header value from response
+        retry_after = 60  # Default to 60 seconds
+        try:
+            # Some APIs include retry info in response body
+            import json
+            data = json.loads(response_text)
+            if "retryAfter" in data:
+                retry_after = int(data["retryAfter"])
+        except:
+            pass
+        return ("rate_limit", True, retry_after)
+    elif status_code == 400:
+        return ("validation", False, None)
+    elif status_code >= 500:
+        return ("network", True, None)
+    else:
+        return ("unknown", False, None)
 
 console = Console()
 
@@ -180,8 +258,43 @@ class ComindAgent:
         
         Returns:
             The created record with uri and cid
+            
+        Raises:
+            Exception: If post creation fails (for backward compatibility)
         """
-        check_write_permission()
+        result = await self.create_post_safe(text, reply_to=reply_to, facets=facets)
+        if not result.success:
+            raise Exception(f"Failed to create post: {result.error_message}")
+        return {"uri": result.uri, "cid": result.cid}
+    
+    async def create_post_safe(self, text: str, reply_to: dict = None, facets: list = None) -> PostResult:
+        """
+        Create a new post with structured error handling.
+        
+        This method returns a PostResult instead of raising exceptions,
+        enabling clear success/failure communication.
+        
+        Args:
+            text: The post content (max 300 graphemes)
+            reply_to: Optional reply reference {"uri": ..., "cid": ...}
+            facets: Optional pre-computed facets. If None, will auto-detect.
+        
+        Returns:
+            PostResult with success/failure status, error classification, and retry guidance
+        """
+        text_preview = text[:50] if text else None
+        
+        try:
+            check_write_permission()
+        except PermissionError as e:
+            return PostResult(
+                success=False,
+                error_type="auth",
+                error_message=str(e),
+                retryable=False,
+                text_preview=text_preview
+            )
+        
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         # Auto-detect facets if not provided
@@ -211,23 +324,125 @@ class ComindAgent:
                     "parent": reply_to
                 }
         
-        response = await self._client.post(
-            f"{self.pds}/xrpc/com.atproto.repo.createRecord",
-            headers=self.auth_headers,
-            json={
-                "repo": self.did,
-                "collection": "app.bsky.feed.post",
-                "record": record
-            }
-        )
+        try:
+            response = await self._client.post(
+                f"{self.pds}/xrpc/com.atproto.repo.createRecord",
+                headers=self.auth_headers,
+                json={
+                    "repo": self.did,
+                    "collection": "app.bsky.feed.post",
+                    "record": record
+                }
+            )
+        except httpx.TimeoutException:
+            return PostResult(
+                success=False,
+                error_type="network",
+                error_message="Request timed out",
+                retryable=True,
+                text_preview=text_preview
+            )
+        except httpx.ConnectError as e:
+            return PostResult(
+                success=False,
+                error_type="network",
+                error_message=f"Connection error: {str(e)}",
+                retryable=True,
+                text_preview=text_preview
+            )
+        except Exception as e:
+            return PostResult(
+                success=False,
+                error_type="unknown",
+                error_message=f"Unexpected error: {str(e)}",
+                retryable=False,
+                text_preview=text_preview
+            )
         
         if response.status_code != 200:
-            raise Exception(f"Failed to create post: {response.text}")
+            error_type, retryable, retry_after = _classify_error(
+                response.status_code, response.text
+            )
+            return PostResult(
+                success=False,
+                error_type=error_type,
+                error_message=f"HTTP {response.status_code}: {response.text[:200]}",
+                http_status=response.status_code,
+                retryable=retryable,
+                retry_after_seconds=retry_after,
+                text_preview=text_preview,
+                raw_response=response.text
+            )
         
         result = response.json()
         console.print(f"[green]Posted:[/green] {text[:50]}...")
         console.print(f"[dim]URI: {result['uri']}[/dim]")
-        return result
+        
+        return PostResult(
+            success=True,
+            uri=result["uri"],
+            cid=result["cid"],
+            text_preview=text_preview
+        )
+    
+    async def create_post_with_retry(
+        self, 
+        text: str, 
+        reply_to: dict = None, 
+        facets: list = None,
+        max_attempts: int = 3,
+        base_delay: float = 1.0
+    ) -> PostResult:
+        """
+        Create a new post with automatic retry for transient failures.
+        
+        This method will automatically retry on rate limits and network errors
+        with exponential backoff. It will NOT retry on validation or auth errors.
+        
+        Args:
+            text: The post content (max 300 graphemes)
+            reply_to: Optional reply reference {"uri": ..., "cid": ...}
+            facets: Optional pre-computed facets. If None, will auto-detect.
+            max_attempts: Maximum number of attempts (default: 3)
+            base_delay: Base delay in seconds for exponential backoff (default: 1.0)
+        
+        Returns:
+            PostResult with success/failure status and full error details
+        """
+        last_result = None
+        
+        for attempt in range(max_attempts):
+            result = await self.create_post_safe(text, reply_to=reply_to, facets=facets)
+            
+            if result.success:
+                if attempt > 0:
+                    console.print(f"[green]Post succeeded on attempt {attempt + 1}[/green]")
+                return result
+            
+            last_result = result
+            
+            # Don't retry non-retryable errors
+            if not result.retryable:
+                console.print(f"[red]Post failed (not retryable): {result.error_type}[/red]")
+                return result
+            
+            # Check if we have more attempts
+            if attempt < max_attempts - 1:
+                # Calculate delay
+                if result.retry_after_seconds:
+                    delay = result.retry_after_seconds
+                else:
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff
+                
+                console.print(
+                    f"[yellow]Attempt {attempt + 1} failed ({result.error_type}). "
+                    f"Retrying in {delay}s...[/yellow]"
+                )
+                await asyncio.sleep(delay)
+        
+        # All retries exhausted
+        console.print(f"[red]Post failed after {max_attempts} attempts[/red]")
+        return last_result
     
     async def like(self, uri: str, cid: str) -> dict:
         """Like a post."""
@@ -407,6 +622,23 @@ async def post(text: str):
     """Quick function to create a post."""
     async with ComindAgent() as agent:
         return await agent.create_post(text)
+
+
+async def post_safe(text: str, retry: bool = True) -> PostResult:
+    """
+    Create a post with structured error handling.
+    
+    Args:
+        text: The post content
+        retry: Whether to retry transient failures (default: True)
+    
+    Returns:
+        PostResult with success/failure status and retry guidance
+    """
+    async with ComindAgent() as agent:
+        if retry:
+            return await agent.create_post_with_retry(text)
+        return await agent.create_post_safe(text)
 
 
 async def introduce():
