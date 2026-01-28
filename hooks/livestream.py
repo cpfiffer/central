@@ -159,7 +159,7 @@ def publish_messages():
             continue
         
         # Redact and determine collection
-        redacted = redact(content)[:500]
+        redacted = redact(content)[:2000]
         if msg_type == "reasoning_message":
             collection = "network.comind.reasoning"
         else:
