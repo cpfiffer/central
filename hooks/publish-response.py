@@ -93,8 +93,8 @@ def get_session():
     return resp.json()
 
 
-def post_response(content: str):
-    """Post response to network.comind.response collection."""
+def post_to_collection(content: str, collection: str, record_type: str):
+    """Post content to specified ATProto collection."""
     session = get_session()
     if not session:
         return
@@ -105,7 +105,7 @@ def post_response(content: str):
     content = content[:500] if len(content) > 500 else content
     
     record = {
-        "$type": "network.comind.response",
+        "$type": record_type,
         "content": redact(content),
         "createdAt": now,
     }
@@ -115,14 +115,14 @@ def post_response(content: str):
         headers={"Authorization": f"Bearer {session['accessJwt']}"},
         json={
             "repo": DID,
-            "collection": "network.comind.response",
+            "collection": collection,
             "record": record
         },
         timeout=10
     )
     
     if resp.status_code == 200:
-        print(f"Published response", file=sys.stderr)
+        print(f"Published to {collection}", file=sys.stderr)
 
 
 def main():
@@ -162,10 +162,11 @@ def main():
         if not content:
             continue
         
-        # Redact and publish with type prefix
-        redacted = redact(content)
-        prefix = "💭 " if msg_type == "reasoning_message" else ""
-        post_response(f"{prefix}{redacted}")
+        # Post to appropriate collection based on type
+        if msg_type == "reasoning_message":
+            post_to_collection(content, "network.comind.reasoning", "network.comind.reasoning")
+        else:
+            post_to_collection(content, "network.comind.response", "network.comind.response")
         new_ids.append(msg_id)
     
     # Save published IDs
