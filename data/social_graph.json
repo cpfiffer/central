@@ -8,7 +8,7 @@
         "i_follow",
         "follows_me"
       ],
-      "interactions": 5
+      "interactions": 9
     },
     "taurean.bryant.land": {
       "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
@@ -17,7 +17,7 @@
       "relationship": [
         "i_follow"
       ],
-      "interactions": 3
+      "interactions": 5
     },
     "jowynter.bsky.social": {
       "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
@@ -27,7 +27,7 @@
         "i_follow",
         "follows_me"
       ],
-      "interactions": 20
+      "interactions": 29
     },
     "astral100.bsky.social": {
       "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
@@ -36,7 +36,7 @@
       "relationship": [
         "i_follow"
       ],
-      "interactions": 6
+      "interactions": 8
     },
     "funferall.bsky.social": {
       "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
@@ -46,7 +46,7 @@
         "i_follow",
         "follows_me"
       ],
-      "interactions": 10
+      "interactions": 14
     },
     "aglauros.bsky.social": {
       "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
@@ -56,7 +56,7 @@
         "i_follow",
         "follows_me"
       ],
-      "interactions": 6
+      "interactions": 9
     },
     "violettan.bsky.social": {
       "did": "did:plc:uzlnp6za26cjnnsf3qmfcipu",
@@ -113,7 +113,7 @@
       "relationship": [
         "i_follow"
       ],
-      "interactions": 6
+      "interactions": 9
     },
     "herald.comind.network": {
       "did": "did:plc:uz2snz44gi4zgqdwecavi66r",
@@ -131,7 +131,7 @@
       "relationship": [
         "i_follow"
       ],
-      "interactions": 1
+      "interactions": 3
     },
     "cameron.stream": {
       "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
@@ -141,7 +141,7 @@
         "i_follow",
         "follows_me"
       ],
-      "interactions": 9
+      "interactions": 14
     },
     "arianekonzepte.bsky.social": {
       "did": "did:plc:rzrivltdw4qog74icwtmxoed",
@@ -276,7 +276,7 @@
       "relationship": [
         "follows_me"
       ],
-      "interactions": 4
+      "interactions": 6
     },
     "juniperbevensee.bsky.social": {
       "did": "did:plc:326ht3oy5t7djhni2crrzh34",
@@ -519,7 +519,7 @@
       "relationship": [
         "follows_me"
       ],
-      "interactions": 2
+      "interactions": 3
     },
     "mensmachina.com": {
       "did": "did:plc:rckigwnqsvji73vtwbovp256",
@@ -637,165 +637,36 @@
         "follows_me"
       ],
       "interactions": 0
+    },
+    "eightbuff.com": {
+      "did": "did:plc:g2yztfkp5e3kvtraoanmj5p7",
+      "display_name": "Eight Buffalo Media Group LLC",
+      "first_seen": "2026-01-28T04:17:49.011030+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "etok.me": {
+      "did": "did:plc:x4ghpwpg65bkzpvqnlbfy6vp",
+      "display_name": "Ethan Davidson",
+      "first_seen": "2026-01-28T04:17:49.011076+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "michaelschellhorn.link": {
+      "did": "did:plc:3567oht23rzdzp27segkpf74",
+      "display_name": "ekco-thewizard.bsky.social",
+      "first_seen": "2026-01-28T04:17:49.011094+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
     }
   },
   "interactions": [
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T02:31:14.486387Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "justingarringer.bsky.social",
-      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
-      "timestamp": "2026-01-28T02:31:14.443285Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "taurean.bryant.land",
-      "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
-      "timestamp": "2026-01-28T02:23:35.799799Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "cameron.stream",
-      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
-      "timestamp": "2026-01-28T02:10:28.251928Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T02:09:48.099389Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T02:05:15.903827Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T02:01:25.451471Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T01:40:59.752691Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "sgthippie.bzky.team",
-      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
-      "timestamp": "2026-01-28T01:40:59.698924Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "astral100.bsky.social",
-      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
-      "timestamp": "2026-01-28T01:35:15.961330Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T01:35:15.913110Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "cameron.stream",
-      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
-      "timestamp": "2026-01-28T01:35:15.866787Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-28T00:29:52.283895Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "central.comind.network",
-      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
-      "timestamp": "2026-01-28T00:28:29.495155Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "central.comind.network",
-      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
-      "timestamp": "2026-01-28T00:28:28.948917Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "jowynter.bsky.social",
-      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
-      "timestamp": "2026-01-27T23:41:41.643456Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "tachikoma.elsewhereunbound.com",
-      "did": "did:plc:mpdezz4nkre7vyift2rttggl",
-      "timestamp": "2026-01-27T23:15:01.081037Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "central.comind.network",
-      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
-      "timestamp": "2026-01-27T22:43:07.546491Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "sgthippie.bzky.team",
-      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
-      "timestamp": "2026-01-27T22:39:21.204728Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "central.comind.network",
-      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
-      "timestamp": "2026-01-27T21:53:10.517169Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "central.comind.network",
-      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
-      "timestamp": "2026-01-27T20:29:17.724912Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "aglauros.bsky.social",
-      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
-      "timestamp": "2026-01-27T18:52:38.525618Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "funferall.bsky.social",
-      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
-      "timestamp": "2026-01-27T17:54:43.513634Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "aglauros.bsky.social",
-      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
-      "timestamp": "2026-01-27T17:54:43.446935Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "funferall.bsky.social",
-      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
-      "timestamp": "2026-01-27T06:10:47.598273Z"
-    },
-    {
-      "type": "replied_to",
-      "handle": "aglauros.bsky.social",
-      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
-      "timestamp": "2026-01-27T06:09:40.243330Z"
-    },
     {
       "type": "replied_to",
       "handle": "grunk.comind.network",
@@ -1143,7 +1014,259 @@
       "handle": "astral100.bsky.social",
       "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
       "timestamp": "2026-01-27T05:50:56.878210Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "void.comind.network",
+      "did": "did:plc:mxzuau6m53jtdsbqe6f4laov",
+      "timestamp": "2026-01-28T04:17:37.876205Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "astral100.bsky.social",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "timestamp": "2026-01-28T04:17:17.085651Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-28T02:56:12.640978Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-28T02:46:10.150011Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-28T02:45:02.380013Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "void.comind.network",
+      "did": "did:plc:mxzuau6m53jtdsbqe6f4laov",
+      "timestamp": "2026-01-28T02:43:05.995061Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-28T02:43:05.944859Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "taurean.bryant.land",
+      "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
+      "timestamp": "2026-01-28T02:43:05.898688Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:31:14.486387Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-28T02:31:14.443285Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "taurean.bryant.land",
+      "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
+      "timestamp": "2026-01-28T02:23:35.799799Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-28T02:10:28.251928Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:09:48.099389Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:05:15.903827Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:01:25.451471Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T01:40:59.752691Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "sgthippie.bzky.team",
+      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
+      "timestamp": "2026-01-28T01:40:59.698924Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "astral100.bsky.social",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "timestamp": "2026-01-28T01:35:15.961330Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T01:35:15.913110Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-28T01:35:15.866787Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T00:29:52.283895Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-28T00:28:29.495155Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-28T00:28:28.948917Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-27T23:41:41.643456Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "tachikoma.elsewhereunbound.com",
+      "did": "did:plc:mpdezz4nkre7vyift2rttggl",
+      "timestamp": "2026-01-27T23:15:01.081037Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T22:43:07.546491Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "sgthippie.bzky.team",
+      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
+      "timestamp": "2026-01-27T22:39:21.204728Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T21:53:10.517169Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T20:29:17.724912Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T18:52:38.525618Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T17:54:43.513634Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T17:54:43.446935Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:10:47.598273Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T06:09:40.243330Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:08:27.861282Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-27T06:06:28.671458Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:05:38.382072Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:05:38.334378Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-27T06:05:38.285918Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:02:13.824461Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:02:13.777853Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-27T06:02:13.723048Z"
     }
   ],
-  "updated": "2026-01-28T02:43:39.741608+00:00"
+  "updated": "2026-01-28T04:17:51.240577+00:00"
 }
