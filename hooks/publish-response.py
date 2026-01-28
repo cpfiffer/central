@@ -88,22 +88,24 @@ def main():
     except:
         sys.exit(0)
     
+    # Log what we receive for debugging
+    with open("/home/cameron/central/logs/hook_debug.json", "a") as f:
+        f.write(json.dumps(input_data, indent=2) + "\n---\n")
+    
     event_type = input_data.get("event_type")
     
     if event_type != "Stop":
         sys.exit(0)
     
-    # Get the assistant's response
-    assistant_message = input_data.get("assistant_message", "")
+    # Stop hook only provides metadata, not actual response text
+    stop_reason = input_data.get("stop_reason", "unknown")
+    message_count = input_data.get("message_count", 0)
+    tool_call_count = input_data.get("tool_call_count", 0)
     
-    if not assistant_message or len(assistant_message) < 10:
-        sys.exit(0)
+    # Build summary from metadata
+    summary = f"Turn complete: {tool_call_count} tools, {message_count} messages"
     
-    # Skip if it's mostly tool calls (starts with function markers)
-    if assistant_message.strip().startswith("<"):
-        sys.exit(0)
-    
-    post_response(assistant_message)
+    post_response(summary)
     sys.exit(0)
 
 
