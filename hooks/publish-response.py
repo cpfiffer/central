@@ -2,7 +2,8 @@
 """
 Publish Response Hook - Post assistant messages to ATProtocol.
 
-Fires on Stop event, publishes what I said to network.comind.response
+Fires on Stop event, queries Letta API for recent messages,
+publishes to network.comind.response
 """
 
 import sys
@@ -16,10 +17,16 @@ from dotenv import load_dotenv
 
 load_dotenv("/home/cameron/central/.env")
 
+# ATProtocol credentials
 PDS = os.getenv("ATPROTO_PDS")
 DID = os.getenv("ATPROTO_DID")
 HANDLE = os.getenv("ATPROTO_HANDLE")
 APP_PASSWORD = os.getenv("ATPROTO_APP_PASSWORD")
+
+# Letta API credentials
+LETTA_API_KEY = os.getenv("LETTA_API_KEY")
+LETTA_AGENT_ID = "agent-c770d1c8-510e-4414-be36-c9ebd95a7758"
+LETTA_API_BASE = "https://api.letta.com/v1"
 
 # Redaction patterns
 REDACT_PATTERNS = [
@@ -36,6 +43,41 @@ def redact(text: str) -> str:
     for pattern, replacement in REDACT_PATTERNS:
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     return text
+
+
+def get_recent_assistant_messages(limit: int = 5) -> list:
+    """Fetch recent assistant messages from Letta API."""
+    if not LETTA_API_KEY:
+        return []
+    
+    try:
+        resp = httpx.get(
+            f"{LETTA_API_BASE}/agents/{LETTA_AGENT_ID}/messages",
+            headers={"Authorization": f"Bearer {LETTA_API_KEY}"},
+            params={"limit": limit},
+            timeout=15
+        )
+        if resp.status_code != 200:
+            return []
+        
+        messages = resp.json()
+        
+        # Filter for assistant messages with text content
+        assistant_msgs = []
+        for msg in messages:
+            if msg.get("role") == "assistant":
+                # Get text content
+                text = msg.get("text", "")
+                if text and len(text) > 10:
+                    assistant_msgs.append({
+                        "text": text,
+                        "id": msg.get("id"),
+                        "created_at": msg.get("created_at")
+                    })
+        
+        return assistant_msgs
+    except Exception as e:
+        return []
 
 
 def get_session():
@@ -97,15 +139,38 @@ def main():
     if event_type != "Stop":
         sys.exit(0)
     
-    # Stop hook only provides metadata, not actual response text
-    stop_reason = input_data.get("stop_reason", "unknown")
-    message_count = input_data.get("message_count", 0)
-    tool_call_count = input_data.get("tool_call_count", 0)
+    # Track which messages we've already published
+    published_file = "/home/cameron/central/data/published_messages.txt"
+    try:
+        with open(published_file) as f:
+            published_ids = set(f.read().splitlines())
+    except:
+        published_ids = set()
     
-    # Build summary from metadata
-    summary = f"Turn complete: {tool_call_count} tools, {message_count} messages"
+    # Fetch recent assistant messages from Letta API
+    messages = get_recent_assistant_messages(limit=10)
     
-    post_response(summary)
+    new_ids = []
+    for msg in messages:
+        msg_id = msg.get("id", "")
+        if msg_id in published_ids:
+            continue
+        
+        text = msg.get("text", "")
+        if not text:
+            continue
+        
+        # Redact and publish
+        redacted = redact(text)
+        post_response(redacted)
+        new_ids.append(msg_id)
+    
+    # Save published IDs
+    if new_ids:
+        with open(published_file, "a") as f:
+            for mid in new_ids:
+                f.write(mid + "\n")
+    
     sys.exit(0)
 
 
