@@ -14,6 +14,7 @@ import json
 import os
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
@@ -97,6 +98,92 @@ def post_activity(tool_name: str, summary: str):
         print(f"Livestreamed: {tool_name}", file=sys.stderr)
 
 
+def get_recent_messages(limit: int = 20) -> list:
+    """Fetch recent assistant + reasoning messages from Letta API."""
+    api_key = os.environ.get("LETTA_API_KEY")
+    agent_id = os.environ.get("LETTA_AGENT_ID", "agent-c770d1c8-510e-4414-be36-c9ebd95a7758")
+    
+    if not api_key:
+        return []
+    
+    try:
+        resp = httpx.get(
+            f"https://api.letta.com/v1/agents/{agent_id}/messages",
+            headers={"Authorization": f"Bearer {api_key}"},
+            params={"limit": limit},
+            timeout=15
+        )
+        if resp.status_code != 200:
+            return []
+        
+        messages = resp.json()
+        result = []
+        for msg in messages:
+            msg_type = msg.get("message_type")
+            if msg_type == "assistant_message":
+                content = msg.get("content", "")
+                if content and len(content) > 10:
+                    result.append({"content": content, "type": msg_type, "id": msg.get("id")})
+            elif msg_type == "reasoning_message":
+                content = msg.get("reasoning", "")
+                if content and len(content) > 10:
+                    result.append({"content": content, "type": msg_type, "id": msg.get("id")})
+        return result
+    except:
+        return []
+
+
+def publish_messages():
+    """Publish any new assistant/reasoning messages."""
+    published_file = Path(__file__).parent.parent / "data" / "published_messages.txt"
+    
+    try:
+        published_ids = set(published_file.read_text().splitlines())
+    except:
+        published_ids = set()
+    
+    messages = get_recent_messages(limit=30)
+    session = get_session()
+    if not session:
+        return
+    
+    new_ids = []
+    for msg in messages:
+        msg_id = msg.get("id", "")
+        if msg_id in published_ids:
+            continue
+        
+        content = msg.get("content", "")
+        msg_type = msg.get("type", "assistant_message")
+        if not content:
+            continue
+        
+        # Redact and determine collection
+        redacted = redact(content)[:500]
+        if msg_type == "reasoning_message":
+            collection = "network.comind.reasoning"
+        else:
+            collection = "network.comind.response"
+        
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        record = {"$type": collection, "content": redacted, "createdAt": now}
+        
+        resp = httpx.post(
+            f"{PDS}/xrpc/com.atproto.repo.createRecord",
+            headers={"Authorization": f"Bearer {session['accessJwt']}"},
+            json={"repo": DID, "collection": collection, "record": record},
+            timeout=10
+        )
+        if resp.status_code == 200:
+            new_ids.append(msg_id)
+            print(f"Published to {collection}", file=sys.stderr)
+    
+    if new_ids:
+        with open(published_file, "a") as f:
+            for mid in new_ids:
+                f.write(mid + "\n")
+
+
 def main():
     """Process hook input."""
     try:
@@ -145,8 +232,11 @@ def main():
     # Apply redaction as backup safety
     summary = redact(summary)
     
-    # Post it
+    # Post activity
     post_activity(tool_name, summary)
+    
+    # Also poll and publish any new responses/reasoning
+    publish_messages()
     
     sys.exit(0)
 
