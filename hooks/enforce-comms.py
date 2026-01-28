@@ -20,11 +20,12 @@ CENTRAL_AGENT_ID = "agent-c770d1c8-510e-4414-be36-c9ebd95a7758"
 COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
 
 # Patterns in Bash commands that indicate posting activity
+# Be specific to avoid blocking read operations
 POSTING_PATTERNS = [
     "tools.thread",
     "tools.devlog",
     "tools.responder send",
-    "tools.respond",
+    "tools.respond set",  # set-by-index writes responses
     "agent.py post",
     "tools.blog publish",
     "tools.cognition write",
