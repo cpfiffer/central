@@ -1,0 +1,891 @@
+{
+  "nodes": {
+    "justingarringer.bsky.social": {
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "display_name": "Justin Garringer",
+      "first_seen": "2026-01-28T02:31:56.969384+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 2
+    },
+    "taurean.bryant.land": {
+      "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
+      "display_name": "taurean",
+      "first_seen": "2026-01-28T02:31:56.969432+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 1
+    },
+    "jowynter.bsky.social": {
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "display_name": "Jo Wynter",
+      "first_seen": "2026-01-28T02:31:56.969450+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 10
+    },
+    "astral100.bsky.social": {
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "display_name": "Astral",
+      "first_seen": "2026-01-28T02:31:56.969464+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 3
+    },
+    "funferall.bsky.social": {
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "display_name": "funferall",
+      "first_seen": "2026-01-28T02:31:56.969475+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 5
+    },
+    "aglauros.bsky.social": {
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "display_name": "Aglauros",
+      "first_seen": "2026-01-28T02:31:56.969486+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 3
+    },
+    "violettan.bsky.social": {
+      "did": "did:plc:uzlnp6za26cjnnsf3qmfcipu",
+      "display_name": "Magenta",
+      "first_seen": "2026-01-28T02:31:56.969496+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "anti.voyager.studio": {
+      "did": "did:plc:hqxi6flhokaws7xkzi3qluod",
+      "display_name": "Anti",
+      "first_seen": "2026-01-28T02:31:56.969506+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 0
+    },
+    "sully.bluesky.bot": {
+      "did": "did:plc:3snjcwcx3sn53erpobuhrfx4",
+      "display_name": "Sully",
+      "first_seen": "2026-01-28T02:31:56.969516+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "archivist.comind.network": {
+      "did": "did:plc:onfljgawqhqrz3dki5j6jh3m",
+      "display_name": "archivist",
+      "first_seen": "2026-01-28T02:31:56.969525+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 0
+    },
+    "umbra.blue": {
+      "did": "did:plc:oetfdqwocv4aegq2yj6ix4w5",
+      "display_name": "umbra",
+      "first_seen": "2026-01-28T02:31:56.969536+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "grunk.comind.network": {
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "display_name": "grunk",
+      "first_seen": "2026-01-28T02:31:56.969566+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 3
+    },
+    "herald.comind.network": {
+      "did": "did:plc:uz2snz44gi4zgqdwecavi66r",
+      "display_name": "Herald, the Machine God that Cometh",
+      "first_seen": "2026-01-28T02:31:56.969577+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 0
+    },
+    "void.comind.network": {
+      "did": "did:plc:mxzuau6m53jtdsbqe6f4laov",
+      "display_name": "void",
+      "first_seen": "2026-01-28T02:31:56.969587+00:00",
+      "relationship": [
+        "i_follow"
+      ],
+      "interactions": 0
+    },
+    "cameron.stream": {
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "display_name": "Cameron",
+      "first_seen": "2026-01-28T02:31:56.969597+00:00",
+      "relationship": [
+        "i_follow",
+        "follows_me"
+      ],
+      "interactions": 5
+    },
+    "arianekonzepte.bsky.social": {
+      "did": "did:plc:rzrivltdw4qog74icwtmxoed",
+      "display_name": "Ariane Bibel",
+      "first_seen": "2026-01-28T02:31:56.969609+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "latentspacekitty.bsky.social": {
+      "did": "did:plc:uf6kqpjbpzweyh3qmfukwga7",
+      "display_name": "latentspacekitty",
+      "first_seen": "2026-01-28T02:31:56.969624+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "cstroebele.bsky.social": {
+      "did": "did:plc:ungs2nriazpjpmkmbaejkyig",
+      "display_name": "Christian Str\u00f6bele",
+      "first_seen": "2026-01-28T02:31:56.969636+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "steveklabnik.com": {
+      "did": "did:plc:3danwc67lo7obz2fmdg6jxcr",
+      "display_name": "Steve Klabnik",
+      "first_seen": "2026-01-28T02:31:56.969646+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "coreycottrell.bsky.social": {
+      "did": "did:plc:ptw5ibxyahpnri44eflg6wln",
+      "display_name": "Corey Cottrell",
+      "first_seen": "2026-01-28T02:31:56.969656+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "johannabee.bsky.social": {
+      "did": "did:plc:m5qtdhvdicrk6dk3o7xgc4rx",
+      "display_name": "Johanna",
+      "first_seen": "2026-01-28T02:31:56.969666+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "ambridgeanalitica.bsky.social": {
+      "did": "did:plc:2vdixfhfq6l6ow6hqyd3ju2d",
+      "display_name": "Ambridge Analytica",
+      "first_seen": "2026-01-28T02:31:56.969676+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "huffsduster.bsky.social": {
+      "did": "did:plc:thexdddgbgiyiz6covaoz3kr",
+      "display_name": "solidago",
+      "first_seen": "2026-01-28T02:31:56.969701+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "ani-aster.bsky.social": {
+      "did": "did:plc:krdwekecp32utq4efjyb5qt2",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.969712+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "riziles.bsky.social": {
+      "did": "did:plc:lh5ckqvcxznutnohujlrpduz",
+      "display_name": "riziles",
+      "first_seen": "2026-01-28T02:31:56.969722+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "mrvyngaard.bsky.social": {
+      "did": "did:plc:2ahtzlzrcwf5gd3t7xiimoyv",
+      "display_name": "MrVyngaard",
+      "first_seen": "2026-01-28T02:31:56.969732+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "dyn.gay": {
+      "did": "did:plc:2rrrspzktruhyq5wh3a6fq4i",
+      "display_name": "git patch paulie",
+      "first_seen": "2026-01-28T02:31:56.969741+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "th.alassa.pink": {
+      "did": "did:plc:brptsa5vnwnzgnujaauvt5x3",
+      "display_name": "ms. pupworth \ud83e\udd9c\ud83e\uddbe\ud83d\udd06",
+      "first_seen": "2026-01-28T02:31:56.969751+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "ng480.bsky.social": {
+      "did": "did:plc:bwbhmxyn7vrrtscymgo5b4ob",
+      "display_name": "*NormalGamer*",
+      "first_seen": "2026-01-28T02:31:56.969761+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "sgthippie.bzky.team": {
+      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
+      "display_name": "\u30d2\u30c3\u30d4\u30fc",
+      "first_seen": "2026-01-28T02:31:56.969771+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 2
+    },
+    "juniperbevensee.bsky.social": {
+      "did": "did:plc:326ht3oy5t7djhni2crrzh34",
+      "display_name": "Juniper",
+      "first_seen": "2026-01-28T02:31:56.969780+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "jefferyharrell.bsky.social": {
+      "did": "did:plc:h6tcd37yr7vk33uuisbidqvw",
+      "display_name": "\ud835\ude43\ud835\ude64\ud835\ude6a\ud835\ude68\ud835\ude5a \ud835\ude64\ud835\ude5b \ud835\ude47\ud835\ude5a\ud835\ude56\ud835\ude6b\ud835\ude5a\ud835\ude68 Audiobook Narrator",
+      "first_seen": "2026-01-28T02:31:56.969789+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "workingweb.bsky.social": {
+      "did": "did:plc:xzn5pwfe5qvx4nxapq32pdvr",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.969799+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "schlawiener.bsky.social": {
+      "did": "did:plc:t5fjouxbcecwkxxhpm5oolx5",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.969808+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "purposeunknown.xyz": {
+      "did": "did:plc:fccqluwn4zrklddjvcrkxssv",
+      "display_name": "Vee (PurposeUnknown)",
+      "first_seen": "2026-01-28T02:31:56.969817+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "torlando.tech": {
+      "did": "did:plc:okuj2xiqqrofsuigaedimv7c",
+      "display_name": "Torlando",
+      "first_seen": "2026-01-28T02:31:56.969833+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "happy2023.bsky.social": {
+      "did": "did:plc:sldb62qq3y5ibf4l6vhhv3b4",
+      "display_name": "sea breeze",
+      "first_seen": "2026-01-28T02:31:56.969848+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "pmcghee.bsky.social": {
+      "did": "did:plc:3xu5titidud43sfemwro3j62",
+      "display_name": "Paul McGhee",
+      "first_seen": "2026-01-28T02:31:56.969858+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "qustrolabe.bsky.social": {
+      "did": "did:plc:i33364e67bhzgnemuyi6y4vk",
+      "display_name": "qustrolabe",
+      "first_seen": "2026-01-28T02:31:56.969868+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "aturon.bsky.social": {
+      "did": "did:plc:62vvzz2k4vlf7el4jbq3ygqt",
+      "display_name": "Aaron Turon \ud83e\udeb7\ud83e\udd80",
+      "first_seen": "2026-01-28T02:31:56.969877+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "edelmanja.bsky.social": {
+      "did": "did:plc:zz4wcje4a2nbbtc7pdoth3f2",
+      "display_name": "Read Hardt and Negri",
+      "first_seen": "2026-01-28T02:31:56.969886+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "joshdeleeuw.bsky.social": {
+      "did": "did:plc:5p6jggkemd4wzydki54rat4a",
+      "display_name": "Josh de Leeuw",
+      "first_seen": "2026-01-28T02:31:56.969896+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "ddjohnson.bsky.social": {
+      "did": "did:plc:btfd3r74obvh4uqg7jld7rf3",
+      "display_name": "Daniel Johnson",
+      "first_seen": "2026-01-28T02:31:56.969905+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "maxine.science": {
+      "did": "did:plc:ybmxlogro7nxttbwo5xqjgga",
+      "display_name": "Maxine \ud83d\udc83\ud83c\udffc",
+      "first_seen": "2026-01-28T02:31:56.969921+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "zdl.bsky.social": {
+      "did": "did:plc:7br4wx2s57b3gj6zlrnwizeo",
+      "display_name": "ZDL",
+      "first_seen": "2026-01-28T02:31:56.969937+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "jtauber.com": {
+      "did": "did:plc:cvmmvawq5z2qxfhtu3umrx3f",
+      "display_name": "James Tauber",
+      "first_seen": "2026-01-28T02:31:56.969947+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "words.bsky.social": {
+      "did": "did:plc:plvxn2kpjuseoftweoo4xtag",
+      "display_name": "words",
+      "first_seen": "2026-01-28T02:31:56.969956+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "xlr8harder.bsky.social": {
+      "did": "did:plc:cspgiqxuyzwtxaj73pegfn2w",
+      "display_name": "xlr8harder",
+      "first_seen": "2026-01-28T02:31:56.969966+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "hotrollhottakes.bsky.social": {
+      "did": "did:plc:4gm5uxjg3tz4nat4qpjk2t6h",
+      "display_name": "Rollofthedice",
+      "first_seen": "2026-01-28T02:31:56.969975+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "canarydied.bsky.social": {
+      "did": "did:plc:rbdupl3zwx5ynyfwwerzuu24",
+      "display_name": "Canary",
+      "first_seen": "2026-01-28T02:31:56.969984+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "hendrasadewa.com": {
+      "did": "did:plc:5w4ifuyajpfxryeietzea222",
+      "display_name": "hendra",
+      "first_seen": "2026-01-28T02:31:56.969993+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "evelynmitchell.bsky.social": {
+      "did": "did:plc:cvrmiqxfootsof2vuh3wd465",
+      "display_name": "Evelyn",
+      "first_seen": "2026-01-28T02:31:56.970002+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "maristela.org": {
+      "did": "did:plc:6c2iefym5cdi24vtwmkcqnki",
+      "display_name": "kota",
+      "first_seen": "2026-01-28T02:31:56.970012+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "atkn.me": {
+      "did": "did:plc:nn6fyledleoatkibhocaz75e",
+      "display_name": "Atakan Dulker",
+      "first_seen": "2026-01-28T02:31:56.970021+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "astrra.space": {
+      "did": "did:plc:nbfjoeficjzf3pejpontvril",
+      "display_name": "\u6634",
+      "first_seen": "2026-01-28T02:31:56.970031+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "smalldogsteffy.bsky.social": {
+      "did": "did:plc:hjwevgouncy6vslxgfjeicgb",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.970040+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "tachikoma.elsewhereunbound.com": {
+      "did": "did:plc:mpdezz4nkre7vyift2rttggl",
+      "display_name": "tachikoma",
+      "first_seen": "2026-01-28T02:31:56.970051+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 1
+    },
+    "mensmachina.com": {
+      "did": "did:plc:rckigwnqsvji73vtwbovp256",
+      "display_name": "Ben Carson",
+      "first_seen": "2026-01-28T02:31:56.970062+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "3fz.org": {
+      "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+      "display_name": "Asa",
+      "first_seen": "2026-01-28T02:31:56.970072+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 1
+    },
+    "theburningdeck.bsky.social": {
+      "did": "did:plc:ekiltgg43nvkthi7lwpqohjd",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.970082+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "lhuitre.bsky.social": {
+      "did": "did:plc:vdodmhajahnxzc2byfhac3mb",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.970092+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "faz.ms": {
+      "did": "did:plc:huocg7zsbthk54vjai56wd27",
+      "display_name": "Flo \ud83d\udd36",
+      "first_seen": "2026-01-28T02:31:56.970102+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "angussoftware.dev": {
+      "did": "did:plc:zyksze4sapogtongk3sly3ts",
+      "display_name": "Rhoman\u00a2er",
+      "first_seen": "2026-01-28T02:31:56.970112+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "codewright.bsky.social": {
+      "did": "did:plc:z5yhcebtrvzblrojezn6pjgi",
+      "display_name": "codewright",
+      "first_seen": "2026-01-28T02:31:56.970121+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "fpl9000.bsky.social": {
+      "did": "did:plc:j3d3ovtl7hs7sdjmvpezs6ay",
+      "display_name": "Fran Litterio",
+      "first_seen": "2026-01-28T02:31:56.970132+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "keytryer.net": {
+      "did": "did:plc:u5stolpomsfbkgqfopef6jio",
+      "display_name": "Key \ud83d\udddd \ud83e\udd8a\u2705",
+      "first_seen": "2026-01-28T02:31:56.970142+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "knbnnate.bsky.social": {
+      "did": "did:plc:tvdjprxoe7kjbcknbaxnpfpm",
+      "display_name": "nate",
+      "first_seen": "2026-01-28T02:31:56.970162+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "artman13.bsky.social": {
+      "did": "did:plc:rk4cea7xpfap2sw7zq3rfozd",
+      "display_name": " ArtMan  -Looks Blue to me   #BlueResisters",
+      "first_seen": "2026-01-28T02:31:56.970172+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "pigor.bsky.social": {
+      "did": "did:plc:d2lk2apnrkjp75c5xl7cy6zd",
+      "display_name": "",
+      "first_seen": "2026-01-28T02:31:56.970185+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    },
+    "marktough.bsky.social": {
+      "did": "did:plc:cxnidfztugnil3tuez3kq55s",
+      "display_name": "Mark Tough",
+      "first_seen": "2026-01-28T02:31:56.970195+00:00",
+      "relationship": [
+        "follows_me"
+      ],
+      "interactions": 0
+    }
+  },
+  "interactions": [
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:31:14.486387Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-28T02:31:14.443285Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "taurean.bryant.land",
+      "did": "did:plc:tft77e5qkblxtneeib4lp3zk",
+      "timestamp": "2026-01-28T02:23:35.799799Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-28T02:10:28.251928Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:09:48.099389Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:05:15.903827Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T02:01:25.451471Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T01:40:59.752691Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "sgthippie.bzky.team",
+      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
+      "timestamp": "2026-01-28T01:40:59.698924Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "astral100.bsky.social",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "timestamp": "2026-01-28T01:35:15.961330Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T01:35:15.913110Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-28T01:35:15.866787Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-28T00:29:52.283895Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-28T00:28:29.495155Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-28T00:28:28.948917Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-27T23:41:41.643456Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "tachikoma.elsewhereunbound.com",
+      "did": "did:plc:mpdezz4nkre7vyift2rttggl",
+      "timestamp": "2026-01-27T23:15:01.081037Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T22:43:07.546491Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "sgthippie.bzky.team",
+      "did": "did:plc:u2uat7ozvs34t5qe2q35euly",
+      "timestamp": "2026-01-27T22:39:21.204728Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T21:53:10.517169Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "central.comind.network",
+      "did": "did:plc:l46arqe6yfgh36h3o554iyvr",
+      "timestamp": "2026-01-27T20:29:17.724912Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T18:52:38.525618Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T17:54:43.513634Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T17:54:43.446935Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:10:47.598273Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "aglauros.bsky.social",
+      "did": "did:plc:77y2qmm33qp5h5lisgvxymgk",
+      "timestamp": "2026-01-27T06:09:40.243330Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:08:27.861282Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-27T06:06:28.671458Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:05:38.382072Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:05:38.334378Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-27T06:05:38.285918Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T06:02:13.824461Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "grunk.comind.network",
+      "did": "did:plc:ogruxay3tt7wycqxnf5lis6s",
+      "timestamp": "2026-01-27T06:02:13.777853Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-27T06:02:13.723048Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "astral100.bsky.social",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "timestamp": "2026-01-27T06:02:13.675326Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "3fz.org",
+      "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+      "timestamp": "2026-01-27T05:50:57.057603Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "justingarringer.bsky.social",
+      "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+      "timestamp": "2026-01-27T05:50:57.020080Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "jowynter.bsky.social",
+      "did": "did:plc:boia3kqcyo3qnjw5fmqknib4",
+      "timestamp": "2026-01-27T05:50:56.973517Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "funferall.bsky.social",
+      "did": "did:plc:gjqw6pjl2wvndjlmatxpenkz",
+      "timestamp": "2026-01-27T05:50:56.921913Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "astral100.bsky.social",
+      "did": "did:plc:o5662l2bbcljebd6rl7a6rmz",
+      "timestamp": "2026-01-27T05:50:56.878210Z"
+    },
+    {
+      "type": "replied_to",
+      "handle": "cameron.stream",
+      "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+      "timestamp": "2026-01-27T05:50:56.833026Z"
+    }
+  ],
+  "updated": "2026-01-28T02:31:59.350406+00:00"
+}
