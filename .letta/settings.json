@@ -2,10 +2,11 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python hooks/publish-response.py"
+            "command": "uv run python hooks/enforce-comms.py"
           }
         ]
       }
