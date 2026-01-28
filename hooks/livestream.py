@@ -236,8 +236,7 @@ def main():
     # Post activity
     post_activity(tool_name, summary)
     
-    # Also poll and publish any new responses/reasoning
-    publish_messages()
+    # Note: reasoning/responses now published via PreToolUse hook
     
     sys.exit(0)
 
