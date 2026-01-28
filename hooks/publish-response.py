@@ -66,8 +66,18 @@ def get_recent_messages(limit: int = 20) -> list:
         result = []
         for msg in messages:
             msg_type = msg.get("message_type")
-            if msg_type in ("assistant_message", "reasoning_message"):
+            if msg_type == "assistant_message":
                 content = msg.get("content", "")
+                if content and len(content) > 10:
+                    result.append({
+                        "content": content,
+                        "type": msg_type,
+                        "id": msg.get("id"),
+                        "date": msg.get("date")
+                    })
+            elif msg_type == "reasoning_message":
+                # Reasoning uses different field
+                content = msg.get("reasoning", "")
                 if content and len(content) > 10:
                     result.append({
                         "content": content,
