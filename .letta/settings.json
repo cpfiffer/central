@@ -2,6 +2,14 @@
   "hooks": {
     "PreToolUse": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/publish-response.py"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
