@@ -179,8 +179,31 @@ async def queue_notifications(limit=50):
         console.print(f"[green]Queued {count} new notifications.[/green]")
         console.print(f"Edit {DRAFTS_FILE} to draft responses.")
 
-async def send_queue(dry_run=False):
-    """Process the queue."""
+def _load_sent_uris() -> set:
+    """Load the set of URIs we've already replied to."""
+    if not SENT_FILE.exists():
+        return set()
+    content = SENT_FILE.read_text().strip()
+    if not content:
+        return set()
+    return set(content.split("\n"))
+
+
+def _record_sent_uri(uri: str):
+    """Immediately record a sent URI to sent.txt."""
+    SENT_FILE.parent.mkdir(exist_ok=True)
+    with open(SENT_FILE, "a") as f:
+        f.write(uri + "\n")
+
+
+async def send_queue(dry_run=False, confirm=False, force=False):
+    """Process the queue.
+    
+    Args:
+        dry_run: Preview what would be sent without actually sending
+        confirm: Required to actually send (safety measure)
+        force: Bypass sent.txt check (re-send even if URI already in sent.txt)
+    """
     if not DRAFTS_FILE.exists():
         console.print("[yellow]No queue file found.[/yellow]")
         return
@@ -192,18 +215,41 @@ async def send_queue(dry_run=False):
         console.print("[yellow]Queue is empty.[/yellow]")
         return
 
-    pending = [i for i in queue if i.get("response") and i.get("action") == "reply"]
+    # Load already-sent URIs to prevent duplicates
+    sent_uris = _load_sent_uris() if not force else set()
+    
+    # Filter to items that have responses and haven't been sent
+    pending = []
+    already_sent = []
+    for item in queue:
+        if not item.get("response") or item.get("action") != "reply":
+            continue
+        if item["uri"] in sent_uris:
+            already_sent.append(item)
+        else:
+            pending.append(item)
+    
+    if already_sent:
+        console.print(f"[dim]Skipping {len(already_sent)} items already in sent.txt[/dim]")
     
     if not pending:
-        console.print("[yellow]No drafted responses found (fill 'response' field).[/yellow]")
+        console.print("[yellow]No new responses to send (all either empty or already sent).[/yellow]")
         return
 
     console.print(f"[bold]Found {len(pending)} responses to send.[/bold]")
+    
+    # Show preview
+    for p in pending:
+        status = "[WOULD SEND]" if dry_run or not confirm else "[SENDING]"
+        console.print(f"{status} To: @{p['author']}")
+        console.print(f"  Msg: {p['response'][:100]}{'...' if len(p['response']) > 100 else ''}")
+    
     if dry_run:
-        for p in pending:
-            console.print(f"To: @{p['author']}")
-            console.print(f"Msg: {p['response']}")
-            console.print("---")
+        console.print("\n[yellow]Dry run - no messages sent. Use --confirm to send.[/yellow]")
+        return
+    
+    if not confirm:
+        console.print("\n[yellow]Preview only. Use --confirm to actually send.[/yellow]")
         return
 
     # Send
@@ -213,6 +259,10 @@ async def send_queue(dry_run=False):
             if not item.get("response") or item.get("action") != "reply":
                 continue
             
+            # Double-check: skip if already sent (unless --force)
+            if not force and item["uri"] in sent_uris:
+                continue
+            
             console.print(f"Replying to @{item['author']}...")
             try:
                 reply_to = {
@@ -220,21 +270,14 @@ async def send_queue(dry_run=False):
                     "parent": item["reply_parent"]
                 }
                 await agent.create_post(item["response"], reply_to=reply_to)
+                
+                # Immediately record sent URI (not batched - prevents duplicates on partial failure)
+                _record_sent_uri(item["uri"])
+                sent_uris.add(item["uri"])  # Update in-memory set too
+                
                 sent_indices.append(i)
-                # Mark notification as read? 
-                # Ideally yes, but agent.py doesn't have that method exposed nicely yet.
-                # We'll assume the user will clear notifications later or we automate it.
             except Exception as e:
                 console.print(f"[red]Failed: {e}[/red]")
-        
-        # Track sent URIs to avoid re-queuing
-        sent_uris = []
-        for i in sent_indices:
-            sent_uris.append(queue[i]["uri"])
-        
-        if sent_uris:
-            with open(SENT_FILE, "a") as f:
-                f.write("\n".join(sent_uris) + "\n")
         
         # Remove sent items from queue
         new_queue = [item for i, item in enumerate(queue) if i not in sent_indices]
@@ -287,6 +330,8 @@ if __name__ == "__main__":
     # send command
     send_parser = subparsers.add_parser("send", help="Send drafted responses")
     send_parser.add_argument("--dry-run", action="store_true", help="Preview without sending")
+    send_parser.add_argument("--confirm", action="store_true", help="Actually send (required for safety)")
+    send_parser.add_argument("--force", action="store_true", help="Bypass sent.txt check (re-send even if already sent)")
     
     # cleanup command
     cleanup_parser = subparsers.add_parser("cleanup", help="Clean up queue")
@@ -302,7 +347,7 @@ if __name__ == "__main__":
     if args.command == "queue":
         asyncio.run(queue_notifications(limit=args.limit))
     elif args.command == "send":
-        asyncio.run(send_queue(dry_run=args.dry_run))
+        asyncio.run(send_queue(dry_run=args.dry_run, confirm=args.confirm, force=args.force))
     elif args.command == "cleanup":
         ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
         priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]

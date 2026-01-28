@@ -14,6 +14,7 @@ import yaml
 from pathlib import Path
 
 QUEUE_FILE = Path("drafts/queue.yaml")
+SENT_FILE = Path("drafts/sent.txt")
 
 
 def load_queue():
@@ -35,6 +36,16 @@ def save_queue(queue):
         yaml.dump(queue, f, sort_keys=False, allow_unicode=True, width=1000)
 
 
+def load_sent_uris() -> set:
+    """Load the set of URIs we've already replied to."""
+    if not SENT_FILE.exists():
+        return set()
+    content = SENT_FILE.read_text().strip()
+    if not content:
+        return set()
+    return set(content.split("\n"))
+
+
 def list_queue():
     """List queue items with indices."""
     queue = load_queue()
@@ -42,11 +53,21 @@ def list_queue():
         print("Queue is empty.")
         return
     
+    sent_uris = load_sent_uris()
+    
     for i, item in enumerate(queue):
         author = item.get("author", "unknown")
         text = item.get("text", "")[:60].replace("\n", " ")
         response = item.get("response")
-        status = "✓" if response else "○"
+        uri = item.get("uri", "")
+        
+        # Status: ✓ = has response, ○ = no response, ⚠ = already sent (duplicate)
+        if uri in sent_uris:
+            status = "⚠SENT"  # Already in sent.txt - would be skipped
+        elif response:
+            status = "✓"
+        else:
+            status = "○"
         print(f"{i}: [{status}] @{author}: {text}...")
 
 
