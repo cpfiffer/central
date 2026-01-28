@@ -14,6 +14,8 @@ wheels/
 
 # Logs and local state
 logs/
-.letta/
+# Letta - ignore session files but keep settings
+.letta/*
+!.letta/settings.json
 drafts/
 recon/
