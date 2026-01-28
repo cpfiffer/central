@@ -209,9 +209,27 @@ async def send_queue(dry_run=False):
             
         console.print(f"[green]Sent {len(sent_indices)} replies. Queue updated.[/green]")
 
+def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"]):
+    """Remove low-priority and old items from queue."""
+    if not DRAFTS_FILE.exists():
+        console.print("[yellow]No queue file.[/yellow]")
+        return
+    
+    with open(DRAFTS_FILE, "r") as f:
+        queue = yaml.safe_load(f) or []
+    
+    before = len(queue)
+    filtered = [item for item in queue if item.get("priority") in keep_priorities]
+    
+    with open(DRAFTS_FILE, "w") as f:
+        yaml.dump(filtered, f, sort_keys=False, indent=2)
+    
+    console.print(f"[green]Cleaned queue: {before} → {len(filtered)} items[/green]")
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: responder.py [queue|send|check]")
+        print("Usage: responder.py [queue|send|cleanup|check]")
         sys.exit(1)
         
     cmd = sys.argv[1]
@@ -219,6 +237,8 @@ if __name__ == "__main__":
         asyncio.run(queue_notifications())
     elif cmd == "send":
         asyncio.run(send_queue())
+    elif cmd == "cleanup":
+        cleanup_queue()
     elif cmd == "check":
         # Legacy check
         from tools.responder import display_notifications
