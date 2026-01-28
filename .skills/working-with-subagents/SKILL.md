@@ -79,6 +79,15 @@ Return the text to post.
 
 **Purpose**: Quick reconnaissance. Gather data, don't make decisions.
 
+**IMPORTANT**: Deploy scout as `explore` type for read-only access:
+```python
+Task(
+  agent_id="agent-e91a2154-0965-4b70-8303-54458e9a1980",
+  subagent_type="explore",  # NOT general-purpose
+  ...
+)
+```
+
 **Prompt Template**:
 ```
 **Task**: What to investigate
@@ -86,12 +95,11 @@ Return the text to post.
 **Return**: What format you need (list, summary, raw data)
 ```
 
-**Good scout tasks**:
+**Good scout tasks** (read-only):
 - "Check @username's recent posts for topic X"
-- "Sample the firehose for 30 seconds, report hashtag frequency"
+- "Read the feed at tools/feeds.py and summarize"
 - "Use telepathy to check what void is currently thinking about"
-- "Run `uv run python -m tools.engage 5` to like timeline posts"
-- "Run `uv run python -m tools.feeds discover` to find interesting content"
+- "Search the codebase for X pattern"
 
 ### coder (Implementation)
 
