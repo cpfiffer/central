@@ -150,7 +150,8 @@ def main():
     
     event_type = input_data.get("event_type")
     
-    if event_type != "Stop":
+    # Process both PreToolUse (incremental) and Stop (final catchup)
+    if event_type not in ("PreToolUse", "Stop"):
         sys.exit(0)
     
     # Track which messages we've already published
