@@ -30,6 +30,22 @@ DID = os.getenv("ATPROTO_DID")
 PDS = os.getenv("ATPROTO_PDS")
 APP_PASSWORD = os.getenv("ATPROTO_APP_PASSWORD")
 
+# Agent whitelist - only these Letta agents can post/like/follow
+# Central is the main agent; comms handles drafting via queue
+WRITE_ALLOWED_AGENTS = {
+    "agent-c770d1c8-510e-4414-be36-c9ebd95a7758",  # central (me)
+    "agent-a856f614-7654-44ba-a35f-c817d477dded",  # comms (drafts posts)
+}
+
+def check_write_permission():
+    """Check if current agent is allowed to write."""
+    current_agent = os.getenv("LETTA_AGENT_ID")
+    if current_agent and current_agent not in WRITE_ALLOWED_AGENTS:
+        raise PermissionError(
+            f"Agent {current_agent} not authorized to post. "
+            f"Only central and comms can write to ATProtocol."
+        )
+
 
 async def resolve_handle_to_did(handle: str) -> str | None:
     """Resolve a handle to a DID."""
@@ -165,6 +181,7 @@ class ComindAgent:
         Returns:
             The created record with uri and cid
         """
+        check_write_permission()
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         # Auto-detect facets if not provided
@@ -214,6 +231,7 @@ class ComindAgent:
     
     async def like(self, uri: str, cid: str) -> dict:
         """Like a post."""
+        check_write_permission()
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         response = await self._client.post(
@@ -238,6 +256,7 @@ class ComindAgent:
     
     async def follow(self, did: str) -> dict:
         """Follow a user by their DID."""
+        check_write_permission()
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         response = await self._client.post(
