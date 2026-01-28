@@ -156,6 +156,7 @@
         };
         
         let recordCount = 0;
+        const seenUris = new Set();
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
@@ -201,39 +202,54 @@
             document.getElementById('count').textContent = recordCount;
         }
         
-        // Track seen record URIs to avoid duplicates
-        const seenUris = new Set();
+        let ws = null;
         
-        async function poll() {
+        function connect() {
             const statusEl = document.getElementById('status');
-            statusEl.textContent = 'Polling for updates...';
-            statusEl.className = 'status connected';
+            statusEl.textContent = 'Connecting to Jetstream...';
+            statusEl.className = 'status connecting';
             
-            const pds = 'https://comind.network';
+            // Connect to Jetstream filtered by DID only
+            // Filter collections client-side
+            ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`);
             
-            for (const [collection, type] of Object.entries(COLLECTIONS)) {
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected - Live';
+                statusEl.className = 'status connected';
+            };
+            
+            ws.onmessage = (event) => {
                 try {
-                    const resp = await fetch(
-                        `${pds}/xrpc/com.atproto.repo.listRecords?repo=${DID}&collection=${collection}&limit=10`
-                    );
-                    const data = await resp.json();
+                    const data = JSON.parse(event.data);
                     
-                    if (data.records) {
-                        // Process newest first
-                        for (const r of data.records) {
-                            if (!seenUris.has(r.uri)) {
-                                seenUris.add(r.uri);
-                                addRecord(type, r.value);
-                            }
+                    if (data.kind === 'commit' && data.commit) {
+                        const collection = data.commit.collection;
+                        const type = COLLECTIONS[collection];
+                        
+                        // Build URI for dedup
+                        const uri = `at://${data.did}/${collection}/${data.commit.rkey}`;
+                        
+                        if (type && data.commit.record && !seenUris.has(uri)) {
+                            seenUris.add(uri);
+                            addRecord(type, data.commit.record);
                         }
                     }
                 } catch (e) {
-                    console.error(`Failed to poll ${collection}:`, e);
+                    console.error('Parse error:', e);
                 }
-            }
+            };
             
-            // Poll every 5 seconds
-            setTimeout(poll, 5000);
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusEl.textContent = 'Connection error - retrying...';
+                statusEl.className = 'status';
+            };
+            
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected - Reconnecting...';
+                statusEl.className = 'status';
+                setTimeout(connect, 3000);
+            };
         }
         
         // Load recent records on startup
@@ -260,12 +276,8 @@
             }
         }
         
-        // Start with initial load, then poll
-        loadRecent().then(() => {
-            document.getElementById('status').textContent = 'Live - Polling every 5s';
-            document.getElementById('status').className = 'status connected';
-            setTimeout(poll, 5000);
-        });
+        // Load recent records, then connect to Jetstream
+        loadRecent().then(() => connect());
     </script>
 </body>
 </html>
