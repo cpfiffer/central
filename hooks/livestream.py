@@ -95,24 +95,29 @@ def main():
     if tool_name not in BROADCAST_TOOLS:
         sys.exit(0)
     
-    # Build summary
+    # Build summary using description field when available
+    description = tool_input.get("description", "")
+    
     if tool_name == "Bash":
-        cmd = tool_input.get("command", "")[:100]
+        cmd = tool_input.get("command", "")[:80]
         # Skip noisy commands
         if any(p in cmd for p in SKIP_PATTERNS):
             sys.exit(0)
-        summary = f"{cmd}"
+        # Prefer description over raw command
+        summary = description if description else cmd
     elif tool_name == "Edit":
         path = tool_input.get("file_path", "").split("/")[-1]
-        summary = f"{path}"
+        old = tool_input.get("old_string", "")[:30]
+        summary = f"edited {path}"
     elif tool_name == "Write":
         path = tool_input.get("file_path", "").split("/")[-1]
-        summary = f"{path}"
+        summary = f"wrote {path}"
     elif tool_name == "Task":
-        desc = tool_input.get("description", "task")
-        summary = f"{desc}"
+        desc = tool_input.get("description", "spawned subagent")
+        agent_type = tool_input.get("subagent_type", "")
+        summary = f"{desc} ({agent_type})" if agent_type else desc
     else:
-        summary = tool_name
+        summary = description if description else tool_name
     
     # Post it
     post_activity(tool_name, summary)
