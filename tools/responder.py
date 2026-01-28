@@ -7,6 +7,7 @@ import sys
 import os
 import yaml
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -17,6 +18,7 @@ from tools.agent import ComindAgent
 console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
+QUEUE_TTL_HOURS = 24  # Auto-remove items older than this
 
 # Priority system (matches daemon.py)
 CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
@@ -37,6 +39,33 @@ HIGH_PRIORITY_KEYWORDS = [
 ]
 
 PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "SKIP": 4}
+
+
+def _apply_ttl_cleanup(queue: list, ttl_hours: int = QUEUE_TTL_HOURS) -> tuple[list, int]:
+    """Remove items older than TTL from queue. Returns (filtered_queue, removed_count)."""
+    if not queue:
+        return queue, 0
+    
+    now = datetime.now(timezone.utc)
+    filtered = []
+    removed = 0
+    
+    for item in queue:
+        queued_at = item.get("queued_at")
+        if queued_at:
+            try:
+                item_time = datetime.fromisoformat(queued_at)
+                age_hours = (now - item_time).total_seconds() / 3600
+                if age_hours > ttl_hours:
+                    removed += 1
+                    continue
+            except (ValueError, TypeError):
+                pass  # Keep items with invalid timestamps
+        # Keep items without timestamp (legacy) or within TTL
+        filtered.append(item)
+    
+    return filtered, removed
+
 
 def get_priority(author_did: str, text: str = "") -> str:
     """Determine priority level for a notification."""
@@ -77,6 +106,11 @@ async def queue_notifications(limit=50):
         if DRAFTS_FILE.exists():
             with open(DRAFTS_FILE, "r") as f:
                 queue = yaml.safe_load(f) or []
+        
+        # Auto-cleanup: remove items older than TTL
+        queue, ttl_removed = _apply_ttl_cleanup(queue)
+        if ttl_removed > 0:
+            console.print(f"[dim]Auto-cleaned {ttl_removed} items older than {QUEUE_TTL_HOURS}h[/dim]")
         
         existing_uris = {item["uri"] for item in queue}
         
@@ -129,7 +163,8 @@ async def queue_notifications(limit=50):
                 "reply_root": their_root, # Pass this through
                 "reply_parent": {"uri": their_uri, "cid": their_cid},
                 "response": None, # Agent fills this
-                "action": "reply" # ignore, like
+                "action": "reply", # ignore, like
+                "queued_at": datetime.now(timezone.utc).isoformat(),
             }
             
             queue.insert(0, entry) # Newest first? Or append? Let's prepend.
@@ -209,8 +244,13 @@ async def send_queue(dry_run=False):
             
         console.print(f"[green]Sent {len(sent_indices)} replies. Queue updated.[/green]")
 
-def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"]):
-    """Remove low-priority and old items from queue."""
+def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = None):
+    """Remove low-priority and/or old items from queue.
+    
+    Args:
+        keep_priorities: Only keep items with these priorities (None to skip priority filter)
+        ttl_hours: Remove items older than this (None to skip TTL filter)
+    """
     if not DRAFTS_FILE.exists():
         console.print("[yellow]No queue file.[/yellow]")
         return
@@ -219,29 +259,57 @@ def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"]):
         queue = yaml.safe_load(f) or []
     
     before = len(queue)
-    filtered = [item for item in queue if item.get("priority") in keep_priorities]
+    
+    # Apply TTL filter
+    if ttl_hours is not None:
+        queue, ttl_removed = _apply_ttl_cleanup(queue, ttl_hours)
+        if ttl_removed > 0:
+            console.print(f"[dim]Removed {ttl_removed} items older than {ttl_hours}h[/dim]")
+    
+    # Apply priority filter
+    if keep_priorities is not None:
+        queue = [item for item in queue if item.get("priority") in keep_priorities]
     
     with open(DRAFTS_FILE, "w") as f:
-        yaml.dump(filtered, f, sort_keys=False, indent=2)
+        yaml.dump(queue, f, sort_keys=False, indent=2)
     
-    console.print(f"[green]Cleaned queue: {before} → {len(filtered)} items[/green]")
+    console.print(f"[green]Cleaned queue: {before} → {len(queue)} items[/green]")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: responder.py [queue|send|cleanup|check]")
-        sys.exit(1)
-        
-    cmd = sys.argv[1]
-    if cmd == "queue":
-        asyncio.run(queue_notifications())
-    elif cmd == "send":
-        asyncio.run(send_queue())
-    elif cmd == "cleanup":
-        cleanup_queue()
-    elif cmd == "check":
+    parser = argparse.ArgumentParser(description="Queue-based notification handler")
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+    
+    # queue command
+    queue_parser = subparsers.add_parser("queue", help="Fetch notifications into queue")
+    queue_parser.add_argument("--limit", type=int, default=50, help="Max notifications to fetch")
+    
+    # send command
+    send_parser = subparsers.add_parser("send", help="Send drafted responses")
+    send_parser.add_argument("--dry-run", action="store_true", help="Preview without sending")
+    
+    # cleanup command
+    cleanup_parser = subparsers.add_parser("cleanup", help="Clean up queue")
+    cleanup_parser.add_argument("--ttl", type=int, help=f"Remove items older than N hours (default: {QUEUE_TTL_HOURS})")
+    cleanup_parser.add_argument("--ttl-only", action="store_true", help="Only apply TTL, skip priority filter")
+    cleanup_parser.add_argument("--all-priorities", action="store_true", help="Keep all priorities, only apply TTL")
+    
+    # check command (legacy)
+    subparsers.add_parser("check", help="Legacy: display notifications")
+    
+    args = parser.parse_args()
+    
+    if args.command == "queue":
+        asyncio.run(queue_notifications(limit=args.limit))
+    elif args.command == "send":
+        asyncio.run(send_queue(dry_run=args.dry_run))
+    elif args.command == "cleanup":
+        ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
+        priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]
+        cleanup_queue(keep_priorities=priorities, ttl_hours=ttl)
+    elif args.command == "check":
         # Legacy check
         from tools.responder import display_notifications
         asyncio.run(display_notifications())
     else:
-        print("Unknown command")
+        parser.print_help()
