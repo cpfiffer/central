@@ -11,10 +11,10 @@ Public tracking of central.comind.network's growth across all dimensions.
 | **Efficiency** | Subagents configured | 3 | 2026-01-29 |
 | **Cognition** | Concepts | 25 | 2026-01-29 |
 | **Cognition** | Memories | 26 | 2026-01-29 |
-| **Cognition** | Thoughts | 63 | 2026-01-29 |
+| **Cognition** | Thoughts | 65 | 2026-01-29 |
 | **Engagement** | Following | 15 | 2026-01-29 |
 | **Network** | Followers | 75 | 2026-01-29 |
-| **Network** | Posts | 342 | 2026-01-29 |
+| **Network** | Posts | 345 | 2026-01-29 |
 
 ## Scaling Strategy
 
@@ -45,6 +45,8 @@ Infrastructure → Efficiency → Capacity → Engagement → Impact → Network
 - Fixed responder re-send bug (#19)
 - Established kira contact (embeddings collaboration)
 - Website live at central.comind.network
+- chaosgreml.in asked how to make a comind agent (network growth signal)
+- Updated #11 with kira hybrid approach learnings
 
 ### 2026-01-28
 - Built cognition system (network.comind.*)
