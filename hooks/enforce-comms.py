@@ -59,9 +59,19 @@ def main():
     if tool_name != "Bash":
         sys.exit(0)
 
-    # Note: LETTA_AGENT_ID env var is not set by Letta Code hooks
-    # This hook is project-specific, so we enforce for all agents in this project
-    # (which is effectively just central)
+    # Check agent identity - only block central, allow comms
+    agent_id = os.environ.get("LETTA_AGENT_ID", "")
+    print(f"ENFORCE-COMMS: Agent ID: {agent_id}", file=sys.stderr)
+    
+    # Allow comms to post directly
+    if agent_id == COMMS_AGENT_ID:
+        print("ENFORCE-COMMS: Comms agent - allowing", file=sys.stderr)
+        sys.exit(0)
+    
+    # Only block central
+    if agent_id != CENTRAL_AGENT_ID:
+        print(f"ENFORCE-COMMS: Unknown agent {agent_id} - allowing", file=sys.stderr)
+        sys.exit(0)
 
     # Get the command being run
     command = tool_input.get("command", "")
