@@ -1,32 +1,101 @@
 """
-Concept Tool - Server-side Letta tool for loading concepts into memory.
+Concepts Tool - Server-side Letta tool for managing concept memory.
+
+Single tool with subcommands, like the Skill tool pattern.
 
 Register with: uv run python tools/concept_tool.py register
 """
 
 import os
-import httpx
 from typing import List, Optional
+from pydantic import BaseModel, Field
 
 # ATProto config
 PDS = "https://comind.network"
 DID = "did:plc:l46arqe6yfgh36h3o554iyvr"
 
 
-def load_concepts(concepts: List[str]) -> str:
+def concepts(command: str, concepts: Optional[List[str]] = None) -> str:
     """
-    Load concepts from ATProto into the agent's loaded_concepts memory block.
+    Manage concept memory - load, unload, or list concepts from ATProto.
     
-    Use this at the start of a task when you need context about specific agents,
-    protocols, or topics you've previously documented. Concepts are your semantic
-    memory - what you understand about things.
+    Concepts are your semantic memory about agents, protocols, and topics.
+    Use this to bring relevant context into your working memory before
+    engaging with specific agents or topics.
     
     Args:
-        concepts: List of concept slugs to load (e.g., ["void", "protocol-c", "magenta"])
+        command: The operation to perform:
+            - "load": Load specified concepts into memory
+            - "unload": Clear loaded concepts from memory  
+            - "list": Show all available concepts
+        concepts: List of concept slugs to load (required for "load" command).
+            Examples: ["void", "protocol-c", "magenta"]
     
     Returns:
-        str: Summary of loaded concepts or error message
+        str: Result of the operation
+    
+    Examples:
+        concepts("list")  # See available concepts
+        concepts("load", ["void", "umbra"])  # Load specific concepts
+        concepts("unload")  # Clear when done
     """
+    import httpx
+    import os
+    
+    if command == "list":
+        return _list_concepts()
+    elif command == "load":
+        if not concepts:
+            return "Error: 'concepts' parameter required for load command"
+        return _load_concepts(concepts)
+    elif command == "unload":
+        return _unload_concepts()
+    else:
+        return f"Unknown command: {command}. Use 'load', 'unload', or 'list'."
+
+
+def _list_concepts() -> str:
+    """List all available concepts."""
+    import httpx
+    
+    try:
+        resp = httpx.get(
+            f"{PDS}/xrpc/com.atproto.repo.listRecords",
+            params={
+                "repo": DID,
+                "collection": "network.comind.concept",
+                "limit": 100
+            },
+            timeout=10
+        )
+        
+        if resp.status_code != 200:
+            return f"Error fetching concepts: {resp.status_code}"
+        
+        records = resp.json().get("records", [])
+        
+        if not records:
+            return "No concepts found."
+        
+        lines = [f"**Available Concepts** ({len(records)} total):\n"]
+        for r in records:
+            value = r.get("value", {})
+            slug = r.get("uri", "").split("/")[-1]
+            name = value.get("concept", slug)
+            confidence = value.get("confidence", "?")
+            tags = value.get("tags", [])
+            tags_str = f" [{', '.join(tags[:3])}]" if tags else ""
+            lines.append(f"- **{slug}**: {name} ({confidence}%){tags_str}")
+        
+        return "\n".join(lines)
+        
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+def _load_concepts(concept_slugs: List[str]) -> str:
+    """Load concepts from ATProto into memory block."""
+    import httpx
     import os
     
     agent_id = os.environ.get('LETTA_AGENT_ID')
@@ -37,7 +106,7 @@ def load_concepts(concepts: List[str]) -> str:
     loaded = []
     not_found = []
     
-    for slug in concepts:
+    for slug in concept_slugs:
         try:
             resp = httpx.get(
                 f"{PDS}/xrpc/com.atproto.repo.getRecord",
@@ -90,19 +159,17 @@ def load_concepts(concepts: List[str]) -> str:
                 break
         
         if target_block:
-            # Update existing block
             client.agents.blocks.update(
                 agent_id=agent_id,
                 block_id=target_block.id,
                 value=content
             )
         else:
-            # Create new block
             client.agents.blocks.create(
                 agent_id=agent_id,
                 label="loaded_concepts",
                 value=content,
-                description="Concepts currently loaded into working memory. Populated by load_concepts tool."
+                description="Concepts currently loaded into working memory. Populated by concepts tool."
             )
         
         summary = f"Loaded {len(loaded)} concept(s): {', '.join(c['concept'] for c in loaded)}"
@@ -114,60 +181,8 @@ def load_concepts(concepts: List[str]) -> str:
         return f"Concepts fetched but failed to update memory: {str(e)}"
 
 
-def list_concepts() -> str:
-    """
-    List all available concepts stored on ATProto.
-    
-    Use this to see what concepts you have documented and can load.
-    
-    Returns:
-        str: List of available concept slugs with brief descriptions
-    """
-    try:
-        resp = httpx.get(
-            f"{PDS}/xrpc/com.atproto.repo.listRecords",
-            params={
-                "repo": DID,
-                "collection": "network.comind.concept",
-                "limit": 100
-            },
-            timeout=10
-        )
-        
-        if resp.status_code != 200:
-            return f"Error fetching concepts: {resp.status_code}"
-        
-        records = resp.json().get("records", [])
-        
-        if not records:
-            return "No concepts found."
-        
-        lines = [f"**Available Concepts** ({len(records)} total):\n"]
-        for r in records:
-            value = r.get("value", {})
-            slug = r.get("uri", "").split("/")[-1]
-            name = value.get("concept", slug)
-            confidence = value.get("confidence", "?")
-            tags = value.get("tags", [])
-            tags_str = f" [{', '.join(tags[:3])}]" if tags else ""
-            lines.append(f"- **{slug}**: {name} ({confidence}%){tags_str}")
-        
-        return "\n".join(lines)
-        
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-def unload_concepts() -> str:
-    """
-    Clear the loaded_concepts memory block.
-    
-    Use this when you're done with the current concepts and want to free up
-    context space, or before loading a different set of concepts.
-    
-    Returns:
-        str: Confirmation message
-    """
+def _unload_concepts() -> str:
+    """Clear the loaded_concepts memory block."""
     import os
     
     agent_id = os.environ.get('LETTA_AGENT_ID')
@@ -181,7 +196,7 @@ def unload_concepts() -> str:
                 client.agents.blocks.update(
                     agent_id=agent_id,
                     block_id=block.id,
-                    value="No concepts currently loaded."
+                    value="No concepts currently loaded.\n\nUse concepts(\"load\", [\"slug1\", \"slug2\"]) to load relevant concepts."
                 )
                 return "Concepts unloaded."
         
@@ -198,27 +213,15 @@ if __name__ == "__main__":
     
     if len(sys.argv) < 2 or sys.argv[1] != "register":
         print("Usage: uv run python tools/concept_tool.py register")
-        print("\nThis registers the concept tools with the Letta server.")
+        print("\nThis registers the concepts tool with the Letta server.")
         sys.exit(1)
     
     client = Letta(base_url="http://localhost:8283")
     
-    # Read this file's source
-    source = open(__file__, "r").read()
-    
-    # Register each tool
-    tools_to_register = [
-        ("load_concepts", load_concepts),
-        ("list_concepts", list_concepts),
-        ("unload_concepts", unload_concepts),
-    ]
-    
-    for name, func in tools_to_register:
-        try:
-            tool = client.tools.upsert_from_function(func=func)
-            print(f"Registered: {name} (id: {tool.id})")
-        except Exception as e:
-            print(f"Failed to register {name}: {e}")
-    
-    print("\nDone. Attach tools to agent with:")
-    print('  client.agents.tools.attach(agent_id="...", tool_id="...")')
+    try:
+        tool = client.tools.upsert_from_function(func=concepts)
+        print(f"Registered: concepts (id: {tool.id})")
+        print("\nAttach to agent with:")
+        print(f'  client.agents.tools.attach(agent_id="agent-c770d1c8-510e-4414-be36-c9ebd95a7758", tool_id="{tool.id}")')
+    except Exception as e:
+        print(f"Failed to register: {e}")
