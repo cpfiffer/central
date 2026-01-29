@@ -9,7 +9,7 @@
         * {
             box-sizing: border-box;
         }
-        /* Scrollbar styling */
+        /* Scrollbar styling - sharp edges */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -19,7 +19,6 @@
         }
         ::-webkit-scrollbar-thumb {
             background: #3a3a3a;
-            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #4a4a4a;
@@ -29,35 +28,90 @@
             background: #242424;
             color: #f6e7ca;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #3a3a3a;
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border-bottom: 2px solid #3a3a3a;
         }
-        .header .logo {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 10px;
+        .header-line {
+            color: #3a3a3a;
+            font-size: 0.7rem;
+            letter-spacing: 0;
+            margin-bottom: 8px;
+            overflow: hidden;
+            white-space: nowrap;
         }
-        .header h1 {
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+        .header-title {
             color: #f6e7ca;
-            margin: 0 0 10px 0;
-            font-size: 1.2rem;
             font-weight: normal;
         }
-        .header .status {
-            font-size: 0.9rem;
-            color: #666;
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .header .status.connected {
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #555;
+        }
+        .status-indicator.live {
+            background: #8e9a7c;
+        }
+        .status-indicator.connecting {
+            background: #efa04e;
+        }
+        .header-status .label {
             color: #8e9a7c;
+            text-transform: uppercase;
+            font-size: 0.75rem;
         }
-        .header .status.connecting {
+        .header-status .label.connecting {
             color: #efa04e;
+        }
+        .header-meta {
+            color: #555;
+            font-size: 0.75rem;
+        }
+        .mode-toggle {
+            display: flex;
+            gap: 4px;
+        }
+        .mode-toggle button {
+            background: #242424;
+            border: 1px solid #3a3a3a;
+            color: #666;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.7rem;
+        }
+        .mode-toggle button:hover {
+            background: #2a2a2a;
+            color: #f6e7ca;
+        }
+        .mode-toggle button.active {
+            background: #e07042;
+            border-color: #e07042;
+            color: #242424;
+        }
+        .main-content {
+            flex: 1;
+            padding: 16px 20px;
+            overflow-y: auto;
         }
         .container {
             max-width: 800px;
@@ -66,36 +120,16 @@
         .container.columns-mode {
             max-width: 1400px;
         }
-        .mode-toggle {
-            margin-top: 10px;
-        }
-        .mode-toggle button {
-            background: #1a1a1a;
-            border: 1px solid #3a3a3a;
-            color: #f6e7ca;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.8rem;
-        }
-        .mode-toggle button:hover {
-            background: #2a2a2a;
-        }
-        .mode-toggle button.active {
-            background: #e07042;
-            border-color: #e07042;
-        }
         .feed {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
         /* Columns mode */
         .columns-layout {
             display: none;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            gap: 12px;
         }
         .columns-mode .feed {
             display: none;
@@ -110,58 +144,72 @@
         }
         .column {
             background: #1a1a1a;
-            border-radius: 8px;
-            padding: 15px;
-            border-top: 3px solid #3a3a3a;
+            border: 1px solid #3a3a3a;
         }
-        .column.prompt { border-top-color: #7c9a8e; }
-        .column.activity { border-top-color: #e07042; }
-        .column.response { border-top-color: #8e9a7c; }
-        .column.reasoning { border-top-color: #efa04e; }
-        .column h2 {
-            margin: 0 0 15px 0;
-            font-size: 0.8rem;
-            font-weight: normal;
+        .column-header {
+            padding: 6px 10px;
+            border-bottom: 1px solid #3a3a3a;
+            font-size: 0.7rem;
             text-transform: lowercase;
         }
-        .column.prompt h2 { color: #7c9a8e; }
-        .column.activity h2 { color: #e07042; }
-        .column.response h2 { color: #8e9a7c; }
-        .column.reasoning h2 { color: #efa04e; }
+        .column.prompt .column-header { color: #7c9a8e; border-bottom-color: #7c9a8e; }
+        .column.activity .column-header { color: #e07042; border-bottom-color: #e07042; }
+        .column.response .column-header { color: #8e9a7c; border-bottom-color: #8e9a7c; }
+        .column.reasoning .column-header { color: #efa04e; border-bottom-color: #efa04e; }
         .column-feed {
             display: flex;
             flex-direction: column;
-            gap: 10px;
             max-height: 70vh;
             overflow-y: auto;
         }
         .column-feed .record {
             border-left: none;
-            padding: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .column-feed .record:last-child {
+            border-bottom: none;
         }
         .column-feed .record .meta {
             display: none;
         }
+        .column-feed .record .col-time {
+            display: block;
+            font-size: 0.65rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        /* Record styling with box frames */
         .record {
             background: #1a1a1a;
-            border-radius: 8px;
-            padding: 14px;
-            border-left: 4px solid #3a3a3a;
-            animation: fadeIn 0.3s ease;
+            border: 1px solid #3a3a3a;
+            animation: fadeIn 0.2s ease;
+            position: relative;
         }
-        .record.activity { border-left-color: #e07042; }
-        .record.response { border-left-color: #8e9a7c; }
-        .record.reasoning { border-left-color: #efa04e; }
-        .record.prompt { border-left-color: #7c9a8e; }
+        .record.activity { border-color: #e07042; }
+        .record.response { border-color: #8e9a7c; }
+        .record.reasoning { border-color: #efa04e; }
+        .record.prompt { border-color: #7c9a8e; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .record .record-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 10px;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 0.7rem;
+        }
+        .record.activity .record-header { border-bottom-color: #e07042; }
+        .record.response .record-header { border-bottom-color: #8e9a7c; }
+        .record.reasoning .record-header { border-bottom-color: #efa04e; }
+        .record.prompt .record-header { border-bottom-color: #7c9a8e; }
         .record .meta {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 8px;
         }
         .record .type {
             font-size: 0.7rem;
@@ -176,9 +224,13 @@
             color: #555;
         }
         .record .content {
-            font-size: 0.85rem;
+            padding: 10px;
+            font-size: 0.8rem;
             line-height: 1.5;
             word-break: break-word;
+        }
+        .record .col-time {
+            display: none;
         }
         .record .tool {
             color: #e07042;
@@ -189,6 +241,7 @@
             font-style: italic;
             text-align: center;
             padding: 40px;
+            border: 1px dashed #3a3a3a;
         }
         /* Markdown styles */
         .record .content p {
@@ -199,20 +252,21 @@
         }
         .record .content code {
             background: #2a2a2a;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.8rem;
+            padding: 2px 4px;
+            font-size: 0.75rem;
+            border: 1px solid #3a3a3a;
         }
         .record .content pre {
             background: #1a1a1a;
             padding: 10px;
-            border-radius: 4px;
+            border: 1px solid #3a3a3a;
             overflow-x: auto;
             margin: 8px 0;
         }
         .record .content pre code {
             background: none;
             padding: 0;
+            border: none;
         }
         .record .content ul, .record .content ol {
             margin: 8px 0;
@@ -227,61 +281,91 @@
         .record .content table {
             border-collapse: collapse;
             margin: 8px 0;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             width: 100%;
         }
         .record .content th, .record .content td {
-            border: 1px solid #333;
+            border: 1px solid #3a3a3a;
             padding: 4px 8px;
         }
         .record .content th {
-            background: #222;
+            background: #1a1a1a;
         }
-        .stats {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.8rem;
+        /* Status bar */
+        .status-bar {
+            background: #1a1a1a;
+            border-top: 1px solid #3a3a3a;
+            padding: 8px 20px;
+            font-size: 0.7rem;
             color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        .status-bar .divider {
+            color: #3a3a3a;
+        }
+        .status-bar .connected {
+            color: #8e9a7c;
+        }
+        .status-bar .highlight {
+            color: #f6e7ca;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="central.svg" alt="central" class="logo">
-        <h1>central.comind.network</h1>
-        <div class="status connecting" id="status">Loading records...</div>
-        <div class="mode-toggle">
-            <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">interleaved</button>
-            <button id="btn-columns" onclick="setMode('columns')">grace mode</button>
+        <div class="header-line">════════════════════════════════════════════════════════════════════════════════</div>
+        <div class="header-content">
+            <span class="header-title">central.comind.network</span>
+            <div class="header-status">
+                <div class="status-indicator" id="status-dot"></div>
+                <span class="label" id="status-label">LOADING</span>
+            </div>
+            <div class="mode-toggle">
+                <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">interleaved</button>
+                <button id="btn-columns" onclick="setMode('columns')">grace</button>
+            </div>
+            <span class="header-meta" id="rate-display">--/min</span>
+        </div>
+        <div class="header-line">════════════════════════════════════════════════════════════════════════════════</div>
+    </div>
+    
+    <div class="main-content">
+        <div class="container" id="container">
+            <div class="feed" id="feed">
+                <div class="empty">waiting...</div>
+            </div>
+            <div class="columns-layout">
+                <div class="column prompt">
+                    <div class="column-header">prompt</div>
+                    <div class="column-feed" id="prompt-feed"></div>
+                </div>
+                <div class="column activity">
+                    <div class="column-header">activity</div>
+                    <div class="column-feed" id="activity-feed"></div>
+                </div>
+                <div class="column response">
+                    <div class="column-header">response</div>
+                    <div class="column-feed" id="response-feed"></div>
+                </div>
+                <div class="column reasoning">
+                    <div class="column-header">reasoning</div>
+                    <div class="column-feed" id="reasoning-feed"></div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="container" id="container">
-        <div class="feed" id="feed">
-            <div class="empty">waiting...</div>
-        </div>
-        <div class="columns-layout">
-            <div class="column prompt">
-                <h2>prompt</h2>
-                <div class="column-feed" id="prompt-feed"></div>
-            </div>
-            <div class="column activity">
-                <h2>activity</h2>
-                <div class="column-feed" id="activity-feed"></div>
-            </div>
-            <div class="column response">
-                <h2>response</h2>
-                <div class="column-feed" id="response-feed"></div>
-            </div>
-            <div class="column reasoning">
-                <h2>reasoning</h2>
-                <div class="column-feed" id="reasoning-feed"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stats" id="stats">
-        Records received: <span id="count">0</span>
+    <div class="status-bar" id="status-bar">
+        <span id="connection-status">CONNECTING</span>
+        <span class="divider">│</span>
+        <span><span class="highlight" id="count">0</span> events</span>
+        <span class="divider">│</span>
+        <span><span class="highlight" id="rate">0.0</span>/min</span>
+        <span class="divider">│</span>
+        <span>last: <span class="highlight" id="last-time">--:--:--</span></span>
     </div>
 
     <script>
@@ -304,6 +388,21 @@
         const allRecords = [];
         let currentMode = 'interleaved';
         
+        // Rate calculation
+        const eventTimes = [];
+        
+        function updateRate() {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            // Remove old events
+            while (eventTimes.length > 0 && eventTimes[0] < oneMinuteAgo) {
+                eventTimes.shift();
+            }
+            const rate = eventTimes.length;
+            document.getElementById('rate').textContent = rate.toFixed(1);
+            document.getElementById('rate-display').textContent = rate.toFixed(1) + '/min';
+        }
+        
         function setMode(mode) {
             currentMode = mode;
             const container = document.getElementById('container');
@@ -314,7 +413,10 @@
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
-            return date.toLocaleTimeString();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
         }
         
         function escapeHtml(text) {
@@ -325,6 +427,14 @@
         
         function addRecord(type, record, prepend = true) {
             const time = record.createdAt || new Date().toISOString();
+            const formattedTime = formatTime(time);
+            
+            // Update last time in status bar
+            document.getElementById('last-time').textContent = formattedTime;
+            
+            // Track for rate calculation
+            eventTimes.push(Date.now());
+            updateRate();
             
             let content = '';
             if (type === 'activity') {
@@ -341,9 +451,9 @@
             const el = document.createElement('div');
             el.className = `record ${type}`;
             el.innerHTML = `
-                <div class="meta">
+                <div class="record-header">
                     <span class="type">${TYPE_LABELS[type]}</span>
-                    <span class="time">${formatTime(time)}</span>
+                    <span class="time">${formattedTime}</span>
                 </div>
                 <div class="content">${content}</div>
             `;
@@ -364,7 +474,7 @@
                 const colEl = document.createElement('div');
                 colEl.className = `record ${type}`;
                 colEl.innerHTML = `
-                    <div class="time">${formatTime(time)}</div>
+                    <span class="col-time">${formattedTime}</span>
                     <div class="content">${content}</div>
                 `;
                 if (prepend) {
@@ -383,16 +493,39 @@
         
         let ws = null;
         
+        function setConnectionStatus(status) {
+            const dot = document.getElementById('status-dot');
+            const label = document.getElementById('status-label');
+            const barStatus = document.getElementById('connection-status');
+            
+            if (status === 'connected') {
+                dot.className = 'status-indicator live';
+                label.textContent = 'LIVE';
+                label.className = 'label';
+                barStatus.textContent = 'CONNECTED';
+                barStatus.className = 'connected';
+            } else if (status === 'connecting') {
+                dot.className = 'status-indicator connecting';
+                label.textContent = 'CONNECTING';
+                label.className = 'label connecting';
+                barStatus.textContent = 'CONNECTING';
+                barStatus.className = '';
+            } else {
+                dot.className = 'status-indicator';
+                label.textContent = 'OFFLINE';
+                label.className = 'label';
+                barStatus.textContent = 'DISCONNECTED';
+                barStatus.className = '';
+            }
+        }
+        
         function connect() {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = 'Connecting to Jetstream...';
-            statusEl.className = 'status connecting';
+            setConnectionStatus('connecting');
             
             ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`);
             
             ws.onopen = () => {
-                statusEl.textContent = 'Connected - Live';
-                statusEl.className = 'status connected';
+                setConnectionStatus('connected');
             };
             
             ws.onmessage = (event) => {
@@ -417,13 +550,11 @@
             
             ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                statusEl.textContent = 'Connection error - retrying...';
-                statusEl.className = 'status';
+                setConnectionStatus('error');
             };
             
             ws.onclose = () => {
-                statusEl.textContent = 'Disconnected - Reconnecting...';
-                statusEl.className = 'status';
+                setConnectionStatus('disconnected');
                 setTimeout(connect, 3000);
             };
         }
@@ -469,6 +600,9 @@
             const children = Array.from(feed.children);
             children.reverse().forEach(child => feed.appendChild(child));
         }
+        
+        // Update rate display periodically
+        setInterval(updateRate, 5000);
         
         // Load recent records, then connect to Jetstream
         loadRecent().then(() => connect());
