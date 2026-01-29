@@ -8,6 +8,15 @@
             "command": "uv run python hooks/publish-response.py"
           }
         ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/enforce-subagents.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
