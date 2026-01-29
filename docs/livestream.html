@@ -123,7 +123,7 @@
         .feed {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
         }
         /* Columns mode */
         .columns-layout {
@@ -163,10 +163,16 @@
             overflow-y: auto;
         }
         .column-feed .record {
-            border-left: none;
+            border-left: 3px solid;
             padding: 8px 10px;
             border-bottom: 1px solid #2a2a2a;
+            border-top: none;
+            border-right: none;
         }
+        .column-feed .record.activity { border-left-color: #e07042; }
+        .column-feed .record.response { border-left-color: #8e9a7c; background: #1e1e1e; }
+        .column-feed .record.reasoning { border-left-color: #efa04e; }
+        .column-feed .record.prompt { border-left-color: #7c9a8e; }
         .column-feed .record:last-child {
             border-bottom: none;
         }
@@ -179,17 +185,21 @@
             color: #555;
             margin-bottom: 4px;
         }
-        /* Record styling with box frames */
+        /* Record styling with thick left border */
         .record {
             background: #1a1a1a;
-            border: 1px solid #3a3a3a;
+            border: 1px solid #2a2a2a;
+            border-left: 4px solid #3a3a3a;
             animation: fadeIn 0.2s ease;
             position: relative;
         }
-        .record.activity { border-color: #e07042; }
-        .record.response { border-color: #8e9a7c; }
-        .record.reasoning { border-color: #efa04e; }
-        .record.prompt { border-color: #7c9a8e; }
+        .record.activity { border-left-color: #e07042; }
+        .record.response { 
+            border-left-color: #8e9a7c; 
+            background: #1e1e1e;
+        }
+        .record.reasoning { border-left-color: #efa04e; }
+        .record.prompt { border-left-color: #7c9a8e; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -198,14 +208,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 4px 10px;
+            padding: 6px 10px;
             border-bottom: 1px solid #2a2a2a;
             font-size: 0.7rem;
         }
-        .record.activity .record-header { border-bottom-color: #e07042; }
-        .record.response .record-header { border-bottom-color: #8e9a7c; }
-        .record.reasoning .record-header { border-bottom-color: #efa04e; }
-        .record.prompt .record-header { border-bottom-color: #7c9a8e; }
         .record .meta {
             display: flex;
             align-items: center;
@@ -214,20 +220,27 @@
         .record .type {
             font-size: 0.7rem;
             text-transform: lowercase;
+            font-weight: bold;
+            padding: 2px 6px;
+            background: rgba(0,0,0,0.3);
         }
-        .record.activity .type { color: #e07042; }
-        .record.response .type { color: #8e9a7c; }
-        .record.reasoning .type { color: #efa04e; }
-        .record.prompt .type { color: #7c9a8e; }
+        .record.activity .type { color: #ff8c5a; background: rgba(224,112,66,0.15); }
+        .record.response .type { color: #b0c4a0; background: rgba(142,154,124,0.15); }
+        .record.reasoning .type { color: #ffb870; background: rgba(239,160,78,0.15); }
+        .record.prompt .type { color: #9cbcae; background: rgba(124,154,142,0.15); }
         .record .time {
             font-size: 0.7rem;
-            color: #555;
+            color: #777;
         }
         .record .content {
             padding: 10px;
             font-size: 0.8rem;
             line-height: 1.5;
             word-break: break-word;
+            color: #e8dcc0;
+        }
+        .record.response .content {
+            color: #f0e4ca;
         }
         .record .col-time {
             display: none;
