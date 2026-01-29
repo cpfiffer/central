@@ -95,10 +95,19 @@ def list_queue():
 def set_response(uri: str, response: str):
     """Set response for a specific URI."""
     queue = load_queue()
-    found = False
     
+    # Check if already sent
+    sent_uris = load_sent_uris()
+    if uri in sent_uris:
+        print(f"⚠️  WARNING: URI already sent. Skipping.")
+        return
+    
+    found = False
     for item in queue:
         if item.get("uri") == uri:
+            author = item.get("author", "unknown")
+            if item.get("response"):
+                print(f"⚠️  WARNING: @{author} already has response. Overwriting.")
             item["response"] = response
             found = True
             break
@@ -118,9 +127,22 @@ def set_response_by_index(index: int, response: str):
         print(f"Invalid index {index}. Queue has {len(queue)} items.")
         return
     
-    queue[index]["response"] = response
+    item = queue[index]
+    uri = item.get("uri", "")
+    author = item.get("author", "unknown")
+    
+    # Check if already sent
+    sent_uris = load_sent_uris()
+    if uri in sent_uris:
+        print(f"⚠️  WARNING: Item {index} (@{author}) already sent. Skipping.")
+        return
+    
+    # Check if already has a response (prevent accidental overwrite)
+    if item.get("response"):
+        print(f"⚠️  WARNING: Item {index} (@{author}) already has response. Overwriting.")
+    
+    item["response"] = response
     save_queue(queue)
-    author = queue[index].get("author", "unknown")
     print(f"Set response for item {index} (@{author})")
 
 
