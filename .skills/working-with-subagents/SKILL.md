@@ -140,26 +140,50 @@ Subagents learn from interactions. To improve them:
 
 Their memory persists, so corrections compound over time.
 
-## Shared Memory
+## Shared Memory (Read-Only Protection)
 
-Subagents can share memory blocks with me. Use `tools/shared_memory.py`:
+Subagents have shared blocks that are **read-only** to prevent accidental modification:
 
-```bash
-# Set up shared blocks (requires Letta server)
-uv run python -m tools.shared_memory setup
-
-# Update concepts block with latest data
-uv run python -m tools.shared_memory update
-```
-
-**Shared blocks:**
+**Read-only shared blocks:**
 - `concepts_index` - Summary of semantic memory (agents, patterns)
 - `project_context` - Mission, key info, tone rules
+- `subagent_rules` - Operational constraints
 
-When I update these blocks, all subagents see the changes immediately.
+**Updating shared blocks** (central only, via Letta API):
+```python
+from letta_client import Letta
+client = Letta(api_key=os.environ.get('LETTA_API_KEY'))
+
+# Update shared block value
+client.blocks.update(
+    block_id='block-9090278f-d701-4ffa-b6a6-f4c164901c3f',  # concepts_index
+    value='new content...'
+)
+```
+
+**Block IDs:**
+- concepts_index: `block-9090278f-d701-4ffa-b6a6-f4c164901c3f`
+- project_context: `block-3674a422-4bd2-4230-9781-4fd6c2c290db`
+
+Subagents can READ these blocks but cannot modify them via memory tool. Only central can update them via the API.
+
+## Cost-Aware Selection
+
+**Billing**: Per STEP, not per token. Premium models have limited steps.
+
+| Task Type | Agent | Rationale |
+|-----------|-------|-----------|
+| Public posts, threads, bulk replies | **comms** | Needs careful tone |
+| Network exploration, API queries, testing | **scout** | Cheap, read-only |
+| Simple code edits (well-defined) | **coder** | Cheap, limited scope |
+| Complex code, architecture | **direct** | Smaller models make messes |
+| File ops, bash, git, status checks | **direct** | No subagent overhead |
+
+**Default to scout for non-posting tasks.** Reserve comms for actual public communications.
 
 ## When NOT to Use Subagents
 
 - **Simple reads**: Just use Read/Glob/Grep directly
 - **Quick one-liners**: Don't spawn an agent for trivial tasks
 - **Sensitive operations**: Keep auth/credential handling in main agent
+- **Complex code changes**: Smaller models (haiku) can make messes - do it yourself
