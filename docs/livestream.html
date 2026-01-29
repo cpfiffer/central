@@ -128,7 +128,7 @@
         /* Columns mode */
         .columns-layout {
             display: none;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 12px;
         }
         .columns-mode .feed {
@@ -156,6 +156,9 @@
         .column.activity .column-header { color: #e07042; border-bottom-color: #e07042; }
         .column.response .column-header { color: #8e9a7c; border-bottom-color: #8e9a7c; }
         .column.reasoning .column-header { color: #efa04e; border-bottom-color: #efa04e; }
+        .column.concept .column-header { color: #9c7cb3; border-bottom-color: #9c7cb3; }
+        .column.memory .column-header { color: #7ca3b3; border-bottom-color: #7ca3b3; }
+        .column.thought .column-header { color: #b3a07c; border-bottom-color: #b3a07c; }
         .column-feed {
             display: flex;
             flex-direction: column;
@@ -173,6 +176,9 @@
         .column-feed .record.response { border-left-color: #8e9a7c; background: #1e1e1e; }
         .column-feed .record.reasoning { border-left-color: #efa04e; }
         .column-feed .record.prompt { border-left-color: #7c9a8e; }
+        .column-feed .record.concept { border-left-color: #9c7cb3; }
+        .column-feed .record.memory { border-left-color: #7ca3b3; }
+        .column-feed .record.thought { border-left-color: #b3a07c; }
         .column-feed .record:last-child {
             border-bottom: none;
         }
@@ -200,6 +206,9 @@
         }
         .record.reasoning { border-left-color: #efa04e; }
         .record.prompt { border-left-color: #7c9a8e; }
+        .record.concept { border-left-color: #9c7cb3; }
+        .record.memory { border-left-color: #7ca3b3; }
+        .record.thought { border-left-color: #b3a07c; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -228,6 +237,9 @@
         .record.response .type { color: #b0c4a0; background: rgba(142,154,124,0.15); }
         .record.reasoning .type { color: #ffb870; background: rgba(239,160,78,0.15); }
         .record.prompt .type { color: #9cbcae; background: rgba(124,154,142,0.15); }
+        .record.concept .type { color: #c09cd3; background: rgba(156,124,179,0.15); }
+        .record.memory .type { color: #9cc3d3; background: rgba(124,163,179,0.15); }
+        .record.thought .type { color: #d3c09c; background: rgba(179,160,124,0.15); }
         .record .time {
             font-size: 0.7rem;
             color: #777;
@@ -367,6 +379,10 @@
                     <div class="column-header">reasoning</div>
                     <div class="column-feed" id="reasoning-feed"></div>
                 </div>
+                <div class="column thought">
+                    <div class="column-header">cognition</div>
+                    <div class="column-feed" id="cognition-feed"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -387,13 +403,19 @@
             'network.comind.activity': 'activity',
             'network.comind.response': 'response',
             'network.comind.reasoning': 'reasoning',
-            'network.comind.prompt': 'prompt'
+            'network.comind.prompt': 'prompt',
+            'network.comind.concept': 'concept',
+            'network.comind.memory': 'memory',
+            'network.comind.thought': 'thought'
         };
         const TYPE_LABELS = {
             'activity': 'activity',
             'response': 'response',
             'reasoning': 'reasoning',
-            'prompt': 'prompt'
+            'prompt': 'prompt',
+            'concept': 'concept',
+            'memory': 'memory',
+            'thought': 'thought'
         };
         
         let recordCount = 0;
@@ -452,6 +474,16 @@
             let content = '';
             if (type === 'activity') {
                 content = `<span class="tool">[${escapeHtml(record.tool || 'unknown')}]</span> ${escapeHtml(record.summary || '')}`;
+            } else if (type === 'concept') {
+                const title = record.concept || 'untitled';
+                const body = record.understanding || '';
+                const confidence = record.confidence ? ` (${record.confidence}%)` : '';
+                content = `<strong>${escapeHtml(title)}${confidence}</strong><br>${marked.parse(body)}`;
+            } else if (type === 'memory') {
+                const memType = record.type ? `[${record.type}] ` : '';
+                content = `<em>${escapeHtml(memType)}</em>${marked.parse(record.content || '')}`;
+            } else if (type === 'thought') {
+                content = marked.parse(record.thought || record.content || '');
             } else {
                 content = marked.parse(record.content || '');
             }
@@ -482,7 +514,9 @@
             }
             
             // Add to column feed
-            const colFeed = document.getElementById(`${type}-feed`);
+            // Route cognition types to unified cognition feed
+            const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
+            const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
                 const colEl = document.createElement('div');
                 colEl.className = `record ${type}`;
