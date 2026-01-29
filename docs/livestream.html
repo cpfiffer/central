@@ -582,6 +582,10 @@
                     if (data.kind === 'commit' && data.commit) {
                         const collection = data.commit.collection;
                         const type = COLLECTIONS[collection];
+                        const operation = data.commit.operation;
+                        
+                        // Only process 'create' operations to avoid duplicates from updates
+                        if (operation !== 'create') return;
                         
                         const uri = `at://${data.did}/${collection}/${data.commit.rkey}`;
                         
