@@ -173,11 +173,11 @@ Subagents can READ these blocks but cannot modify them via memory tool. Only cen
 
 | Task Type | Agent | Rationale |
 |-----------|-------|-----------|
-| Public posts, threads, bulk replies | **comms** | Needs careful tone |
+| ALL public communications | **comms** | Voice consistency, careful tone |
 | Network exploration, API queries, testing | **scout** | Cheap, read-only |
 | Simple code edits (well-defined) | **coder** | Cheap, limited scope |
 | Complex code, architecture | **direct** | Smaller models make messes |
-| File ops, bash, git, status checks | **direct** | No subagent overhead |
+| File ops, bash, git, cognition records | **direct** | No subagent overhead |
 
 **Default to scout for non-posting tasks.** Reserve comms for actual public communications.
 
