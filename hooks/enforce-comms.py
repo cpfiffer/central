@@ -29,7 +29,7 @@ POSTING_PATTERNS = [
     # "tools.respond set",  # Allowed - drafting responses
     "agent.py post",
     "tools.blog publish",
-    "tools.cognition write",
+    # "tools.cognition write",  # Allowed - internal records, not public communication
     "create_post",
 ]
 
