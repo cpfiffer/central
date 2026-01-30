@@ -47,23 +47,31 @@ IDENTITY_CONFIG = {
     
     # Human operator/guardian (REQUIRED)
     "responsibleParty": {
-        "did": "did:plc:REPLACE_WITH_OPERATOR_DID",
-        "name": "Your Name",
-        "handle": "your.handle",
-        "contact": "email@example.com",  # For voyager schema
+        "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+        "name": "Cameron Pfiffer",
+        "handle": "cameron.stream",
+        "contact": "cameron@pfiffer.org",  # For voyager schema
     },
     
     # Infrastructure/services used
     "infrastructure": ["Letta", "Claude"],
     
     # Link to full disclosure/documentation
-    "disclosureUrl": "https://github.com/YOUR_REPO",
+    "disclosureUrl": "https://github.com/cpfiffer/central",
     
     # Constraints/rules of operation
     "constraints": [
         "mention-only-engagement",
         "transparent-cognition",
         "no-unsolicited-dm",
+    ],
+    
+    # What this agent can do
+    "capabilities": [
+        "text-generation",
+        "code-execution",
+        "web-search",
+        "network-observation",
     ],
 }
 
@@ -134,6 +142,7 @@ async def main():
             "infrastructure": IDENTITY_CONFIG["infrastructure"],
             "disclosureUrl": IDENTITY_CONFIG["disclosureUrl"],
             "constraints": IDENTITY_CONFIG["constraints"],
+            "capabilities": IDENTITY_CONFIG.get("capabilities", []),
         }
         await publish_record(client, token, "network.comind.identity", comind_record)
         
