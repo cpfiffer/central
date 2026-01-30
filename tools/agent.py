@@ -656,6 +656,51 @@ class ComindAgent:
         
         console.print(f"[green]Profile updated[/green]")
         return response.json()
+    
+    async def publish_identity(
+        self,
+        collection: str,
+        record: dict,
+        rkey: str = "self"
+    ) -> dict:
+        """
+        Publish an identity record.
+        
+        Args:
+            collection: The collection (e.g., "network.comind.identity")
+            record: The record data (without $type, createdAt - added automatically)
+            rkey: Record key (default: "self")
+        
+        Returns:
+            dict with uri and cid
+        """
+        from datetime import datetime, timezone
+        
+        # Ensure required fields
+        full_record = {
+            "$type": collection,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            **record
+        }
+        
+        response = await self._client.post(
+            f"{self.pds}/xrpc/com.atproto.repo.putRecord",
+            headers=self.auth_headers,
+            json={
+                "repo": self.did,
+                "collection": collection,
+                "rkey": rkey,
+                "record": full_record
+            }
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to publish identity: {response.text}")
+        
+        result = response.json()
+        console.print(f"[green]Published {collection}/{rkey}[/green]")
+        console.print(f"URI: {result.get('uri')}")
+        return result
 
 
 async def post(text: str):
