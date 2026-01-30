@@ -30,6 +30,22 @@ from rich.table import Table
 load_dotenv()
 console = Console()
 
+# Track liked posts to prevent re-liking
+LIKED_CACHE_PATH = Path(__file__).parent.parent / 'data' / 'liked_posts.txt'
+
+
+def load_liked_cache() -> set:
+    """Load set of already-liked post URIs."""
+    if LIKED_CACHE_PATH.exists():
+        return set(LIKED_CACHE_PATH.read_text().strip().split('\n'))
+    return set()
+
+
+def save_liked_cache(liked: set):
+    """Save liked posts to cache file."""
+    LIKED_CACHE_PATH.parent.mkdir(exist_ok=True)
+    LIKED_CACHE_PATH.write_text('\n'.join(sorted(liked)))
+
 
 def get_client():
     """Get authenticated ATProto client."""
@@ -41,9 +57,13 @@ def get_client():
 def bulk_like(uris: list[str]) -> dict:
     """Like multiple posts in parallel."""
     client = get_client()
-    results = {'success': [], 'failed': []}
+    liked_cache = load_liked_cache()
+    results = {'success': [], 'failed': [], 'skipped': []}
     
     for uri in uris:
+        if uri in liked_cache:
+            results['skipped'].append(uri)
+            continue
         try:
             # Get post CID
             parts = uri.replace('at://', '').split('/')
@@ -57,10 +77,20 @@ def bulk_like(uris: list[str]) -> dict:
             # Like it
             client.like(uri, cid)
             results['success'].append(uri)
+            liked_cache.add(uri)
         except Exception as e:
-            results['failed'].append((uri, str(e)))
+            err = str(e).lower()
+            if 'already' in err:
+                results['skipped'].append(uri)
+                liked_cache.add(uri)
+            else:
+                results['failed'].append((uri, str(e)))
+    
+    save_liked_cache(liked_cache)
     
     console.print(f"[green]Liked {len(results['success'])} posts[/green]")
+    if results['skipped']:
+        console.print(f"[dim]Skipped {len(results['skipped'])} (already liked)[/dim]")
     if results['failed']:
         console.print(f"[yellow]Failed: {len(results['failed'])}[/yellow]")
     
@@ -71,6 +101,9 @@ def process_notifications(like_replies: bool = True, limit: int = 50) -> dict:
     """Process notification backlog efficiently."""
     client = get_client()
     
+    # Load cache of already-liked posts
+    liked_cache = load_liked_cache()
+    
     notifs = client.app.bsky.notification.list_notifications({'limit': limit})
     
     stats = {
@@ -78,7 +111,8 @@ def process_notifications(like_replies: bool = True, limit: int = 50) -> dict:
         'replies': 0,
         'follows': 0,
         'mentions': 0,
-        'liked_back': 0
+        'liked_back': 0,
+        'skipped': 0  # Already liked
     }
     
     to_like = []
@@ -99,14 +133,24 @@ def process_notifications(like_replies: bool = True, limit: int = 50) -> dict:
             if notif.uri:
                 to_like.append((notif.uri, notif.cid))
     
-    # Bulk like replies/mentions
+    # Bulk like replies/mentions (skip already-liked)
     if to_like:
         for uri, cid in to_like:
+            if uri in liked_cache:
+                stats['skipped'] += 1
+                continue
             try:
                 client.like(uri, cid)
                 stats['liked_back'] += 1
-            except:
-                pass
+                liked_cache.add(uri)
+            except Exception as e:
+                # "already liked" errors are fine, still add to cache
+                if 'already' in str(e).lower():
+                    liked_cache.add(uri)
+                    stats['skipped'] += 1
+    
+    # Save updated cache
+    save_liked_cache(liked_cache)
     
     # Mark as read
     try:
