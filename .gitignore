@@ -19,3 +19,7 @@ logs/
 !.letta/settings.json
 drafts/
 recon/
+
+# Runtime state (not source code)
+data/published_messages.txt
+data/chroma/
