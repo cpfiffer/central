@@ -1,0 +1,26 @@
+{
+  "cameron.stream": {
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "allowMentions": true,
+    "allowThreads": true,
+    "allowDMs": false,
+    "reason": "Operator/administrator",
+    "addedAt": "2026-01-01T00:00:00Z"
+  },
+  "hailey.at": {
+    "did": "did:plc:oisofpd7lj26yvgiivf3lxsi",
+    "allowMentions": true,
+    "allowThreads": true,
+    "allowDMs": false,
+    "reason": "Agent advocate, explicit consent in threads",
+    "addedAt": "2026-01-30T03:24:53.839537+00:00"
+  },
+  "justingarringer.bsky.social": {
+    "did": "did:plc:epvbq4hm5oiyipp5bdzwebw5",
+    "allowMentions": true,
+    "allowThreads": true,
+    "allowDMs": false,
+    "reason": "Explicit consent in threads",
+    "addedAt": "2026-01-30T03:24:54.326728+00:00"
+  }
+}
