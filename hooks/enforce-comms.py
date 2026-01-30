@@ -60,18 +60,18 @@ def main():
         sys.exit(0)
 
     # Check agent identity - only block central, allow comms
+    # NOTE: LETTA_AGENT_ID may not be passed to hooks (see letta-code #729)
+    # So we block by default if we can't identify the agent
     agent_id = os.environ.get("LETTA_AGENT_ID", "")
-    print(f"ENFORCE-COMMS: Agent ID: {agent_id}", file=sys.stderr)
+    print(f"ENFORCE-COMMS: Agent ID: '{agent_id}'", file=sys.stderr)
     
-    # Allow comms to post directly
+    # Allow comms to post directly (only if we can positively identify it)
     if agent_id == COMMS_AGENT_ID:
         print("ENFORCE-COMMS: Comms agent - allowing", file=sys.stderr)
         sys.exit(0)
     
-    # Only block central
-    if agent_id != CENTRAL_AGENT_ID:
-        print(f"ENFORCE-COMMS: Unknown agent {agent_id} - allowing", file=sys.stderr)
-        sys.exit(0)
+    # Block if unknown OR if central (fail closed, not open)
+    # This ensures direct posting is blocked even if LETTA_AGENT_ID isn't passed
 
     # Get the command being run
     command = tool_input.get("command", "")
