@@ -140,8 +140,13 @@ def post_to_collection(content: str, collection: str, record_type: str):
     
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
-    # Truncate to reasonable size
-    content = content[:500] if len(content) > 500 else content
+    # Truncate to reasonable size (generous limits - we have plenty of storage)
+    # Reasoning gets more space since that's the interesting thinking
+    if record_type == "network.comind.reasoning":
+        max_len = 5000
+    else:
+        max_len = 2000
+    content = content[:max_len] if len(content) > max_len else content
     
     record = {
         "$type": record_type,

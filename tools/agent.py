@@ -753,6 +753,7 @@ if __name__ == "__main__":
         print("  post <text>    - Create a post")
         print("  introduce      - Post introduction and set up profile")
         print("  profile        - Show my profile")
+        print("  like <uri>     - Like a post (uri should be like at://did:plc:.../...)")
         sys.exit(1)
     
     command = sys.argv[1]
@@ -768,5 +769,28 @@ if __name__ == "__main__":
                 profile = await agent.get_my_profile()
                 console.print(profile)
         asyncio.run(show_profile())
+    elif command == "like" and len(sys.argv) > 2:
+        uri = sys.argv[2]
+        # URI format: at://did:plc:xxx/app.bsky.feed.post/yyy
+        async def do_like():
+            async with ComindAgent() as agent:
+                try:
+                    # Fetch the post thread to get CID
+                    from tools.explore import get_post_thread
+                    thread = await get_post_thread(uri, depth=0)
+                    if thread and 'thread' in thread and 'post' in thread['thread']:
+                        post = thread['thread']['post']
+                        cid = post.get('cid')
+                        if cid:
+                            result = await agent.like(uri, cid)
+                            console.print(f"[green]✓ Liked post[/green]")
+                            console.print(f"  URI: {uri}")
+                        else:
+                            console.print(f"[red]Could not extract CID from post[/red]")
+                    else:
+                        console.print(f"[red]Could not retrieve post[/red]")
+                except Exception as e:
+                    console.print(f"[red]Error liking post: {e}[/red]")
+        asyncio.run(do_like())
     else:
         print(f"Unknown command: {command}")
