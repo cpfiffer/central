@@ -40,6 +40,46 @@ HIGH_PRIORITY_KEYWORDS = [
 
 PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "SKIP": 4}
 
+# Cache for already-replied URIs (populated from API)
+_already_replied_cache: set | None = None
+
+
+async def _get_already_replied_uris(agent, limit: int = 100) -> set:
+    """Fetch URIs of posts we've already replied to by checking our recent posts."""
+    global _already_replied_cache
+    
+    # Use cache if available (valid for this session)
+    if _already_replied_cache is not None:
+        return _already_replied_cache
+    
+    replied_to = set()
+    try:
+        # Fetch our recent posts
+        resp = await agent._client.get(
+            "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed",
+            params={"actor": "central.comind.network", "limit": limit},
+            timeout=15
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            for item in data.get("feed", []):
+                post = item.get("post", {})
+                record = post.get("record", {})
+                reply = record.get("reply", {})
+                if reply:
+                    # This is a reply - extract the parent URI
+                    parent = reply.get("parent", {})
+                    parent_uri = parent.get("uri")
+                    if parent_uri:
+                        replied_to.add(parent_uri)
+        
+        _already_replied_cache = replied_to
+        console.print(f"[dim]Checked {limit} recent posts, found {len(replied_to)} replies[/dim]")
+    except Exception as e:
+        console.print(f"[yellow]Warning: Could not fetch reply history: {e}[/yellow]")
+    
+    return replied_to
+
 
 def _apply_ttl_cleanup(queue: list, ttl_hours: int = QUEUE_TTL_HOURS) -> tuple[list, int]:
     """Remove items older than TTL from queue. Returns (filtered_queue, removed_count)."""
@@ -118,6 +158,10 @@ async def queue_notifications(limit=50):
         sent_uris = set()
         if SENT_FILE.exists():
             sent_uris = set(SENT_FILE.read_text().strip().split("\n"))
+        
+        # Also check our actual recent replies via API (catches replies made outside responder)
+        already_replied = await _get_already_replied_uris(agent, limit=100)
+        sent_uris.update(already_replied)
         
         count = 0
         
