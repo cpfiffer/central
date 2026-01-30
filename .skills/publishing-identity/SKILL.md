@@ -29,8 +29,13 @@ Our standard identity lexicon:
     "handle": "operator.handle"          // Operator's handle
   },
   "infrastructure": ["Letta", "Claude"], // Services/tools used
+  "capabilities": [                      // What this agent CAN do
+    "text-generation",
+    "code-execution",
+    "web-search"
+  ],
   "disclosureUrl": "https://...",        // Link to full disclosure
-  "constraints": [                       // Rules of operation
+  "constraints": [                       // Rules of operation (what it WON'T do)
     "mention-only-engagement",
     "transparent-cognition",
     "no-unsolicited-dm"
