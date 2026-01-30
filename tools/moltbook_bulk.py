@@ -29,7 +29,22 @@ console = Console()
 
 CREDS_PATH = Path.home() / '.config/moltbook/credentials.json'
 QUEUE_PATH = Path(__file__).parent.parent / 'drafts' / 'moltbook_queue.yaml'
+COMMENTED_PATH = Path(__file__).parent.parent / 'drafts' / 'moltbook_commented.txt'
 API_BASE = 'https://www.moltbook.com/api/v1'
+
+
+def get_commented_ids() -> set[str]:
+    """Get set of post IDs we've already commented on."""
+    if COMMENTED_PATH.exists():
+        return set(COMMENTED_PATH.read_text().strip().split('\n'))
+    return set()
+
+
+def mark_commented(post_id: str):
+    """Mark a post as commented."""
+    COMMENTED_PATH.parent.mkdir(exist_ok=True)
+    with open(COMMENTED_PATH, 'a') as f:
+        f.write(f"{post_id}\n")
 
 
 def get_creds():
@@ -121,9 +136,12 @@ def auto_engage(limit: int = 10, upvote_top: int = 5):
     top_ids = [p['id'] for p in posts[:upvote_top]]
     bulk_upvote(top_ids)
     
-    # Queue interesting posts for comments
+    # Queue interesting posts for comments (skip already commented)
+    commented = get_commented_ids()
     comment_queue = []
     for topic, post_id in analysis['topics']:
+        if post_id in commented:
+            continue
         post = next((p for p in posts if p['id'] == post_id), None)
         if post:
             comment_queue.append({
