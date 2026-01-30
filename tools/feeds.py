@@ -14,8 +14,8 @@ console = Console()
 
 PUBLIC_API = "https://public.api.bsky.app"
 
-# Feed categories
-FEEDS = {
+# Account categories (individual feeds)
+ACCOUNTS = {
     "comind": [
         "central.comind.network",
         "void.comind.network",
@@ -41,6 +41,17 @@ FEEDS = {
     ],
 }
 
+# Algorithmic feed generators
+ALGO_FEEDS = {
+    "discover": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot",
+    "for-you": "at://did:plc:3guzzweuqraryl3rdkimjamk/app.bsky.feed.generator/for-you",
+    "with-friends": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/with-friends",
+    "hot-classic": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/hot-classic",
+}
+
+# Legacy alias
+FEEDS = ACCOUNTS
+
 
 def fetch_feed(handle: str, limit: int = 10) -> list:
     """Fetch recent posts from an account."""
@@ -55,6 +66,23 @@ def fetch_feed(handle: str, limit: int = 10) -> list:
         return resp.json().get("feed", [])
     except Exception as e:
         console.print(f"[dim]Error fetching {handle}: {e}[/dim]")
+        return []
+
+
+def fetch_algo_feed(feed_uri: str, limit: int = 20) -> list:
+    """Fetch posts from an algorithmic feed generator."""
+    try:
+        resp = httpx.get(
+            f"{PUBLIC_API}/xrpc/app.bsky.feed.getFeed",
+            params={"feed": feed_uri, "limit": limit},
+            timeout=15
+        )
+        if resp.status_code != 200:
+            console.print(f"[dim]Error: {resp.status_code}[/dim]")
+            return []
+        return resp.json().get("feed", [])
+    except Exception as e:
+        console.print(f"[dim]Error fetching feed: {e}[/dim]")
         return []
 
 
@@ -152,6 +180,56 @@ def sweep(categories: list = None, limit: int = 10):
             console.print(f"  {cat}: avg engagement {avg_eng:.1f}, reply ratio {avg_reply_ratio*100:.0f}%")
 
 
+def trending(feed_name: str = "discover", limit: int = 20):
+    """Show trending posts from an algorithmic feed."""
+    if feed_name not in ALGO_FEEDS:
+        console.print(f"[red]Unknown feed: {feed_name}[/red]")
+        console.print(f"Available: {', '.join(ALGO_FEEDS.keys())}")
+        return
+    
+    console.print(f"\n[bold]{feed_name.upper()} Feed[/bold] - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+    
+    feed = fetch_algo_feed(ALGO_FEEDS[feed_name], limit)
+    
+    if not feed:
+        console.print("[yellow]No posts found[/yellow]")
+        return
+    
+    table = Table(title=f"Top {len(feed)} from {feed_name}")
+    table.add_column("#", style="dim")
+    table.add_column("Author", style="cyan", max_width=20, no_wrap=True)
+    table.add_column("Content", max_width=45)
+    table.add_column("Likes", justify="right")
+    table.add_column("Replies", justify="right")
+    table.add_column("Reposts", justify="right")
+    
+    for i, item in enumerate(feed, 1):
+        post = item.get("post", {})
+        author = post.get("author", {}).get("handle", "?")
+        text = post.get("record", {}).get("text", "")[:47].replace("\n", " ")
+        if len(post.get("record", {}).get("text", "")) > 47:
+            text += "..."
+        likes = post.get("likeCount", 0)
+        replies = post.get("replyCount", 0)
+        reposts = post.get("repostCount", 0)
+        
+        table.add_row(
+            str(i),
+            author[:25],
+            text,
+            str(likes),
+            str(replies),
+            str(reposts)
+        )
+    
+    console.print(table)
+    
+    # Summary
+    total_likes = sum(item.get("post", {}).get("likeCount", 0) for item in feed)
+    avg_likes = total_likes / len(feed) if feed else 0
+    console.print(f"\n[dim]Avg likes: {avg_likes:.0f} | Total engagement: {total_likes}[/dim]")
+
+
 def compare(handle1: str, handle2: str, limit: int = 20):
     """Compare two accounts."""
     console.print(f"\n[bold]Comparing @{handle1} vs @{handle2}[/bold]\n")
@@ -196,6 +274,14 @@ if __name__ == "__main__":
     compare_parser.add_argument("--limit", "-n", type=int, default=20,
                                help="Posts to analyze (default: 20)")
     
+    # trending command
+    trending_parser = subparsers.add_parser("trending", help="Show trending posts from algorithmic feeds")
+    trending_parser.add_argument("feed", nargs="?", default="discover",
+                                choices=list(ALGO_FEEDS.keys()),
+                                help="Feed to check (default: discover)")
+    trending_parser.add_argument("--limit", "-n", type=int, default=20,
+                                help="Number of posts (default: 20)")
+    
     # list command
     subparsers.add_parser("list", help="List tracked feeds")
     
@@ -205,10 +291,16 @@ if __name__ == "__main__":
         sweep(categories=args.categories, limit=args.limit)
     elif args.command == "compare":
         compare(args.handle1, args.handle2, limit=args.limit)
+    elif args.command == "trending":
+        trending(feed_name=args.feed, limit=args.limit)
     elif args.command == "list":
-        for cat, handles in FEEDS.items():
+        console.print("[bold]Account Categories:[/bold]")
+        for cat, handles in ACCOUNTS.items():
             console.print(f"[cyan]{cat}:[/cyan]")
             for h in handles:
                 console.print(f"  @{h}")
+        console.print("\n[bold]Algorithmic Feeds:[/bold]")
+        for name, uri in ALGO_FEEDS.items():
+            console.print(f"[cyan]{name}:[/cyan] {uri[:50]}...")
     else:
         parser.print_help()
