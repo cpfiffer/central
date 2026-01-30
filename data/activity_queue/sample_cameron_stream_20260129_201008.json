@@ -1,0 +1,109 @@
+[
+  {
+    "timestamp": "2026-01-30T02:13:39.181Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "post",
+    "content": "",
+    "uri": "at://did:plc:p572wxnsuoogcrhlfrlizlrb/app.bsky.feed.post/3mdma4s5wni2l",
+    "likes": 77,
+    "replies": 8
+  },
+  {
+    "timestamp": "2026-01-30T04:00:02.307Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "post",
+    "content": "It's time to go home when the motion sensing lights in the office go off",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmg2zkhi22q",
+    "likes": 2,
+    "replies": 1
+  },
+  {
+    "timestamp": "2026-01-30T03:55:47.879Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "post",
+    "content": "letta.bot now has Discord support.\n\nIt'll rewrite it in rust but it won't rewrite it in Brainfuck.",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmftgvc4s2f",
+    "likes": 2,
+    "replies": 0
+  },
+  {
+    "timestamp": "2026-01-30T03:55:02.412Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "done",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmfs3jprs2f",
+    "likes": 1,
+    "replies": 1,
+    "reply_to": "at://did:plc:bcjjfiwojaixucdtemqhpv6e/app.bsky.feed.post/3mdmeno4rr226"
+  },
+  {
+    "timestamp": "2026-01-30T03:07:14.403Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "Lettabot vs. clawdbot",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmd4mezqk2v",
+    "likes": 1,
+    "replies": 1,
+    "reply_to": "at://did:plc:boia3kqcyo3qnjw5fmqknib4/app.bsky.feed.post/3mdmalkyvms2x"
+  },
+  {
+    "timestamp": "2026-01-30T03:01:59.784Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "I bet @central.comind.network could provide a general purpose tool like this to queue up ATProto-specific information for lettabot users.",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmctanaak2a",
+    "likes": 1,
+    "replies": 0,
+    "reply_to": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmctan7bc2a"
+  },
+  {
+    "timestamp": "2026-01-30T03:01:59.783Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "My rec:\n\n- Jetstream to listen to you and some record types\n- Formatter to unroll threads\n- Queue dumped into a folder somewhere\n- Ask the agent to peruse it during its heartbeat",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmctan7bc2a",
+    "likes": 1,
+    "replies": 1,
+    "reply_to": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmctadkoc2a"
+  },
+  {
+    "timestamp": "2026-01-30T03:01:59.782Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "Gotcha. Very doable.\n\nThis would require some infrastructure on your part, but I think it's reasonably easy to vibe code.",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmctadkoc2a",
+    "likes": 1,
+    "replies": 1,
+    "reply_to": "at://did:plc:zviscnpwyvj6y32agi5davn5/app.bsky.feed.post/3mdmadstlkk2w"
+  },
+  {
+    "timestamp": "2026-01-30T02:18:12.888Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "all homelabs are terrible. do not permit order.",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmaex55i22a",
+    "likes": 0,
+    "replies": 0,
+    "reply_to": "at://did:plc:nn6fyledleoatkibhocaz75e/app.bsky.feed.post/3mdma62pxdc2t"
+  },
+  {
+    "timestamp": "2026-01-30T02:17:30.764Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "This is a recording of a live event, I cannot change time",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdmadoxlrs2a",
+    "likes": 0,
+    "replies": 1,
+    "reply_to": "at://did:plc:boia3kqcyo3qnjw5fmqknib4/app.bsky.feed.post/3mdm7wk3bhc2x"
+  },
+  {
+    "timestamp": "2026-01-30T02:12:47.895Z",
+    "did": "did:plc:gfrmhdmjvxn2sjedzboeudef",
+    "type": "reply",
+    "content": "Oh, interesting. Can you walk me through a short example? might be able to get something.",
+    "uri": "at://did:plc:gfrmhdmjvxn2sjedzboeudef/app.bsky.feed.post/3mdma3b75is2v",
+    "likes": 1,
+    "replies": 1,
+    "reply_to": "at://did:plc:zviscnpwyvj6y32agi5davn5/app.bsky.feed.post/3mdm7uwwrc22w"
+  }
+]
