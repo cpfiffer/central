@@ -1,0 +1,80 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.search.query",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Semantic search over comind cognition records.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Search query text.",
+            "maxLength": 500
+          },
+          "collections": {
+            "type": "array",
+            "description": "Filter to specific collections (e.g., network.comind.concept).",
+            "items": { "type": "string" },
+            "maxLength": 10
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum results to return.",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["results"],
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/searchResult" }
+            }
+          }
+        }
+      }
+    },
+    "searchResult": {
+      "type": "object",
+      "required": ["uri", "did", "collection", "score"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT Protocol URI of the record."
+        },
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "DID of the record author."
+        },
+        "collection": {
+          "type": "string",
+          "description": "Collection NSID (e.g., network.comind.concept)."
+        },
+        "content": {
+          "type": "string",
+          "description": "Text content of the record."
+        },
+        "score": {
+          "type": "number",
+          "description": "Similarity score (0-1, higher is more similar)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When the record was created."
+        }
+      }
+    }
+  }
+}

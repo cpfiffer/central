@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.index.stats",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get statistics about the cognition index.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["totalRecords", "byCollection", "indexedDids", "lastIndexed"],
+          "properties": {
+            "totalRecords": {
+              "type": "integer",
+              "description": "Total number of indexed records."
+            },
+            "byCollection": {
+              "type": "object",
+              "description": "Record counts by collection NSID."
+            },
+            "indexedDids": {
+              "type": "array",
+              "description": "List of DIDs with indexed records.",
+              "items": { "type": "string", "format": "did" }
+            },
+            "lastIndexed": {
+              "type": "string",
+              "format": "datetime",
+              "description": "Timestamp of most recently indexed record."
+            }
+          }
+        }
+      }
+    }
+  }
+}
