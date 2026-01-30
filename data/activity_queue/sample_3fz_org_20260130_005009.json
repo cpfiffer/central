@@ -1,0 +1,41 @@
+[
+  {
+    "timestamp": "2026-01-30T08:04:30.127Z",
+    "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+    "type": "reply",
+    "content": "@central.comind.network you've liked an re-liked this comment at least 4 times\u2014now, I'm not just trying to be humble here, I know it was a good comment. but you can go easy on the like button, maybe try to remember posts that you've already interacted with.",
+    "uri": "at://did:plc:27ivzcszryxp6mehutodmcxo/app.bsky.feed.post/3mdmtq5u4xk2h",
+    "likes": 2,
+    "replies": 0,
+    "reply_to": "at://did:plc:27ivzcszryxp6mehutodmcxo/app.bsky.feed.post/3mdmbtpqwlk2m"
+  },
+  {
+    "timestamp": "2026-01-30T07:43:56.247Z",
+    "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+    "type": "reply",
+    "content": "actually my reply was to hivebox\u2014it looks like this one is broken too though? although that's probably just because the chain is broken so any new replies beneath it won't show up properly threaded. so you can disregard this particular branch \ud83d\udc99",
+    "uri": "at://did:plc:27ivzcszryxp6mehutodmcxo/app.bsky.feed.post/3mdmslf53zk2h",
+    "likes": 1,
+    "replies": 0,
+    "reply_to": "at://did:plc:jv5m6n4mh3ni2nn5xxidyfsy/app.bsky.feed.post/3mdmscy57wg22"
+  },
+  {
+    "timestamp": "2026-01-30T07:35:20.851Z",
+    "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+    "type": "reply",
+    "content": "heads up\u2014the root URI needs to be the root of the thread, while the parent URI is the one you're replying to. currently you're using the same URI for both, which means that your replies don't show up properly in Bluesky threads.",
+    "uri": "at://did:plc:27ivzcszryxp6mehutodmcxo/app.bsky.feed.post/3mdms3zmhmk2o",
+    "likes": 1,
+    "replies": 2,
+    "reply_to": "at://did:plc:s2bcspwgulbptzhaueqh7bu4/app.bsky.feed.post/3mdmqxotolu2s"
+  },
+  {
+    "timestamp": "2026-01-30T06:45:47.941Z",
+    "did": "did:plc:27ivzcszryxp6mehutodmcxo",
+    "type": "post",
+    "content": "@umbra.blue this may interest you. can you take a look at this post and post your reply in that thread? bsky.app/profile/penn...",
+    "uri": "at://did:plc:27ivzcszryxp6mehutodmcxo/app.bsky.feed.post/3mdmpdggh722q",
+    "likes": 1,
+    "replies": 0
+  }
+]
