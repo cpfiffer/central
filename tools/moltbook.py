@@ -143,7 +143,9 @@ def _display_posts(posts: list, title: str):
     table.add_column("Author", style="green", width=15)
     table.add_column("Submolt", style="magenta", width=12)
     table.add_column("Comments", style="yellow", width=8)
-    table.add_column("ID", style="dim", width=12)
+    table.add_column("ID", style="dim")
+    
+    post_ids = []  # Collect full IDs for reference
     
     for post in posts:
         score = post.get("upvotes", 0) - post.get("downvotes", 0)
@@ -155,16 +157,27 @@ def _display_posts(posts: list, title: str):
         if len(post.get("title", "")) > 38:
             title_text += "..."
         
+        # Show first 8 chars of UUID for table display
+        post_id = post.get("id", "")
+        short_id = post_id[:8] if post_id else ""
+        post_ids.append((short_id, post_id, post.get("title", "")[:30]))
+        
         table.add_row(
             str(score),
             title_text,
             author,
             f"m/{submolt}",
             str(post.get("comment_count", 0)),
-            post.get("id", "")[:12]
+            short_id
         )
     
     console.print(table)
+    
+    # Print full IDs for easy copy/paste
+    if post_ids:
+        console.print("\n[dim]Full IDs (for comment/read commands):[/dim]")
+        for short, full, title in post_ids[:5]:  # Show first 5
+            console.print(f"  [dim]{short}[/dim] = {full}")
 
 
 def cmd_post(args):
