@@ -19,6 +19,10 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
+# Add parent to path for tools import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tools.db import is_message_published, mark_message_published, init_db
+
 # Redaction patterns for secrets (backup safety)
 REDACT_PATTERNS = [
     (r'[A-Za-z_]*API_KEY[=:]\s*\S+', '[REDACTED_KEY]'),
@@ -136,22 +140,16 @@ def get_recent_messages(limit: int = 20) -> list:
 
 def publish_messages():
     """Publish any new assistant/reasoning messages."""
-    published_file = Path(__file__).parent.parent / "data" / "published_messages.txt"
-    
-    try:
-        published_ids = set(published_file.read_text().splitlines())
-    except:
-        published_ids = set()
+    init_db()
     
     messages = get_recent_messages(limit=30)
     session = get_session()
     if not session:
         return
     
-    new_ids = []
     for msg in messages:
         msg_id = msg.get("id", "")
-        if msg_id in published_ids:
+        if is_message_published(msg_id):
             continue
         
         content = msg.get("content", "")
@@ -176,13 +174,8 @@ def publish_messages():
             timeout=10
         )
         if resp.status_code == 200:
-            new_ids.append(msg_id)
+            mark_message_published(msg_id)
             print(f"Published to {collection}", file=sys.stderr)
-    
-    if new_ids:
-        with open(published_file, "a") as f:
-            for mid in new_ids:
-                f.write(mid + "\n")
 
 
 def main():

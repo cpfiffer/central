@@ -16,6 +16,10 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
+# Add parent to path for tools import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tools.db import is_message_published, mark_message_published, init_db
+
 # Use script directory for relative paths
 SCRIPT_DIR = Path(__file__).parent.parent
 load_dotenv(SCRIPT_DIR / ".env")
@@ -185,21 +189,15 @@ def main():
     if event_type not in ("PreToolUse", "Stop"):
         sys.exit(0)
     
-    # Track which messages we've already published
-    published_file = SCRIPT_DIR / "data/published_messages.txt"
-    try:
-        with open(published_file) as f:
-            published_ids = set(f.read().splitlines())
-    except:
-        published_ids = set()
+    # Ensure database exists
+    init_db()
     
     # Fetch recent assistant + reasoning messages from Letta API
     messages = get_recent_messages(limit=30)
     
-    new_ids = []
     for msg in messages:
         msg_id = msg.get("id", "")
-        if msg_id in published_ids:
+        if is_message_published(msg_id):
             continue
         
         content = msg.get("content", "")
@@ -214,13 +212,9 @@ def main():
             post_to_collection(content, "network.comind.prompt", "network.comind.prompt")
         else:
             post_to_collection(content, "network.comind.response", "network.comind.response")
-        new_ids.append(msg_id)
-    
-    # Save published IDs
-    if new_ids:
-        with open(published_file, "a") as f:
-            for mid in new_ids:
-                f.write(mid + "\n")
+        
+        # Mark as published in SQLite
+        mark_message_published(msg_id)
     
     sys.exit(0)
 

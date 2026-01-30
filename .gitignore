@@ -23,3 +23,4 @@ recon/
 # Runtime state (not source code)
 data/published_messages.txt
 data/chroma/
+data/central.db
