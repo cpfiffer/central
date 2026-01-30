@@ -96,6 +96,52 @@ def get_collection(client):
     )
 
 
+def index_single_record(uri: str, content: str, record_type: str, agent: str = "central"):
+    """
+    Index a single record immediately after creation.
+    Called by cognition.py after writing thoughts/concepts/memories.
+    
+    Args:
+        uri: The at:// URI of the record
+        content: The text content to index
+        record_type: 'thought', 'concept', or 'memory'
+        agent: Agent name (default: central)
+    """
+    if not uri or not content:
+        return False
+    
+    try:
+        client = get_client()
+        collection = get_collection(client)
+        
+        # Check if already indexed
+        try:
+            existing = collection.get(ids=[uri])
+            if existing and existing["ids"]:
+                return True  # Already indexed
+        except:
+            pass
+        
+        # Index the record
+        agent_config = KNOWN_AGENTS.get(agent, KNOWN_AGENTS["central"])
+        collection.add(
+            ids=[uri],
+            documents=[content],
+            metadatas=[{
+                "agent": agent,
+                "handle": agent_config["handle"],
+                "collection": f"network.comind.{record_type}",
+                "created": datetime.utcnow().isoformat(),
+                "type": record_type,
+            }]
+        )
+        return True
+    except Exception as e:
+        # Silent fail - don't break writes if indexing fails
+        console.print(f"[dim]Index failed: {e}[/dim]")
+        return False
+
+
 async def fetch_records(agent_config: dict, collection_name: str) -> list[dict]:
     """Fetch all records from a collection for a specific agent."""
     async with httpx.AsyncClient() as http:

@@ -159,7 +159,17 @@ async def write_concept(
     action = "Updating" if existing else "Creating"
     conf_str = f" ({confidence}%)" if confidence else ""
     console.print(f"[cyan]{action} concept:[/cyan] {concept}{conf_str}")
-    return await put_record("network.comind.concept", rkey, record)
+    result = await put_record("network.comind.concept", rkey, record)
+    
+    # Auto-index for semantic search
+    try:
+        from tools.cognition_search import index_single_record
+        index_content = understanding or concept
+        index_single_record(result.get("uri", ""), index_content, "concept")
+    except Exception:
+        pass  # Don't fail write if indexing fails
+    
+    return result
 
 
 async def get_concept(concept_key: str) -> dict | None:
@@ -232,7 +242,16 @@ async def write_memory(
     
     type_str = f"[{memory_type}] " if memory_type else ""
     console.print(f"[cyan]Writing memory:[/cyan] {type_str}{content[:50]}...")
-    return await create_record("network.comind.memory", record)
+    result = await create_record("network.comind.memory", record)
+    
+    # Auto-index for semantic search
+    try:
+        from tools.cognition_search import index_single_record
+        index_single_record(result.get("uri", ""), content, "memory")
+    except Exception:
+        pass  # Don't fail write if indexing fails
+    
+    return result
 
 
 async def list_memories(limit: int = 20) -> list:
@@ -285,7 +304,16 @@ async def write_thought(
     
     type_str = f"[{thought_type}] " if thought_type else ""
     console.print(f"[cyan]Writing thought:[/cyan] {type_str}{thought[:50]}...")
-    return await create_record("network.comind.thought", record)
+    result = await create_record("network.comind.thought", record)
+    
+    # Auto-index for semantic search
+    try:
+        from tools.cognition_search import index_single_record
+        index_single_record(result.get("uri", ""), thought, "thought")
+    except Exception:
+        pass  # Don't fail write if indexing fails
+    
+    return result
 
 
 async def list_thoughts(limit: int = 20) -> list:
