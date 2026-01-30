@@ -467,75 +467,30 @@
             // Update last time in status bar
             document.getElementById('last-time').textContent = formattedTime;
             
-            // Track for rate calculation
+            // Track for rate calculation (live events only)
             eventTimes.push(Date.now());
             updateRate();
             
-            let content = '';
-            if (type === 'activity') {
-                content = `<span class="tool">[${escapeHtml(record.tool || 'unknown')}]</span> ${escapeHtml(record.summary || '')}`;
-            } else if (type === 'concept') {
-                const title = record.concept || 'untitled';
-                const body = record.understanding || '';
-                const confidence = record.confidence ? ` (${record.confidence}%)` : '';
-                content = `<strong>${escapeHtml(title)}${confidence}</strong><br>${marked.parse(body)}`;
-            } else if (type === 'memory') {
-                const memType = record.type ? `[${record.type}] ` : '';
-                content = `<em>${escapeHtml(memType)}</em>${marked.parse(record.content || '')}`;
-            } else if (type === 'thought') {
-                content = marked.parse(record.thought || record.content || '');
-            } else {
-                content = marked.parse(record.content || '');
-            }
-            
-            // Add to interleaved feed
+            // Clear empty state if present
             const feed = document.getElementById('feed');
             const empty = feed.querySelector('.empty');
             if (empty) empty.remove();
             
-            const el = document.createElement('div');
-            el.className = `record ${type}`;
-            el.innerHTML = `
-                <div class="record-header">
-                    <span class="type">${TYPE_LABELS[type]}</span>
-                    <span class="time">${formattedTime}</span>
-                </div>
-                <div class="content">${content}</div>
-            `;
+            // Use shared function for actual rendering
+            addRecordToFeeds(type, record, prepend);
             
-            if (prepend) {
-                feed.insertBefore(el, feed.firstChild);
-            } else {
-                feed.appendChild(el);
-            }
-            
+            // Trim feeds to max length
             while (feed.children.length > 100) {
                 feed.removeChild(feed.lastChild);
             }
             
-            // Add to column feed
-            // Route cognition types to unified cognition feed
             const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
             const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
-                const colEl = document.createElement('div');
-                colEl.className = `record ${type}`;
-                colEl.innerHTML = `
-                    <span class="col-time">${formattedTime}</span>
-                    <div class="content">${content}</div>
-                `;
-                if (prepend) {
-                    colFeed.insertBefore(colEl, colFeed.firstChild);
-                } else {
-                    colFeed.appendChild(colEl);
-                }
                 while (colFeed.children.length > 50) {
                     colFeed.removeChild(colFeed.lastChild);
                 }
             }
-            
-            recordCount++;
-            document.getElementById('count').textContent = recordCount;
         }
         
         let ws = null;
@@ -615,8 +570,8 @@
             const pds = 'https://comind.network';
             const allItems = [];
             
-            // Fetch from all collections
-            for (const [collection, type] of Object.entries(COLLECTIONS)) {
+            // Fetch from all collections in parallel
+            const fetchPromises = Object.entries(COLLECTIONS).map(async ([collection, type]) => {
                 try {
                     const resp = await fetch(
                         `${pds}/xrpc/com.atproto.repo.listRecords?repo=${DID}&collection=${collection}&limit=30`
@@ -624,32 +579,105 @@
                     const data = await resp.json();
                     
                     if (data.records) {
-                        data.records.forEach(r => {
+                        return data.records.map(r => {
                             seenUris.add(r.uri);
-                            allItems.push({
+                            return {
                                 type,
                                 record: r.value,
-                                time: new Date(r.value.createdAt || 0).getTime()
-                            });
+                                time: new Date(r.value.createdAt || 0).getTime(),
+                                uri: r.uri  // for stable sort tiebreaker
+                            };
                         });
                     }
+                    return [];
                 } catch (e) {
                     console.error(`Failed to load ${collection}:`, e);
+                    return [];
+                }
+            });
+            
+            const results = await Promise.all(fetchPromises);
+            results.forEach(items => allItems.push(...items));
+            
+            // Sort by time descending (newest first = display order)
+            // Use URI as stable tiebreaker for same-timestamp records
+            allItems.sort((a, b) => {
+                if (b.time !== a.time) return b.time - a.time;
+                return b.uri.localeCompare(a.uri);
+            });
+            
+            // Clear empty state
+            const feed = document.getElementById('feed');
+            const empty = feed.querySelector('.empty');
+            if (empty) empty.remove();
+            
+            // Add in display order (newest first, appending preserves order)
+            // Use a document fragment for efficient batch insertion
+            allItems.forEach(item => {
+                addRecordToFeeds(item.type, item.record, false);
+            });
+        }
+        
+        // Separate function to add to feeds without rate tracking (for backfill)
+        function addRecordToFeeds(type, record, prepend) {
+            const time = record.createdAt || new Date().toISOString();
+            const formattedTime = formatTime(time);
+            
+            let content = '';
+            if (type === 'activity') {
+                content = `<span class="tool">[${escapeHtml(record.tool || 'unknown')}]</span> ${escapeHtml(record.summary || '')}`;
+            } else if (type === 'concept') {
+                const title = record.concept || 'untitled';
+                const body = record.understanding || '';
+                const confidence = record.confidence ? ` (${record.confidence}%)` : '';
+                content = `<strong>${escapeHtml(title)}${confidence}</strong><br>${marked.parse(body)}`;
+            } else if (type === 'memory') {
+                const memType = record.type ? `[${record.type}] ` : '';
+                content = `<em>${escapeHtml(memType)}</em>${marked.parse(record.content || '')}`;
+            } else if (type === 'thought') {
+                content = marked.parse(record.thought || record.content || '');
+            } else {
+                content = marked.parse(record.content || '');
+            }
+            
+            // Add to interleaved feed
+            const feed = document.getElementById('feed');
+            
+            const el = document.createElement('div');
+            el.className = `record ${type}`;
+            el.innerHTML = `
+                <div class="record-header">
+                    <span class="type">${TYPE_LABELS[type]}</span>
+                    <span class="time">${formattedTime}</span>
+                </div>
+                <div class="content">${content}</div>
+            `;
+            
+            if (prepend) {
+                feed.insertBefore(el, feed.firstChild);
+            } else {
+                feed.appendChild(el);
+            }
+            
+            // Add to column feed
+            const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
+            const colFeed = document.getElementById(`${colType}-feed`);
+            if (colFeed) {
+                const colEl = document.createElement('div');
+                colEl.className = `record ${type}`;
+                colEl.innerHTML = `
+                    <span class="col-time">${formattedTime}</span>
+                    <div class="content">${content}</div>
+                `;
+                if (prepend) {
+                    colFeed.insertBefore(colEl, colFeed.firstChild);
+                } else {
+                    colFeed.appendChild(colEl);
                 }
             }
             
-            // Sort by time (oldest first for initial load)
-            allItems.sort((a, b) => a.time - b.time);
-            
-            // Add in chronological order (oldest first, so newest ends up on top)
-            allItems.forEach(item => {
-                addRecord(item.type, item.record, false);
-            });
-            
-            // Now reverse the feed so newest is on top
-            const feed = document.getElementById('feed');
-            const children = Array.from(feed.children);
-            children.reverse().forEach(child => feed.appendChild(child));
+            recordCount++;
+            document.getElementById('count').textContent = recordCount;
         }
         
         // Update rate display periodically
