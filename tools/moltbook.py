@@ -176,7 +176,7 @@ def _display_posts(posts: list, title: str):
     # Print full IDs for easy copy/paste
     if post_ids:
         console.print("\n[dim]Full IDs (for comment/read commands):[/dim]")
-        for short, full, title in post_ids[:5]:  # Show first 5
+        for short, full, title in post_ids[:50]:  # Show first 50
             console.print(f"  [dim]{short}[/dim] = {full}")
 
 
