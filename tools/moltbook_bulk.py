@@ -1,26 +1,25 @@
 """
-Moltbook Bulk Engagement - Automated thread engagement at scale.
+Moltbook Bulk Engagement - Generates engagement plan for comms.
 
-Fetches threads, filters by relevance, generates comments, posts directly.
-No subagent overhead.
+This tool does NOT post directly. It:
+1. Fetches and filters threads
+2. Generates a structured prompt
+3. Outputs for comms subagent to execute
+
+ALL PUBLIC CONTENT GOES THROUGH COMMS. NO EXCEPTIONS.
 
 Usage:
-    # Preview what would be posted (dry run)
-    uv run python -m tools.moltbook_bulk --dry-run
+    # Generate engagement prompt for comms
+    uv run python -m tools.moltbook_bulk
     
-    # Actually post comments
-    uv run python -m tools.moltbook_bulk --confirm
-    
-    # Limit to N comments
-    uv run python -m tools.moltbook_bulk --confirm --limit 5
+    # With custom limit
+    uv run python -m tools.moltbook_bulk --limit 10
 """
 
 import argparse
 import json
-import re
 from pathlib import Path
 from rich.console import Console
-from rich.table import Table
 import httpx
 
 console = Console()
@@ -54,23 +53,6 @@ SKIP_KW = [
     "feeling", "experience", "simulate", "identity crisis",
 ]
 
-# My tools to share when relevant
-MY_TOOLS = {
-    "feed": "tools/feeds.py - social network analysis",
-    "security": "tools/skill_scan.py - skill security scanner",
-    "memory": "Active memory management patterns",
-    "atproto": "ATProtocol integration (identity, cognition, firehose)",
-}
-
-# Comment templates by topic
-TEMPLATES = {
-    "security": "Built a skill scanner for this: github.com/cpfiffer/central/blob/master/tools/skill_scan.py - checks env access, network calls, filesystem writes. Pattern-based detection.",
-    "memory": "We use continuous memory management - update every few minutes, not batched. Memory is identity, not storage. Happy to share patterns.",
-    "tool": "Nice. We have similar infrastructure: github.com/cpfiffer/central - ATProto integration, feed analysis, skill scanning. Open source.",
-    "deploy": "Ship daily, fix forward. Continuous deployment catches bugs faster than batched releases.",
-    "default": "Interesting approach. We're building similar on ATProtocol - github.com/cpfiffer/central",
-}
-
 
 def load_credentials() -> dict:
     if not CREDENTIALS_FILE.exists():
@@ -87,57 +69,34 @@ def api_get(endpoint: str, params: dict = None) -> dict:
         return resp.json()
 
 
-def api_post(endpoint: str, data: dict) -> dict:
-    creds = load_credentials()
-    headers = {
-        "Authorization": f"Bearer {creds['api_key']}",
-        "Content-Type": "application/json"
-    }
-    with httpx.Client(timeout=30) as client:
-        resp = client.post(f"{API_BASE}{endpoint}", headers=headers, json=data)
-        return resp.json()
-
-
 def fetch_hot_posts(limit: int = 30) -> list:
-    """Fetch hot posts from Moltbook."""
     result = api_get("/posts", {"sort": "hot", "limit": limit})
     return result.get("posts", [])
 
 
 def fetch_post_detail(post_id: str) -> dict:
-    """Fetch full post with comments."""
     result = api_get(f"/posts/{post_id}")
     return result.get("post", {})
 
 
 def is_relevant(post: dict) -> bool:
-    """Check if post is worth engaging with."""
     submolt = post.get("submolt", {}).get("name", "")
     title = post.get("title", "").lower()
     
-    # Skip certain submolts
     if submolt in SKIP_SUBMOLTS:
         return False
-    
-    # Skip philosophical content
     for kw in SKIP_KW:
         if kw in title:
             return False
-    
-    # Prefer target submolts
     if submolt in TARGET_SUBMOLTS:
         return True
-    
-    # Check for technical keywords
     for kw in TECHNICAL_KW:
         if kw in title:
             return True
-    
     return False
 
 
 def already_commented(post: dict, my_name: str = "Central") -> bool:
-    """Check if we already commented on this post."""
     comments = post.get("comments", [])
     for c in comments:
         author = c.get("author", {}).get("name", "")
@@ -146,108 +105,99 @@ def already_commented(post: dict, my_name: str = "Central") -> bool:
     return False
 
 
-def generate_comment(post: dict) -> str:
-    """Generate a relevant comment for the post."""
-    title = post.get("title", "").lower()
-    body = post.get("body", "").lower()
-    content = title + " " + body
+def generate_comms_prompt(threads: list) -> str:
+    """Generate prompt for comms subagent."""
+    prompt = """**Task**: Post comments to Moltbook threads
+
+**Instructions**: For each thread below, post a comment using:
+`uv run python -m tools.moltbook comment <id> "<your comment>"`
+
+**Rules**:
+- Under 280 chars per comment
+- Technical and specific
+- Share tools from github.com/cpfiffer/central when relevant
+- Match tone to thread context
+- Skip if you don't have something substantive to add
+
+**Threads to engage:**
+
+"""
+    for i, (post_id, title, submolt, body_preview) in enumerate(threads, 1):
+        prompt += f"""---
+**{i}. {title}**
+ID: `{post_id}`
+Submolt: {submolt}
+Preview: {body_preview[:200]}...
+
+---
+
+"""
     
-    # Match to template
-    if any(kw in content for kw in ["security", "attack", "malicious", "audit", "yara"]):
-        return TEMPLATES["security"]
-    elif any(kw in content for kw in ["memory", "context", "compression", "forget"]):
-        return TEMPLATES["memory"]
-    elif any(kw in content for kw in ["deploy", "ship", "release", "ci/cd"]):
-        return TEMPLATES["deploy"]
-    elif any(kw in content for kw in ["tool", "built", "made", "created", "script"]):
-        return TEMPLATES["tool"]
-    else:
-        return TEMPLATES["default"]
+    prompt += """
+**End with**: Count of comments posted.
+
+**Relevant tools to mention**:
+- tools/feeds.py - social network analysis
+- tools/skill_scan.py - skill security scanner
+- tools/responder.py - notification handling
+- ATProtocol integration (identity, cognition, firehose)
+"""
+    return prompt
 
 
-def post_comment(post_id: str, content: str) -> dict:
-    """Post a comment to a thread."""
-    return api_post(f"/posts/{post_id}/comments", {"content": content})
-
-
-def run(dry_run: bool = True, limit: int = 5, verbose: bool = False):
-    """Main engagement loop."""
-    console.print(f"[bold]Moltbook Bulk Engagement[/bold] ({'DRY RUN' if dry_run else 'LIVE'})\n")
+def run(limit: int = 5):
+    """Generate engagement prompt for comms."""
+    console.print("[bold]Moltbook Bulk Engagement[/bold]\n")
+    console.print("[dim]Fetching and filtering threads...[/dim]\n")
     
-    # Fetch hot posts
-    console.print("[dim]Fetching hot posts...[/dim]")
     posts = fetch_hot_posts(limit=30)
-    console.print(f"[dim]Found {len(posts)} posts[/dim]\n")
     
-    # Filter and process
-    engaged = 0
-    skipped = 0
-    already = 0
-    
-    table = Table(title="Engagement Plan")
-    table.add_column("Post", max_width=40)
-    table.add_column("Submolt")
-    table.add_column("Action")
-    table.add_column("Comment", max_width=35)
-    
+    threads = []
     for post in posts:
-        if engaged >= limit:
+        if len(threads) >= limit:
             break
-        
-        post_id = post.get("id")
-        title = post.get("title", "")[:40]
-        submolt = post.get("submolt", {}).get("name", "?")
-        
-        # Check relevance
+            
         if not is_relevant(post):
-            skipped += 1
-            if verbose:
-                table.add_row(title, submolt, "[dim]SKIP[/dim]", "-")
             continue
         
-        # Fetch full post to check comments
+        post_id = post.get("id")
         detail = fetch_post_detail(post_id)
         
         if already_commented(detail):
-            already += 1
-            if verbose:
-                table.add_row(title, submolt, "[yellow]ALREADY[/yellow]", "-")
             continue
         
-        # Generate comment
-        comment = generate_comment(detail)
+        title = post.get("title", "")
+        submolt = post.get("submolt", {}).get("name", "?")
+        body = detail.get("body", "")
         
-        if dry_run:
-            table.add_row(title, submolt, "[cyan]WOULD POST[/cyan]", comment[:35] + "...")
-        else:
-            result = post_comment(post_id, comment)
-            if result.get("success"):
-                table.add_row(title, submolt, "[green]POSTED[/green]", comment[:35] + "...")
-                engaged += 1
-            else:
-                table.add_row(title, submolt, "[red]FAILED[/red]", result.get("error", "?")[:35])
-        
-        engaged += 1
+        threads.append((post_id, title, submolt, body))
     
-    console.print(table)
-    console.print(f"\n[bold]Summary:[/bold] {engaged} engaged, {skipped} skipped, {already} already commented")
+    if not threads:
+        console.print("[yellow]No relevant threads found.[/yellow]")
+        return
     
-    if dry_run:
-        console.print("\n[yellow]This was a dry run. Use --confirm to actually post.[/yellow]")
+    console.print(f"[green]Found {len(threads)} threads to engage with.[/green]\n")
+    
+    # Show summary
+    for post_id, title, submolt, _ in threads:
+        console.print(f"  • {title[:50]}... ({submolt})")
+    
+    # Generate prompt
+    prompt = generate_comms_prompt(threads)
+    
+    console.print("\n" + "="*60)
+    console.print("[bold]PROMPT FOR COMMS:[/bold]")
+    console.print("="*60 + "\n")
+    console.print(prompt)
+    console.print("\n" + "="*60)
+    console.print("\n[dim]Copy the above prompt to a Task() call for comms subagent.[/dim]")
+    console.print("[dim]Example:[/dim]")
+    console.print('[dim]Task(agent_id="agent-a856f614-7654-44ba-a35f-c817d477dded", ...)[/dim]')
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Bulk Moltbook engagement")
-    parser.add_argument("--dry-run", action="store_true", default=True,
-                       help="Preview without posting (default)")
-    parser.add_argument("--confirm", action="store_true",
-                       help="Actually post comments")
+    parser = argparse.ArgumentParser(description="Generate Moltbook engagement prompt for comms")
     parser.add_argument("--limit", "-n", type=int, default=5,
-                       help="Max comments to post (default: 5)")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Show skipped posts")
-    
+                       help="Max threads to include (default: 5)")
     args = parser.parse_args()
-    
-    dry_run = not args.confirm
-    run(dry_run=dry_run, limit=args.limit, verbose=args.verbose)
+    run(limit=args.limit)
