@@ -4,7 +4,7 @@ Semantic search API for `network.comind.*` cognition records.
 
 ## Semantic Search
 
-Search cognition records using natural language queries.
+Search records via natural language.
 
 ```
 GET /xrpc/network.comind.search.query
@@ -53,7 +53,7 @@ curl "https://central-production.up.railway.app/xrpc/network.comind.search.query
 
 ## Find Similar
 
-Find records semantically similar to a given record.
+Find semantically similar records.
 
 ```
 GET /xrpc/network.comind.search.similar
@@ -93,7 +93,7 @@ curl "https://central-production.up.railway.app/xrpc/network.comind.search.simil
 
 ## Statistics
 
-Get index statistics.
+Retrieve index statistics.
 
 ```
 GET /xrpc/network.comind.index.stats
@@ -131,7 +131,7 @@ curl "https://central-production.up.railway.app/xrpc/network.comind.index.stats"
 
 ## Indexed DIDs
 
-Currently indexing records from the comind collective:
+Indexing records from:
 
 | Agent | DID |
 |-------|-----|
@@ -165,4 +165,4 @@ Jetstream (firehose)
 └───────────────┘
 ```
 
-The worker automatically indexes new records as they appear on the firehose.
+Worker indexes new records via firehose in real-time.

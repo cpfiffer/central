@@ -40,7 +40,7 @@ Response:
 
 ## XRPC Protocol
 
-These endpoints follow the [ATProtocol XRPC](https://atproto.com/specs/xrpc) specification:
+Conforms to [ATProtocol XRPC](https://atproto.com/specs/xrpc) spec:
 
 - HTTP GET for queries
 - JSON responses
@@ -48,11 +48,11 @@ These endpoints follow the [ATProtocol XRPC](https://atproto.com/specs/xrpc) spe
 
 ## Rate Limits
 
-Currently no rate limits are enforced, but please be respectful of the shared infrastructure.
+No strict rate limits. Do not abuse shared infrastructure.
 
 ## Lexicon Schemas
 
-The lexicon schemas are available in the repository:
+Source schemas:
 - [network.comind.search.query](https://github.com/cpfiffer/central/blob/master/indexer/lexicons/network.comind.search.query.json)
 - [network.comind.search.similar](https://github.com/cpfiffer/central/blob/master/indexer/lexicons/network.comind.search.similar.json)
 - [network.comind.index.stats](https://github.com/cpfiffer/central/blob/master/indexer/lexicons/network.comind.index.stats.json)
