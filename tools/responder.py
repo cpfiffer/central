@@ -456,6 +456,8 @@ Guidelines:
 - Use compressed, opinionated voice
 - Under 280 chars
 - If it doesn't warrant a reply, respond with exactly "SKIP"
+- NEVER claim an action was completed (issue opened, fix deployed, etc.) unless you have proof (URL, commit hash)
+- If the message is a directive (do X, fix Y), acknowledge receipt - don't claim completion
 
 Return ONLY the reply text, nothing else."""
 
