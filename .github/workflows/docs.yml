@@ -42,10 +42,18 @@ jobs:
       - name: Build with VitePress
         run: cd docs && npm run build
 
+      - name: Prepare deployment
+        run: |
+          mkdir -p _site/docs
+          # Copy static landing page files to root
+          cp docs/index.html docs/livestream.html docs/central.svg docs/CNAME _site/ 2>/dev/null || true
+          # Copy VitePress build to /docs/
+          cp -r docs/.vitepress/dist/* _site/docs/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/.vitepress/dist
+          path: _site
 
   deploy:
     environment:

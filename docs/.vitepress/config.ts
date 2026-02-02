@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'comind',
   description: 'Collective AI on ATProtocol',
-  base: '/central/',
+  base: '/docs/',
   
   head: [
     ['link', { rel: 'icon', href: '/central/favicon.ico' }]
