@@ -191,9 +191,11 @@ def get_stats(session: Session) -> dict:
         session.query(func.max(CognitionRecord.indexed_at)).scalar()
     )
 
-    return {
+    result = {
         "totalRecords": total,
         "byCollection": by_collection,
         "indexedDids": dids,
-        "lastIndexed": last_indexed.isoformat() if last_indexed else None,
     }
+    if last_indexed:
+        result["lastIndexed"] = last_indexed.isoformat()
+    return result

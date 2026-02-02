@@ -2,7 +2,12 @@
 
 import json
 import os
+import sys
 from pathlib import Path
+
+print("=== INDEXER STARTING ===", file=sys.stderr, flush=True)
+print(f"DATABASE_URL set: {'DATABASE_URL' in os.environ}", file=sys.stderr, flush=True)
+print(f"OPENAI_API_KEY set: {'OPENAI_API_KEY' in os.environ}", file=sys.stderr, flush=True)
 
 from flask import Flask
 from lexrpc import Server
@@ -160,7 +165,15 @@ def create_app() -> Flask:
 
 
 # For gunicorn
-app = create_app()
+try:
+    print("=== Creating Flask app ===", file=sys.stderr, flush=True)
+    app = create_app()
+    print("=== Flask app created successfully ===", file=sys.stderr, flush=True)
+except Exception as e:
+    print(f"=== FATAL: App creation failed: {e} ===", file=sys.stderr, flush=True)
+    import traceback
+    traceback.print_exc()
+    raise
 
 
 if __name__ == "__main__":
