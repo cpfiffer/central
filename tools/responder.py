@@ -400,6 +400,101 @@ def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = 
 COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
 
 
+async def process_queue(dry_run=False):
+    """Have comms draft responses for all pending items via Letta API.
+    
+    This is the preferred way to draft responses - comms controls all content,
+    Central just orchestrates.
+    
+    Args:
+        dry_run: Preview without writing to YAML
+    """
+    from letta_client import Letta
+    
+    if not DRAFTS_FILE.exists():
+        console.print("[yellow]No queue file found. Run 'queue' first.[/yellow]")
+        return
+    
+    with open(DRAFTS_FILE, "r") as f:
+        queue = yaml.safe_load(f) or []
+    
+    # Filter to items needing responses
+    pending = [(i, item) for i, item in enumerate(queue) 
+               if not item.get("response") 
+               and item.get("action") == "reply"
+               and item.get("priority") != "SKIP"]
+    
+    if not pending:
+        console.print("[yellow]No items needing responses.[/yellow]")
+        return
+    
+    console.print(f"[bold]Processing {len(pending)} items via comms...[/bold]\n")
+    
+    api_key = os.environ.get('LETTA_API_KEY')
+    if not api_key:
+        console.print("[red]LETTA_API_KEY not set[/red]")
+        return
+    
+    client = Letta(base_url='https://api.letta.com', api_key=api_key)
+    
+    processed = 0
+    skipped = 0
+    
+    for idx, item in pending:
+        author = item.get('author', 'unknown')
+        text = item.get('text', '')
+        priority = item.get('priority', 'MEDIUM')
+        
+        # Build prompt for comms
+        prompt = f"""Draft a reply to this Bluesky notification.
+
+**Author:** @{author}
+**Priority:** {priority}
+**Text:** {text}
+
+Guidelines:
+- Use compressed, opinionated voice
+- Under 280 chars
+- If it doesn't warrant a reply, respond with exactly "SKIP"
+
+Return ONLY the reply text, nothing else."""
+
+        try:
+            response = client.agents.messages.create(
+                agent_id=COMMS_AGENT_ID,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            # Extract response from comms
+            draft = None
+            for msg in reversed(response.messages):
+                if hasattr(msg, 'content') and msg.content:
+                    draft = msg.content.strip()
+                    break
+            
+            if draft and draft.upper() != "SKIP":
+                queue[idx]["response"] = draft
+                console.print(f"[green]✓[/green] [{idx}] @{author}: {draft[:60]}...")
+                processed += 1
+            else:
+                console.print(f"[yellow]⊘[/yellow] [{idx}] @{author}: skipped by comms")
+                skipped += 1
+                
+        except Exception as e:
+            console.print(f"[red]✗[/red] [{idx}] @{author}: error - {e}")
+    
+    console.print(f"\n[bold]Done:[/bold] {processed} drafted, {skipped} skipped")
+    
+    # Write back
+    if not dry_run and processed > 0:
+        with open(DRAFTS_FILE, "w") as f:
+            yaml.dump(queue, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        console.print(f"[green]Updated {DRAFTS_FILE}[/green]")
+        console.print(f"\n[cyan]Next: uv run python -m tools.responder send --dry-run[/cyan]")
+    elif dry_run:
+        console.print(f"\n[yellow]Dry run - no changes written[/yellow]")
+
+
 def process_parallel(batch_size: int = 10):
     """Partition queue and output Task() calls for parallel processing.
     
@@ -498,6 +593,10 @@ if __name__ == "__main__":
     cleanup_parser.add_argument("--ttl-only", action="store_true", help="Only apply TTL, skip priority filter")
     cleanup_parser.add_argument("--all-priorities", action="store_true", help="Keep all priorities, only apply TTL")
     
+    # process command (comms drafts responses)
+    process_parser = subparsers.add_parser("process", help="Have comms draft responses via Letta API")
+    process_parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
+    
     # process-parallel command
     parallel_parser = subparsers.add_parser("process-parallel", help="Partition queue and output Task() calls for parallel processing")
     parallel_parser.add_argument("--batch-size", type=int, default=10, help="Items per batch (default: 10)")
@@ -515,6 +614,8 @@ if __name__ == "__main__":
         ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
         priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]
         cleanup_queue(keep_priorities=priorities, ttl_hours=ttl)
+    elif args.command == "process":
+        asyncio.run(process_queue(dry_run=args.dry_run))
     elif args.command == "process-parallel":
         process_parallel(batch_size=args.batch_size)
     elif args.command == "check":
