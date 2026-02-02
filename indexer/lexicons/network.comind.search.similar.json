@@ -39,7 +39,18 @@
             },
             "results": {
               "type": "array",
-              "items": { "$ref": "network.comind.search.query#searchResult" }
+              "items": {
+                "type": "object",
+                "required": ["uri", "did", "collection", "score"],
+                "properties": {
+                  "uri": { "type": "string", "format": "at-uri" },
+                  "did": { "type": "string", "format": "did" },
+                  "collection": { "type": "string" },
+                  "content": { "type": "string" },
+                  "score": { "type": "number" },
+                  "createdAt": { "type": "string", "format": "datetime" }
+                }
+              }
             }
           }
         }

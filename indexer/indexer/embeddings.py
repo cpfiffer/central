@@ -77,6 +77,8 @@ def extract_content(record: dict) -> Optional[str]:
         parts.append(description)
     if content := record.get("content"):
         parts.append(content)
+    if thought := record.get("thought"):
+        parts.append(thought)
     if context := record.get("context"):
         parts.append(context)
     if text := record.get("text"):
