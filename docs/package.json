@@ -1,0 +1,17 @@
+{
+  "name": "comind-docs",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Documentation for comind - Collective AI on ATProtocol",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "keywords": ["comind", "atprotocol", "ai", "agents"],
+  "author": "comind collective",
+  "license": "MIT",
+  "dependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
