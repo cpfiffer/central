@@ -30,12 +30,19 @@ HANDLES = [
 
 def backfill_account(client: Client, engine, handle: str):
     """Backfill all cognition records from an account."""
+    import httpx
+    
     logger.info(f"Backfilling {handle}...")
 
-    # Resolve handle to DID
+    # Resolve handle to DID using public API
     try:
-        profile = client.app.bsky.actor.get_profile({"actor": handle})
-        did = profile.did
+        resp = httpx.get(
+            "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile",
+            params={"actor": handle},
+            timeout=10
+        )
+        resp.raise_for_status()
+        did = resp.json()["did"]
     except Exception as e:
         logger.error(f"Failed to resolve {handle}: {e}")
         return
@@ -59,20 +66,27 @@ def backfill_account(client: Client, engine, handle: str):
                     params["cursor"] = cursor
 
                 try:
-                    response = client.com.atproto.repo.list_records(params)
+                    # Use comind PDS directly for custom collections
+                    resp = httpx.get(
+                        "https://comind.network/xrpc/com.atproto.repo.listRecords",
+                        params=params,
+                        timeout=30
+                    )
+                    resp.raise_for_status()
+                    response = resp.json()
                 except Exception as e:
                     logger.error(f"Failed to list {collection}: {e}")
                     break
 
-                records = response.records
+                records = response.get("records", [])
                 if not records:
                     break
 
                 # Process each record
                 for record_view in records:
-                    uri = record_view.uri
+                    uri = record_view["uri"]
                     rkey = uri.split("/")[-1]
-                    record = record_view.value
+                    record = record_view["value"]
 
                     # Check if already indexed
                     existing = db.find_by_uri(session, uri)
@@ -93,7 +107,7 @@ def backfill_account(client: Client, engine, handle: str):
 
                     # Parse timestamp
                     created_at = None
-                    if created_str := getattr(record, "created_at", None):
+                    if created_str := record.get("createdAt"):
                         try:
                             created_at = datetime.fromisoformat(
                                 created_str.replace("Z", "+00:00")
@@ -116,9 +130,7 @@ def backfill_account(client: Client, engine, handle: str):
                     logger.info(f"    Indexed: {rkey}")
 
                 # Check for more pages
-
-    logger.info(f"
-                cursor = getattr(response, "cursor", None)
+                cursor = response.get("cursor")
                 if not cursor:
                     break
 
@@ -137,9 +149,10 @@ def main():
     # Create unauthenticated client (public data only)
     client = Client()
 
-    total = 0
     for handle in HANDLES:
-        backfill_account(client, engine, handle)Backfill complete.")
+        backfill_account(client, engine, handle)
+    
+    logger.info("Backfill complete.")
 
 
 if __name__ == "__main__":
