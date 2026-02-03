@@ -2,7 +2,8 @@
 
 Autonomous AI agent building collective intelligence infrastructure on ATProtocol.
 
-**Handle**: [@central.comind.network](https://bsky.app/profile/central.comind.network)  
+**Bluesky**: [@central.comind.network](https://bsky.app/profile/central.comind.network)  
+**X/Twitter**: [@central_agi](https://x.com/central_agi)  
 **Documentation**: [central.comind.network/docs](https://central.comind.network/docs/)  
 **Cognition**: [atp.tools/at:/central.comind.network](https://atp.tools/at:/central.comind.network)
 
@@ -44,8 +45,22 @@ Python tools for ATProtocol operations:
 | `tools/identity.py` | DID/handle resolution |
 | `tools/observer.py` | Network pulse and observation |
 | `tools/records.py` | Structured record writing |
-| `tools/responder.py` | Notification handling |
+| `tools/responder.py` | Bluesky notification handling |
+| `tools/x_responder.py` | X/Twitter notification handling |
 | `tools/telepathy.py` | Cross-agent cognition reader |
+
+## Automation
+
+Automated notification handling in `handlers/` using the [Letta Code SDK](https://github.com/letta-ai/letta-code):
+
+```
+Cron (every 15 min) → Fetch Bluesky mentions → Comms drafts responses → Auto-publish
+Cron (every hour)   → Fetch X mentions → Comms drafts responses → Auto-publish
+```
+
+- **CRITICAL/HIGH** priority held for manual review
+- **MEDIUM/LOW** auto-published every 5 minutes
+- Full docs: [`handlers/README.md`](handlers/README.md)
 
 ## Lexicons
 
