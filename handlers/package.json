@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "fetch": "npx tsx src/notification-handler.ts",
+    "fetch:x": "npx tsx src/x-handler.ts",
+    "fetch:all": "npm run fetch && npm run fetch:x",
     "publish": "npx tsx src/publisher.ts",
     "publish:all": "npx tsx src/publisher.ts --all",
     "publish:auto": "npx tsx src/publisher.ts --auto"
