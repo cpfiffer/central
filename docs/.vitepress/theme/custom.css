@@ -1,0 +1,233 @@
+/**
+ * comind theme - based on livestream aesthetic
+ * Dark terminal with color-coded elements
+ */
+
+:root {
+  /* Core colors from livestream */
+  --vp-c-bg: #242424;
+  --vp-c-bg-soft: #1a1a1a;
+  --vp-c-bg-mute: #2a2a2a;
+  --vp-c-bg-alt: #1a1a1a;
+  
+  --vp-c-divider: #3a3a3a;
+  --vp-c-divider-light: #2a2a2a;
+  
+  --vp-c-text-1: #f6e7ca;
+  --vp-c-text-2: #e8dcc0;
+  --vp-c-text-3: #888;
+  
+  /* Brand colors from livestream */
+  --vp-c-brand-1: #e07042;  /* activity orange */
+  --vp-c-brand-2: #ff8c5a;
+  --vp-c-brand-3: #c85a32;
+  --vp-c-brand-soft: rgba(224, 112, 66, 0.15);
+  
+  /* Accent colors */
+  --comind-green: #8e9a7c;    /* response */
+  --comind-gold: #efa04e;     /* reasoning */
+  --comind-teal: #7c9a8e;     /* prompt */
+  --comind-purple: #9c7cb3;   /* concept */
+  --comind-blue: #7ca3b3;     /* memory */
+  --comind-tan: #b3a07c;      /* thought */
+  
+  /* Typography */
+  --vp-font-family-base: 'SF Mono', 'Consolas', 'Monaco', 'Menlo', monospace;
+  --vp-font-family-mono: 'SF Mono', 'Consolas', 'Monaco', 'Menlo', monospace;
+  
+  /* Remove rounded corners */
+  --vp-border-radius: 0;
+  
+  /* Code blocks */
+  --vp-code-block-bg: #1a1a1a;
+  --vp-code-line-highlight-color: rgba(224, 112, 66, 0.1);
+  
+  /* Buttons */
+  --vp-button-brand-bg: #e07042;
+  --vp-button-brand-hover-bg: #ff8c5a;
+  --vp-button-brand-text: #242424;
+  
+  /* Links */
+  --vp-c-brand: #efa04e;
+  
+  /* Home */
+  --vp-home-hero-name-color: #f6e7ca;
+}
+
+/* Dark mode only (we don't need light mode) */
+.dark {
+  --vp-c-bg: #242424;
+  --vp-c-bg-soft: #1a1a1a;
+  --vp-c-bg-mute: #2a2a2a;
+}
+
+/* Force dark mode */
+html {
+  color-scheme: dark;
+}
+
+/* Sharp scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+
+/* Nav styling */
+.VPNav {
+  border-bottom: 2px solid #3a3a3a !important;
+}
+
+.VPNavBar {
+  background: #1a1a1a !important;
+}
+
+/* Sidebar */
+.VPSidebar {
+  background: #1a1a1a !important;
+  border-right: 1px solid #3a3a3a !important;
+}
+
+/* Content */
+.VPContent {
+  background: #242424;
+}
+
+/* Hero section */
+.VPHero .name {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #f6e7ca !important;
+}
+
+.VPHero .tagline {
+  color: #888 !important;
+}
+
+/* Feature cards */
+.VPFeature {
+  background: #1a1a1a !important;
+  border: 1px solid #3a3a3a !important;
+  border-left: 4px solid #e07042 !important;
+  border-radius: 0 !important;
+}
+
+.VPFeature:nth-child(2) {
+  border-left-color: #8e9a7c !important;
+}
+
+.VPFeature:nth-child(3) {
+  border-left-color: #efa04e !important;
+}
+
+.VPFeature:nth-child(4) {
+  border-left-color: #9c7cb3 !important;
+}
+
+.VPFeature .title {
+  color: #f6e7ca !important;
+}
+
+.VPFeature .details {
+  color: #e8dcc0 !important;
+}
+
+/* Code blocks with thick left border */
+div[class*='language-'] {
+  border-left: 4px solid #e07042 !important;
+  border-radius: 0 !important;
+}
+
+/* Tables */
+.vp-doc table {
+  border-collapse: collapse;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 1px solid #3a3a3a !important;
+}
+
+.vp-doc th {
+  background: #1a1a1a !important;
+}
+
+/* Blockquotes */
+.vp-doc blockquote {
+  border-left: 4px solid #7c9a8e !important;
+  background: #1a1a1a;
+  border-radius: 0;
+}
+
+/* Footer */
+.VPFooter {
+  background: #1a1a1a !important;
+  border-top: 1px solid #3a3a3a !important;
+}
+
+/* Links */
+.vp-doc a {
+  color: #efa04e;
+}
+
+.vp-doc a:hover {
+  color: #ffb870;
+}
+
+/* Headers */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  color: #f6e7ca;
+}
+
+.vp-doc h2 {
+  border-bottom: 1px solid #3a3a3a;
+}
+
+/* Inline code */
+.vp-doc :not(pre) > code {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 0;
+  color: #e8dcc0;
+}
+
+/* Button styling */
+.VPButton {
+  border-radius: 0 !important;
+}
+
+/* Custom callouts */
+.custom-block {
+  border-radius: 0 !important;
+}
+
+.custom-block.tip {
+  border-left-color: #8e9a7c !important;
+  background-color: rgba(142, 154, 124, 0.1) !important;
+}
+
+.custom-block.warning {
+  border-left-color: #efa04e !important;
+  background-color: rgba(239, 160, 78, 0.1) !important;
+}
+
+.custom-block.danger {
+  border-left-color: #e07042 !important;
+  background-color: rgba(224, 112, 66, 0.1) !important;
+}
+
+.custom-block.info {
+  border-left-color: #7ca3b3 !important;
+  background-color: rgba(124, 163, 179, 0.1) !important;
+}

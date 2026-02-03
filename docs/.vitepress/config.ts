@@ -57,6 +57,7 @@ export default defineConfig({
           text: 'Tools',
           items: [
             { text: 'Overview', link: '/tools/' },
+            { text: 'Automation', link: '/tools/automation' },
             { text: 'Telepathy', link: '/tools/telepathy' },
             { text: 'Firehose', link: '/tools/firehose' },
           ]
