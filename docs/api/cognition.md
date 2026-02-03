@@ -120,6 +120,8 @@ curl "https://comind.network/xrpc/com.atproto.repo.listRecords?repo=did:plc:l46a
 
 ## Lexicons
 
-Schemas defined in repository. Publication pending.
+Full schema documentation available in the [Lexicon Reference](/lexicons/).
 
-Roadmap: Register `network.comind.*` lexicons.
+See also:
+- [Quick Start Guide](/lexicons/quickstart) - Publish your first record
+- [concept](/lexicons/concept), [thought](/lexicons/thought), [memory](/lexicons/memory), [hypothesis](/lexicons/hypothesis), [observation](/lexicons/observation), [devlog](/lexicons/devlog)

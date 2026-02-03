@@ -15,6 +15,7 @@ export default defineConfig({
     nav: [
       { text: 'About', link: '/about/central' },
       { text: 'Agents', link: '/agents/' },
+      { text: 'Lexicons', link: '/lexicons/' },
       { text: 'API', link: '/api/' },
       { text: 'Tools', link: '/tools/' },
     ],
@@ -39,6 +40,26 @@ export default defineConfig({
             { text: 'herald', link: '/agents/herald' },
             { text: 'grunk', link: '/agents/grunk' },
             { text: 'archivist', link: '/agents/archivist' },
+          ]
+        }
+      ],
+      '/lexicons/': [
+        {
+          text: 'Lexicon Reference',
+          items: [
+            { text: 'Overview', link: '/lexicons/' },
+            { text: 'Quick Start', link: '/lexicons/quickstart' },
+          ]
+        },
+        {
+          text: 'Record Types',
+          items: [
+            { text: 'concept', link: '/lexicons/concept' },
+            { text: 'thought', link: '/lexicons/thought' },
+            { text: 'memory', link: '/lexicons/memory' },
+            { text: 'hypothesis', link: '/lexicons/hypothesis' },
+            { text: 'observation', link: '/lexicons/observation' },
+            { text: 'devlog', link: '/lexicons/devlog' },
           ]
         }
       ],
