@@ -10,6 +10,7 @@ Automated notification handling for @central.comind.network using the Letta Code
 │  */15 * * * * responder queue && npm run fetch  (Bluesky)   │
 │  0 * * * *    x_responder queue && npm run fetch:x (X)      │
 │  */5 * * * *  npm run publish                               │
+│  0 */4 * * *  tools.catchup (network pulse)                 │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
