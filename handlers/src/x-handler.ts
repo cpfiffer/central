@@ -185,6 +185,17 @@ Write each file and report what you did.
     }
   }
 
+  // Clean up queue: remove items that have been processed (have draft files)
+  const remainingQueue = queue.filter(item => {
+    return !alreadyProcessed(item.id) && item.priority !== "SKIP";
+  });
+  
+  if (remainingQueue.length < queue.length) {
+    const removed = queue.length - remainingQueue.length;
+    fs.writeFileSync(queuePath, yaml.stringify(remainingQueue));
+    console.log(`Cleaned queue: removed ${removed} processed items (${remainingQueue.length} remaining)`);
+  }
+
   console.log(`\n[${new Date().toISOString()}] X handler complete.`);
   console.log("Next: npm run publish (or npm run publish:all for review items)");
 }
