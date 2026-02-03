@@ -49,8 +49,13 @@ function parseDraft(filePath: string): Draft | null {
       return null;
     }
 
-    const frontmatter = yaml.parse(match[1]) as DraftFrontmatter;
+    const frontmatter = yaml.parse(match[1], { intAsBigInt: true }) as DraftFrontmatter;
     const content = match[2].trim();
+    
+    // Convert BigInts back to strings for tweet IDs
+    if (frontmatter.reply_to && typeof frontmatter.reply_to === 'bigint') {
+      frontmatter.reply_to = frontmatter.reply_to.toString();
+    }
 
     return { path: filePath, frontmatter, content };
   } catch (error) {
@@ -99,7 +104,7 @@ function postToBluesky(draft: Draft): boolean {
 function postToX(draft: Draft): boolean {
   const { frontmatter, content } = draft;
   
-  const scriptPath = "../.skills/interacting-with-x/scripts/post.py";
+  const scriptPath = ".skills/interacting-with-x/scripts/post.py";
   
   if (frontmatter.type === "reply" && frontmatter.reply_to) {
     const cmd = `cd .. && uv run python ${scriptPath} --reply-to ${frontmatter.reply_to} "${content.replace(/"/g, '\\"')}"`;
