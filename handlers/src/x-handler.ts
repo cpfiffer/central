@@ -168,20 +168,33 @@ Write each file and report what you did.
         cwd: process.cwd(),
       });
       
-      await session.send(commsPrompt);
+      // Timeout wrapper - 90 seconds per batch
+      const BATCH_TIMEOUT_MS = 90000;
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error(`Batch timeout after ${BATCH_TIMEOUT_MS/1000}s`)), BATCH_TIMEOUT_MS);
+      });
       
-      for await (const msg of session.stream()) {
-        if (msg.type === "assistant") {
-          process.stdout.write(msg.content);
+      const processPromise = async () => {
+        await session.send(commsPrompt);
+        
+        for await (const msg of session.stream()) {
+          if (msg.type === "assistant") {
+            process.stdout.write(msg.content);
+          }
+          if (msg.type === "result") {
+            console.log("\n✓ Batch complete");
+          }
         }
-        if (msg.type === "result") {
-          console.log("\n✓ Batch complete");
-        }
-      }
+      };
       
+      await Promise.race([processPromise(), timeoutPromise]);
       session.close();
     } catch (error) {
-      console.error("Error invoking comms:", error);
+      if (error instanceof Error && error.message.includes("timeout")) {
+        console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
+      } else {
+        console.error("Error invoking comms:", error);
+      }
     }
   }
 
