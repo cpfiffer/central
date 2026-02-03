@@ -34,6 +34,21 @@ SPAM_KEYWORDS = [
 
 QUEUE_PATH = Path("drafts/x_queue.yaml")
 SENT_PATH = Path("drafts/x_sent.txt")
+MENTIONS_LOG = Path("logs/x_mentions.jsonl")
+
+
+def _log_mention(entry: dict):
+    """Log a mention to x_mentions.jsonl for pulse tracking."""
+    MENTIONS_LOG.parent.mkdir(exist_ok=True)
+    log_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "author": entry.get("author"),
+        "text": entry.get("text", "")[:200],
+        "id": entry.get("id"),
+        "priority": entry.get("priority"),
+    }
+    with open(MENTIONS_LOG, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
 
 
 def get_client() -> tweepy.Client:
@@ -153,6 +168,7 @@ def queue_mentions(limit: int = 20):
         }
         
         existing_queue.append(queue_item)
+        _log_mention(queue_item)  # Log for pulse tracking
         queued += 1
         
         if priority == "SKIP":

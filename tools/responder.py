@@ -14,10 +14,12 @@ from rich.table import Table
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from tools.agent import ComindAgent, PostResult
+import json
 
 console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
+MENTIONS_LOG = Path("logs/mentions.jsonl")
 QUEUE_TTL_HOURS = 24  # Auto-remove items older than this
 
 # Priority system (matches daemon.py)
@@ -79,6 +81,20 @@ async def _get_already_replied_uris(agent, limit: int = 100) -> set:
         console.print(f"[yellow]Warning: Could not fetch reply history: {e}[/yellow]")
     
     return replied_to
+
+
+def _log_mention(entry: dict):
+    """Log a mention to mentions.jsonl for pulse tracking."""
+    MENTIONS_LOG.parent.mkdir(exist_ok=True)
+    log_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "author": entry.get("author"),
+        "text": entry.get("text", "")[:200],  # Truncate for log
+        "uri": entry.get("uri"),
+        "priority": entry.get("priority"),
+    }
+    with open(MENTIONS_LOG, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
 
 
 def _apply_ttl_cleanup(queue: list, ttl_hours: int = QUEUE_TTL_HOURS) -> tuple[list, int]:
@@ -212,6 +228,7 @@ async def queue_notifications(limit=50):
             }
             
             queue.insert(0, entry) # Newest first? Or append? Let's prepend.
+            _log_mention(entry)  # Log for pulse tracking
             count += 1
         
         # Sort queue by priority (CRITICAL first, SKIP last), then by timestamp (newest first within tier)
