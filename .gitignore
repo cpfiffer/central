@@ -24,3 +24,5 @@ recon/
 data/published_messages.txt
 data/chroma/
 data/central.db
+handlers/node_modules/
+handlers/.letta/
