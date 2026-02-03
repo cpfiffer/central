@@ -20,6 +20,7 @@ ALLOWED_AGENTS = {
     "agent-a856f614-7654-44ba-a35f-c817d477dded",  # comms
     "agent-e91a2154-0965-4b70-8303-54458e9a1980",  # scout
     "agent-f9b768de-e3a4-4845-9c16-d6cf2e954942",  # coder
+    "agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838",  # memory
 }
 
 
