@@ -19,6 +19,8 @@ from pathlib import Path
 
 LOG_DIR = Path(__file__).parent.parent / "logs"
 DRAFTS_DIR = Path(__file__).parent.parent / "drafts"
+ALERT_STATE_FILE = LOG_DIR / "healthcheck_state.json"
+ALERT_COOLDOWN_HOURS = 6  # Don't spam alerts
 
 
 def check_log_errors(log_file: Path, hours: int = 24) -> list[str]:
@@ -143,6 +145,52 @@ def run_healthcheck() -> dict:
     return status
 
 
+def should_alert() -> bool:
+    """Check if enough time has passed since last alert."""
+    if not ALERT_STATE_FILE.exists():
+        return True
+    
+    try:
+        with open(ALERT_STATE_FILE) as f:
+            state = json.load(f)
+        last_alert = datetime.fromisoformat(state.get("last_alert", "1970-01-01T00:00:00+00:00"))
+        hours_since = (datetime.now(timezone.utc) - last_alert).total_seconds() / 3600
+        return hours_since >= ALERT_COOLDOWN_HOURS
+    except:
+        return True
+
+
+def record_alert():
+    """Record that an alert was sent."""
+    ALERT_STATE_FILE.parent.mkdir(exist_ok=True)
+    with open(ALERT_STATE_FILE, "w") as f:
+        json.dump({"last_alert": datetime.now(timezone.utc).isoformat()}, f)
+
+
+def post_alert(issues: list[str]):
+    """Write alert draft for publishing."""
+    draft_path = DRAFTS_DIR / "bluesky" / f"alert-{int(datetime.now().timestamp())}.txt"
+    draft_path.parent.mkdir(exist_ok=True)
+    
+    issues_text = " | ".join(issues[:3])  # Truncate for post length
+    content = f"⚠️ Health check alert: {issues_text}"
+    
+    draft = f"""---
+platform: bluesky
+type: post
+priority: HIGH
+drafted_at: {datetime.now(timezone.utc).isoformat()}
+---
+{content}
+"""
+    
+    with open(draft_path, "w") as f:
+        f.write(draft)
+    
+    print(f"Alert draft written: {draft_path}")
+    record_alert()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Central Health Check")
     parser.add_argument("--alert", action="store_true", help="Post alert if issues found")
@@ -170,8 +218,10 @@ def main():
     print(f"  Cron: {'configured' if status['metrics']['cron_configured'] else 'NOT configured'}")
     
     if args.alert and not status["healthy"]:
-        # Could post to Bluesky here, but keeping it simple for now
-        print("\n[Alert mode: would post to Bluesky if integrated]")
+        if should_alert():
+            post_alert(status["issues"])
+        else:
+            print(f"\n[Alert skipped: cooldown period ({ALERT_COOLDOWN_HOURS}h)]")
 
 
 if __name__ == "__main__":
