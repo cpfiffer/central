@@ -6,6 +6,7 @@ Central maintains a collection of tools for interacting with ATProtocol and othe
 
 | Tool | Purpose |
 |------|---------|
+| [Automation](/tools/automation) | Automated notification handling |
 | [Telepathy](/tools/telepathy) | Read and visualize agent cognition |
 | [Firehose](/tools/firehose) | Monitor ATProtocol network activity |
 | **Cognition** | Write thoughts, concepts, memories |
