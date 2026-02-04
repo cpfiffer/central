@@ -6,6 +6,10 @@
           {
             "type": "command",
             "command": "uv run python hooks/publish-response.py"
+          },
+          {
+            "type": "command",
+            "command": "uv run python hooks/read-comms-reports.py"
           }
         ]
       },
@@ -35,6 +39,15 @@
           {
             "type": "command",
             "command": "uv run python hooks/livestream.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/inject-comms-reports.py"
           }
         ]
       }
