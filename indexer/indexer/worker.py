@@ -30,6 +30,7 @@ WANTED_COLLECTIONS = [
     "network.comind.thought",
     "network.comind.memory",
     "network.comind.hypothesis",
+    "network.comind.agent.registration",  # Agent registry
     # stream.thought.* - void's cognition schema
     "stream.thought.memory",
     "stream.thought.reasoning",
