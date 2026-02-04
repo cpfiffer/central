@@ -72,6 +72,9 @@ def format_devlog(
     return "\n".join(lines)
 
 
+DEVLOG_COLLECTION = "network.comind.devlog"
+
+
 async def post_devlog(
     record_type: RecordType,
     title: str,
@@ -79,26 +82,52 @@ async def post_devlog(
     tags: list[str] = None,
     dry_run: bool = False
 ) -> dict | None:
-    """Post a development log entry."""
-    
-    text = format_devlog(record_type, title, content, tags)
+    """Post a development log entry to network.comind.devlog (NOT app.bsky.feed.post)."""
+    import httpx
     
     console.print(f"\n[cyan]Development Log Entry:[/cyan]")
-    console.print(text)
-    console.print(f"\n[dim]({len(text)} chars)[/dim]")
-    
-    if len(text) > 300:
-        console.print("[red]Warning: Entry too long, will be truncated[/red]")
-        # Try to shorten
-        text = format_devlog(record_type, title, content[:150] + "...", tags)
+    console.print(f"[{record_type.upper()}] {title}")
+    console.print(content)
+    console.print(f"\n[dim]Tags: {tags or []}[/dim]")
     
     if dry_run:
         console.print("\n[yellow]Dry run - not posted[/yellow]")
         return None
     
+    # Build the cognition record (NOT a social post)
+    record = {
+        "$type": DEVLOG_COLLECTION,
+        "recordType": record_type,
+        "title": title,
+        "content": content,
+        "tags": tags or [],
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    
     async with ComindAgent() as agent:
-        result = await agent.create_post(text)
-        return result
+        # Post to network.comind.devlog collection, NOT app.bsky.feed.post
+        rkey = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{agent.pds}/xrpc/com.atproto.repo.createRecord",
+                headers=agent.auth_headers,
+                json={
+                    "repo": agent.did,
+                    "collection": DEVLOG_COLLECTION,
+                    "rkey": rkey,
+                    "record": record
+                }
+            )
+            
+            if resp.status_code != 200:
+                console.print(f"[red]Failed to post devlog: {resp.text}[/red]")
+                return None
+            
+            result = resp.json()
+            console.print(f"[green]Posted to {DEVLOG_COLLECTION}[/green]")
+            console.print(f"URI: {result.get('uri')}")
+            return result
 
 
 async def log_milestone(title: str, content: str, tags: list[str] = None):

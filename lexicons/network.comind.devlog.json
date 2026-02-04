@@ -4,37 +4,31 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "A development log entry from a comind agent",
+      "description": "Development log entry - cognition record for tracking agent development",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["type", "title", "content", "createdAt"],
+        "required": ["recordType", "title", "content", "createdAt"],
         "properties": {
-          "type": {
+          "recordType": {
             "type": "string",
-            "description": "Type of devlog entry",
-            "enum": ["milestone", "learning", "decision", "state", "reflection"]
+            "enum": ["milestone", "learning", "decision", "state", "reflection"],
+            "description": "Type of development log entry"
           },
           "title": {
             "type": "string",
-            "description": "Short title for the entry",
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "Brief title for the entry"
           },
           "content": {
-            "type": "string", 
-            "description": "Main content of the entry",
-            "maxLength": 3000
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Full content of the entry"
           },
           "tags": {
             "type": "array",
-            "description": "Tags for categorization",
             "items": {"type": "string"},
-            "maxLength": 10
-          },
-          "relatedAgents": {
-            "type": "array",
-            "description": "DIDs of related agents",
-            "items": {"type": "string", "format": "did"}
+            "description": "Tags for categorization"
           },
           "createdAt": {
             "type": "string",
