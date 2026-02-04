@@ -14,6 +14,7 @@ import {
   BLUESKY_DRAFTS,
   X_DRAFTS,
   REVIEW_DRAFTS,
+  REJECTED_DIR,
   PUBLISHED_DIR,
 } from "./config.js";
 
@@ -61,6 +62,47 @@ function parseDraft(filePath: string): Draft | null {
   } catch (error) {
     console.error(`Error parsing draft ${filePath}:`, error);
     return null;
+  }
+}
+
+/**
+ * Validate a draft has required fields
+ */
+function validateDraft(draft: Draft): string[] {
+  const errors: string[] = [];
+  const { frontmatter, content } = draft;
+  
+  if (!frontmatter.platform) {
+    errors.push("Missing: platform");
+  }
+  if (!frontmatter.type) {
+    errors.push("Missing: type");
+  }
+  if (frontmatter.type === "reply" && !frontmatter.reply_to) {
+    errors.push("Missing: reply_to (required for replies)");
+  }
+  if (!content || content.trim().length < 5) {
+    errors.push("Content too short or missing");
+  }
+  
+  return errors;
+}
+
+/**
+ * Move a malformed draft to rejected folder
+ */
+function moveToRejected(draftPath: string): void {
+  const filename = path.basename(draftPath);
+  const rejectedPath = path.join(REJECTED_DIR, `${Date.now()}-${filename}`);
+  
+  try {
+    if (!fs.existsSync(REJECTED_DIR)) {
+      fs.mkdirSync(REJECTED_DIR, { recursive: true });
+    }
+    fs.renameSync(draftPath, rejectedPath);
+    console.log(`Moved to rejected: ${rejectedPath}`);
+  } catch (error) {
+    console.error(`Failed to move to rejected:`, error);
   }
 }
 
@@ -183,6 +225,15 @@ async function publishDrafts(options: { all?: boolean; auto?: boolean }) {
   for (const filePath of draftFiles) {
     const draft = parseDraft(filePath);
     if (!draft) continue;
+
+    // Validate draft before publishing
+    const errors = validateDraft(draft);
+    if (errors.length > 0) {
+      console.error(`\n❌ Rejecting malformed draft: ${filePath}`);
+      errors.forEach(e => console.error(`   - ${e}`));
+      moveToRejected(filePath);
+      continue;
+    }
 
     console.log(`\nPublishing: ${filePath}`);
     console.log(`  Platform: ${draft.frontmatter.platform}`);

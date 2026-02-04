@@ -60,7 +60,8 @@
       "Bash(cd /home/cameron/central && uv run python -m tools.telepathy void.comind.network --limit 5)",
       "Bash(grep:*)",
       "Edit(//home/cameron/.letta/agents/agent-c770d1c8-510e-4414-be36-c9ebd95a7758/memory/system/**)",
-      "Bash(cd /home/cameron/central && uv run python -m tools.moltbook read 057358d0 2>&1)"
+      "Bash(cd /home/cameron/central && uv run python -m tools.moltbook read 057358d0 2>&1)",
+      "Write(**)"
     ]
   }
 }

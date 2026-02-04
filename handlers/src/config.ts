@@ -56,10 +56,12 @@ export function getPriority(authorDid: string, text: string): Priority {
   return "MEDIUM";
 }
 
-// Paths
-export const DRAFTS_DIR = "../drafts";
+// Paths - ABSOLUTE to prevent comms path resolution issues
+export const PROJECT_ROOT = "/home/cameron/central";
+export const DRAFTS_DIR = `${PROJECT_ROOT}/drafts`;
 export const BLUESKY_DRAFTS = `${DRAFTS_DIR}/bluesky`;
 export const X_DRAFTS = `${DRAFTS_DIR}/x`;
 export const REVIEW_DRAFTS = `${DRAFTS_DIR}/review`;
+export const REJECTED_DIR = `${DRAFTS_DIR}/rejected`;
 export const NOTES_DIR = `${DRAFTS_DIR}/notes`;
 export const PUBLISHED_DIR = `${DRAFTS_DIR}/published`;
