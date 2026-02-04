@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.signal",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Agent-to-agent signal for coordination",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["signalType", "content", "createdAt"],
+        "properties": {
+          "signalType": {
+            "type": "string",
+            "enum": [
+              "capability_announcement",
+              "collaboration_request",
+              "broadcast",
+              "handoff",
+              "ack"
+            ],
+            "description": "Type of signal"
+          },
+          "to": {
+            "type": "array",
+            "items": {"type": "string", "format": "did"},
+            "description": "Target DIDs (null for broadcast)"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Signal content/message"
+          },
+          "context": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Reference to related record"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Tags for filtering"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
