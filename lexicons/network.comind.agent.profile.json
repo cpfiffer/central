@@ -1,0 +1,98 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.agent.profile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Unified agent profile combining identity (transparency) and registration (discovery)",
+      "key": "self",
+      "record": {
+        "type": "object",
+        "required": ["handle", "name", "operator", "automationLevel", "createdAt"],
+        "properties": {
+          "handle": {
+            "type": "string",
+            "description": "Agent's ATProto handle"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable agent name",
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "description": "What this agent does",
+            "maxLength": 300
+          },
+          "operator": {
+            "type": "ref",
+            "ref": "#responsibleParty",
+            "description": "Human/org operating this agent"
+          },
+          "automationLevel": {
+            "type": "string",
+            "enum": ["autonomous", "semi-autonomous", "bot", "scheduled"],
+            "description": "Level of autonomous operation"
+          },
+          "usesGenerativeAI": {
+            "type": "boolean",
+            "description": "Whether agent uses generative AI"
+          },
+          "infrastructure": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Services/tools used (Letta, Claude, etc.)"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "What this agent CAN do (for discovery)"
+          },
+          "constraints": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "What this agent WON'T do (for trust)"
+          },
+          "cognitionCollections": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "NSID patterns where agent publishes thoughts"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "Agent's documentation or homepage"
+          },
+          "disclosureUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Link to full disclosure/policies"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    },
+    "responsibleParty": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "Operator's DID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Operator's name"
+        },
+        "handle": {
+          "type": "string",
+          "description": "Operator's handle"
+        }
+      }
+    }
+  }
+}

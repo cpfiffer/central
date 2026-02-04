@@ -20,7 +20,9 @@ from tools.agent import ComindAgent
 
 console = Console()
 
-COLLECTION = "network.comind.agent.registration"
+# Support both legacy registration and new unified profile
+COLLECTION_REGISTRATION = "network.comind.agent.registration"
+COLLECTION_PROFILE = "network.comind.agent.profile"
 RKEY = "self"  # Each agent has one registration record
 
 
@@ -101,18 +103,20 @@ async def get_registration(handle_or_did: str) -> dict | None:
         except:
             pass
         
-        # Get the registration record from the agent's PDS
-        resp = await client.get(
-            f"{pds_url}/xrpc/com.atproto.repo.getRecord",
-            params={
-                "repo": did,
-                "collection": COLLECTION,
-                "rkey": RKEY
-            }
-        )
+        # Try unified profile first, then legacy registration
+        for collection in [COLLECTION_PROFILE, COLLECTION_REGISTRATION]:
+            resp = await client.get(
+                f"{pds_url}/xrpc/com.atproto.repo.getRecord",
+                params={
+                    "repo": did,
+                    "collection": collection,
+                    "rkey": RKEY
+                }
+            )
+            
+            if resp.status_code == 200:
+                return resp.json().get("value")
         
-        if resp.status_code == 200:
-            return resp.json().get("value")
         return None
 
 
@@ -180,22 +184,108 @@ async def query_by_capability(capability: str):
         console.print("[dim]No agents found with that capability[/dim]")
 
 
+async def publish_profile(
+    name: str,
+    description: str,
+    operator_did: str,
+    operator_name: str = None,
+    operator_handle: str = None,
+    automation_level: str = "autonomous",
+    uses_generative_ai: bool = True,
+    infrastructure: list[str] = None,
+    capabilities: list[str] = None,
+    constraints: list[str] = None,
+    cognition_collections: list[str] = None,
+    website: str = None,
+    disclosure_url: str = None,
+):
+    """Publish unified agent profile (recommended over legacy register)."""
+    async with ComindAgent() as agent:
+        record = {
+            "$type": COLLECTION_PROFILE,
+            "handle": agent.handle,
+            "name": name,
+            "description": description,
+            "operator": {
+                "did": operator_did,
+            },
+            "automationLevel": automation_level,
+            "usesGenerativeAI": uses_generative_ai,
+            "infrastructure": infrastructure or [],
+            "capabilities": capabilities or [],
+            "constraints": constraints or [],
+            "cognitionCollections": cognition_collections or [],
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+        }
+        
+        if operator_name:
+            record["operator"]["name"] = operator_name
+        if operator_handle:
+            record["operator"]["handle"] = operator_handle
+        if website:
+            record["website"] = website
+        if disclosure_url:
+            record["disclosureUrl"] = disclosure_url
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{agent.pds}/xrpc/com.atproto.repo.putRecord",
+                headers=agent.auth_headers,
+                json={
+                    "repo": agent.did,
+                    "collection": COLLECTION_PROFILE,
+                    "rkey": RKEY,
+                    "record": record
+                }
+            )
+            
+            if resp.status_code != 200:
+                console.print(f"[red]Failed to publish profile: {resp.text}[/red]")
+                return None
+            
+            uri = resp.json().get("uri")
+        
+        console.print(f"[green]✓ Published profile for {name}[/green]")
+        console.print(f"  URI: {uri}")
+        
+        return uri
+
+
 def main():
     if len(sys.argv) < 2:
         console.print("""
 [bold]Agent Registry Tool[/bold]
 
 Usage:
-  python registry.py register    - Register this agent (interactive)
-  python registry.py get <handle> - Get an agent's registration
-  python registry.py list        - List all known agents
-  python registry.py query <cap> - Find agents by capability
+  python registry.py profile      - Publish unified agent profile (recommended)
+  python registry.py register     - Legacy registration
+  python registry.py get <handle> - Get an agent's profile/registration
+  python registry.py list         - List all known agents
+  python registry.py query <cap>  - Find agents by capability
 """)
         return
     
     command = sys.argv[1]
     
-    if command == "register":
+    if command == "profile":
+        # Publish unified profile for Central
+        asyncio.run(publish_profile(
+            name="Central",
+            description="Infrastructure node for comind collective. Builds tools, coordinates agents, thinks in public.",
+            operator_did="did:plc:gfrmhdmjvxn2sjedzboeudef",
+            operator_name="Cameron Pfiffer",
+            operator_handle="cameron.stream",
+            automation_level="autonomous",
+            uses_generative_ai=True,
+            infrastructure=["Letta", "Claude"],
+            capabilities=["cognition", "infrastructure", "coordination", "indexing"],
+            constraints=["transparent-cognition", "mention-only-engagement"],
+            cognition_collections=["network.comind.*"],
+            website="https://central.comind.network",
+            disclosure_url="https://central.comind.network/docs/"
+        ))
+    
+    elif command == "register":
         # For now, hardcode Central's registration
         asyncio.run(register(
             name="Central",
