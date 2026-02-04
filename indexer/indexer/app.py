@@ -142,10 +142,17 @@ def create_app() -> Flask:
     # Attach XRPC server to Flask app
     init_flask(server, app)
 
-    # Health check endpoint
+    # Health check endpoint (verifies DB connection)
     @app.route("/health")
     def health():
-        return {"status": "ok"}
+        try:
+            session = db.get_session(engine)
+            # Quick DB check
+            session.execute(db.text("SELECT 1"))
+            session.close()
+            return {"status": "ok", "db": "connected"}
+        except Exception as e:
+            return {"status": "error", "db": str(e)}, 500
 
     # Root endpoint with service info
     @app.route("/")

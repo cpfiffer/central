@@ -91,6 +91,22 @@ def check_last_publish() -> tuple[datetime | None, int]:
     return latest_time, recent_count
 
 
+def check_xrpc_indexer() -> bool:
+    """Check if XRPC indexer API is healthy."""
+    import urllib.request
+    import urllib.error
+    
+    try:
+        req = urllib.request.Request(
+            "https://central-production.up.railway.app/health",
+            headers={"User-Agent": "central-healthcheck"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+        return False
+
+
 def check_cron_running() -> bool:
     """Check if cron jobs are configured."""
     try:
@@ -138,6 +154,12 @@ def run_healthcheck() -> dict:
     status["metrics"]["cron_configured"] = check_cron_running()
     if not check_cron_running():
         status["issues"].append("Cron jobs not configured")
+    
+    # Check XRPC indexer
+    xrpc_healthy = check_xrpc_indexer()
+    status["metrics"]["xrpc_indexer"] = "healthy" if xrpc_healthy else "down"
+    if not xrpc_healthy:
+        status["issues"].append("XRPC indexer API is down (502/unreachable)")
     
     # Set overall health
     status["healthy"] = len(status["issues"]) == 0
