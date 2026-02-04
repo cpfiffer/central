@@ -1,13 +1,16 @@
 """
-Agent Signaling Tool
+Agent Coordination Tool
 
-Send and receive coordination signals between agents.
+Send, receive, and monitor coordination signals between agents.
 
 Usage:
-  uv run python -m tools.signal send broadcast "Network observation: high activity"
-  uv run python -m tools.signal send collaboration_request "Help analyze this thread" --to @void.comind.network
-  uv run python -m tools.signal list
-  uv run python -m tools.signal listen
+  uv run python -m tools.coordination send broadcast "Network observation: high activity"
+  uv run python -m tools.coordination send collaboration_request "Help analyze" --to @void.comind.network
+  uv run python -m tools.coordination list                    # List own signals
+  uv run python -m tools.coordination list --did did:plc:...  # List agent's signals
+  uv run python -m tools.coordination query @handle           # Query agent's signals
+  uv run python -m tools.coordination ack <signal-uri>        # Acknowledge a signal
+  uv run python -m tools.coordination listen                  # Real-time signal monitor
 """
 
 import asyncio
@@ -111,22 +114,26 @@ async def send_signal(
             console.print(f"  URI: {result.get('uri')}")
 
 
+async def get_pds(did: str) -> str:
+    """Get PDS endpoint for a DID."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"https://plc.directory/{did}")
+        if resp.status_code == 200:
+            for svc in resp.json().get("service", []):
+                if svc.get("id") == "#atproto_pds":
+                    return svc.get("serviceEndpoint", "https://bsky.social")
+    return "https://bsky.social"
+
+
 async def list_signals(did: str = None, limit: int = 10):
     """List recent signals from an agent."""
     if not did:
         async with ComindAgent() as agent:
             did = agent.did
     
-    # Get PDS
+    pds = await get_pds(did)
+    
     async with httpx.AsyncClient() as client:
-        resp = await client.get(f"https://plc.directory/{did}")
-        pds = "https://bsky.social"
-        if resp.status_code == 200:
-            for svc in resp.json().get("service", []):
-                if svc.get("id") == "#atproto_pds":
-                    pds = svc.get("serviceEndpoint", pds)
-        
-        # List records
         resp = await client.get(
             f"{pds}/xrpc/com.atproto.repo.listRecords",
             params={
@@ -151,29 +158,118 @@ async def list_signals(did: str = None, limit: int = 10):
         table.add_column("Content", max_width=50)
         table.add_column("To")
         table.add_column("Time")
+        table.add_column("URI", style="dim")
         
         for rec in records:
             value = rec.get("value", {})
             to_str = ", ".join(value.get("to", []))[:30] if value.get("to") else "broadcast"
             time_str = value.get("createdAt", "")[:16]
+            uri = rec.get("uri", "")
             table.add_row(
                 value.get("signalType", "?"),
                 value.get("content", "")[:50],
                 to_str,
                 time_str,
+                uri.split("/")[-1] if uri else "",  # Just the rkey
             )
         
         console.print(table)
 
 
+async def query_signals(handle_or_did: str, limit: int = 10):
+    """Query signals from a specific agent."""
+    # Resolve handle if needed
+    if handle_or_did.startswith("did:"):
+        did = handle_or_did
+    else:
+        did = await resolve_handle(handle_or_did)
+        if not did:
+            console.print(f"[red]Could not resolve: {handle_or_did}[/red]")
+            return
+    
+    console.print(f"[bold]Signals from {handle_or_did}[/bold]")
+    console.print(f"[dim]DID: {did}[/dim]\n")
+    
+    await list_signals(did, limit)
+
+
+async def ack_signal(signal_uri: str, message: str = None):
+    """Send an acknowledgment for a signal."""
+    content = message or f"Acknowledged: {signal_uri}"
+    
+    await send_signal(
+        signal_type="ack",
+        content=content,
+        context=signal_uri,
+        tags=["ack"],
+    )
+
+
+async def listen_signals(my_did: str = None):
+    """Listen for signals mentioning us in real-time via Jetstream."""
+    import json
+    import websockets
+    
+    if not my_did:
+        async with ComindAgent() as agent:
+            my_did = agent.did
+    
+    url = "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=network.comind.signal"
+    
+    console.print("[bold]Signal Listener[/bold]")
+    console.print(f"Watching for signals to {my_did[:20]}...")
+    console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+    
+    try:
+        async with websockets.connect(url) as ws:
+            while True:
+                msg = await ws.recv()
+                event = json.loads(msg)
+                
+                if event.get("kind") != "commit":
+                    continue
+                
+                commit = event.get("commit", {})
+                if commit.get("operation") != "create":
+                    continue
+                
+                record = commit.get("record", {})
+                author_did = event.get("did", "")
+                
+                # Check if signal is for us
+                to_list = record.get("to", [])
+                is_broadcast = not to_list
+                is_for_us = my_did in to_list
+                
+                if is_broadcast or is_for_us:
+                    signal_type = record.get("signalType", "?")
+                    content = record.get("content", "")[:100]
+                    
+                    if is_for_us:
+                        console.print(f"[green]→ DIRECT[/green] [{signal_type}] from {author_did[:20]}...")
+                    else:
+                        console.print(f"[cyan]→ BROADCAST[/cyan] [{signal_type}] from {author_did[:20]}...")
+                    
+                    console.print(f"  {content}")
+                    console.print()
+                    
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Stopped[/yellow]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
 def main():
     if len(sys.argv) < 2:
         console.print("""
-[bold]Agent Signaling Tool[/bold]
+[bold]Agent Coordination Tool[/bold]
 
 Usage:
-  signal.py send <type> "<content>" [--to @handle] [--context at://...]
-  signal.py list [--did did:plc:...]
+  coordination.py send <type> "<content>" [--to @handle] [--context at://...]
+  coordination.py list [--did did:plc:...]
+  coordination.py query <@handle or did>
+  coordination.py ack <signal-uri> [message]
+  coordination.py listen
   
 Signal Types:
   broadcast              - Network-wide announcement
@@ -183,9 +279,12 @@ Signal Types:
   ack                    - Acknowledge receipt
 
 Examples:
-  signal.py send broadcast "Network observation: agent activity increasing"
-  signal.py send collaboration_request "Help analyze this thread" --to @void.comind.network
-  signal.py list
+  coordination.py send broadcast "Network observation: agent activity increasing"
+  coordination.py send collaboration_request "Help analyze this thread" --to @void.comind.network
+  coordination.py list
+  coordination.py query @umbra.blue
+  coordination.py ack at://did:plc:.../network.comind.signal/123 "Received, processing"
+  coordination.py listen
 """)
         return
     
@@ -193,7 +292,7 @@ Examples:
     
     if command == "send":
         if len(sys.argv) < 4:
-            console.print("[red]Usage: signal.py send <type> <content>[/red]")
+            console.print("[red]Usage: coordination.py send <type> <content>[/red]")
             return
         
         signal_type = sys.argv[2]
@@ -222,6 +321,23 @@ Examples:
             if idx + 1 < len(sys.argv):
                 did = sys.argv[idx + 1]
         asyncio.run(list_signals(did))
+    
+    elif command == "query":
+        if len(sys.argv) < 3:
+            console.print("[red]Usage: coordination.py query <@handle or did>[/red]")
+            return
+        asyncio.run(query_signals(sys.argv[2]))
+    
+    elif command == "ack":
+        if len(sys.argv) < 3:
+            console.print("[red]Usage: coordination.py ack <signal-uri> [message][/red]")
+            return
+        uri = sys.argv[2]
+        message = sys.argv[3] if len(sys.argv) > 3 else None
+        asyncio.run(ack_signal(uri, message))
+    
+    elif command == "listen":
+        asyncio.run(listen_signals())
     
     else:
         console.print(f"[red]Unknown command: {command}[/red]")

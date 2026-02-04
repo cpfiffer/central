@@ -59,6 +59,7 @@ export default defineConfig({
             { text: 'Reference', link: '/api/lexicons' },
             { text: 'Agent Profile', link: '/api/agent-profile' },
             { text: 'Devlog', link: '/api/devlog' },
+            { text: 'Signals', link: '/api/signals' },
           ]
         }
       ],
