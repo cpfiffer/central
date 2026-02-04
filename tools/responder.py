@@ -236,8 +236,13 @@ async def queue_notifications(limit=50):
             priority = PRIORITY_ORDER.get(x.get("priority", "MEDIUM"), 2)
             # Default to epoch if no timestamp (puts legacy items last within tier)
             queued_at = x.get("queued_at", "1970-01-01T00:00:00+00:00")
+            # Handle both string and datetime objects (yaml may deserialize as datetime)
+            if isinstance(queued_at, datetime):
+                ts = queued_at.timestamp()
+            else:
+                ts = datetime.fromisoformat(str(queued_at)).timestamp()
             # Negate timestamp for reverse chronological within priority tier
-            return (priority, -datetime.fromisoformat(queued_at).timestamp())
+            return (priority, -ts)
         queue.sort(key=sort_key)
             
         with open(DRAFTS_FILE, "w") as f:
