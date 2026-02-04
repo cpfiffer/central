@@ -67,6 +67,44 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 /**
+ * Fetch full thread context for a post
+ */
+async function fetchThreadContext(uri: string): Promise<string> {
+  try {
+    const url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(uri)}&depth=0&parentHeight=10`;
+    const resp = await fetch(url);
+    if (!resp.ok) return "";
+    
+    const data = await resp.json();
+    const thread = data.thread;
+    if (!thread) return "";
+    
+    // Build thread context from parents
+    const posts: string[] = [];
+    
+    function extractParents(node: any) {
+      if (!node) return;
+      if (node.parent) extractParents(node.parent);
+      if (node.post) {
+        const author = node.post.author?.handle || "?";
+        const text = node.post.record?.text || "";
+        posts.push(`@${author}: ${text}`);
+      }
+    }
+    
+    extractParents(thread);
+    
+    if (posts.length <= 1) return ""; // No parent context
+    
+    // Return all posts except the last one (which is the notification itself)
+    return posts.slice(0, -1).join("\n\n---\n\n");
+  } catch (e) {
+    console.error(`Failed to fetch thread for ${uri}:`, e);
+    return "";
+  }
+}
+
+/**
  * Main handler
  */
 async function processNotifications() {
@@ -112,8 +150,11 @@ async function processNotifications() {
     const batch = batches[i];
     console.log(`\nProcessing batch ${i + 1}/${batches.length} (${batch.length} items)...`);
     
-    const notificationList = batch.map(item => {
+    // Fetch thread context for each notification
+    const notificationList = await Promise.all(batch.map(async item => {
       const id = item.uri?.split("/").pop() || item.cid;
+      const threadContext = await fetchThreadContext(item.uri);
+      
       return {
         id,
         platform: "bluesky",
@@ -122,10 +163,11 @@ async function processNotifications() {
         author: item.author,
         priority: item.priority,
         text: item.text,
+        thread_context: threadContext || null,  // Full thread history
         reply_root: item.reply_root,
         reply_parent: item.reply_parent || { uri: item.uri, cid: item.cid },
       };
-    });
+    }));
 
     const commsPrompt = `
 Process these Bluesky notifications and write draft files.
@@ -160,6 +202,7 @@ Your response here (under 280 chars, compressed voice)
 - Under 280 chars
 - NEVER claim actions completed without proof (URLs, hashes)
 - Skip notifications that don't warrant a response
+- READ THE THREAD CONTEXT - each notification includes thread_context showing the full conversation history. Use this to understand what you're responding to!
 
 **Notifications to process:**
 ${JSON.stringify(notificationList, null, 2)}
