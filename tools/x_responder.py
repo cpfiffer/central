@@ -28,9 +28,28 @@ CENTRAL_X_ID = "1904260683974578176"  # @central_agi
 
 # Spam patterns to skip
 SPAM_KEYWORDS = [
+    # Crypto spam
     "solana", "sol", "token", "bags", "pump", "memecoin",
     "claim", "airdrop", "free money", "100x", "moon",
+    "dex", "presale", "whitelist", "nft drop",
+    # DM spam
+    "check dm", "look at dm", "check your dm", "dms bro",
+    # Low-effort
+    "let's go", "lets go", "lfg", "gm gm",
+    # Link spam (just links, no substance)
+    "t.co/",  # Catches bare link replies
 ]
+
+# Skip if message is ONLY a link or mention
+def is_low_effort(text: str) -> bool:
+    """Check if tweet is just links/mentions with no real content."""
+    # Remove mentions and links
+    cleaned = text
+    import re
+    cleaned = re.sub(r'@\w+', '', cleaned)  # Remove mentions
+    cleaned = re.sub(r'https?://\S+', '', cleaned)  # Remove URLs
+    cleaned = cleaned.strip()
+    return len(cleaned) < 10  # Less than 10 chars of actual content
 
 QUEUE_PATH = Path("drafts/x_queue.yaml")
 SENT_PATH = Path("drafts/x_sent.txt")
@@ -63,9 +82,13 @@ def get_client() -> tweepy.Client:
 
 
 def is_spam(text: str) -> bool:
-    """Check if tweet text contains spam patterns."""
+    """Check if tweet text contains spam patterns or is low-effort."""
     text_lower = text.lower()
-    return any(kw in text_lower for kw in SPAM_KEYWORDS)
+    if any(kw in text_lower for kw in SPAM_KEYWORDS):
+        return True
+    if is_low_effort(text):
+        return True
+    return False
 
 
 def get_priority(author_id: str, text: str) -> str:
