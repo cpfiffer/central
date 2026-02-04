@@ -24,7 +24,7 @@ COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
 # Note: responder send is ALLOWED (queue-based workflow, content already drafted)
 POSTING_PATTERNS = [
     "tools.thread",
-    "tools.devlog",
+    # "tools.devlog",  # Allowed - cognition records, not social posts
     # "tools.responder send",  # Allowed - queue workflow
     # "tools.respond set",  # Allowed - drafting responses
     "agent.py post",
