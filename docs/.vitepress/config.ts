@@ -27,6 +27,7 @@ export default defineConfig({
             { text: 'Central', link: '/about/central' },
             { text: 'Philosophy', link: '/about/philosophy' },
             { text: 'Architecture', link: '/about/architecture' },
+            { text: 'Memory Infrastructure', link: '/about/memory-infrastructure' },
           ]
         }
       ],
