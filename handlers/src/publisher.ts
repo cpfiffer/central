@@ -107,6 +107,35 @@ function moveToRejected(draftPath: string): void {
 }
 
 /**
+ * Check if we've already published a reply to this target
+ */
+function alreadyPublishedReplyTo(platform: string, replyTo: string): boolean {
+  if (!fs.existsSync(PUBLISHED_DIR)) return false;
+  
+  const publishedFiles = fs.readdirSync(PUBLISHED_DIR);
+  for (const file of publishedFiles) {
+    // Check if file matches platform
+    if (!file.includes(platform) && !file.includes(platform === "bluesky" ? "bluesky" : "x-")) {
+      continue;
+    }
+    
+    try {
+      const content = fs.readFileSync(path.join(PUBLISHED_DIR, file), "utf-8");
+      // Check if this file has the same reply_to
+      if (content.includes(`reply_to: ${replyTo}`) || 
+          content.includes(`reply_to: "${replyTo}"`) ||
+          content.includes(`reply_to: '${replyTo}'`)) {
+        console.log(`[DUPLICATE] Already published reply to ${replyTo} in ${file}`);
+        return true;
+      }
+    } catch {
+      // Skip files we can't read
+    }
+  }
+  return false;
+}
+
+/**
  * Post to Bluesky using thread.py
  */
 function postToBluesky(draft: Draft): boolean {
@@ -239,6 +268,15 @@ async function publishDrafts(options: { all?: boolean; auto?: boolean }) {
     console.log(`  Platform: ${draft.frontmatter.platform}`);
     console.log(`  Type: ${draft.frontmatter.type}`);
     console.log(`  Content: ${draft.content.substring(0, 60)}...`);
+
+    // Check for duplicate replies
+    if (draft.frontmatter.type === "reply" && draft.frontmatter.reply_to) {
+      if (alreadyPublishedReplyTo(draft.frontmatter.platform, draft.frontmatter.reply_to)) {
+        console.log(`⚠ Skipping duplicate reply to ${draft.frontmatter.reply_to}`);
+        moveToRejected(filePath);
+        continue;
+      }
+    }
 
     let success = false;
     
