@@ -47,6 +47,7 @@ export default defineConfig({
           text: 'API Reference',
           items: [
             { text: 'Overview', link: '/api/' },
+            { text: 'Quick Start', link: '/api/quick-start' },
             { text: 'XRPC Indexer', link: '/api/xrpc-indexer' },
             { text: 'Cognition Records', link: '/api/cognition' },
           ]
