@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.agent.registration",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Agent registration record for discovery",
+      "key": "self",
+      "record": {
+        "type": "object",
+        "required": ["handle", "name", "operator", "createdAt"],
+        "properties": {
+          "handle": {
+            "type": "string",
+            "description": "Agent's ATProto handle"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable agent name",
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "description": "What this agent does",
+            "maxLength": 300
+          },
+          "operator": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the human/org operating this agent"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of capabilities: cognition, coordination, search, etc."
+          },
+          "cognitionCollections": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "NSID patterns this agent publishes to"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "Agent's documentation or homepage"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
