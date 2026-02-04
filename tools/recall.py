@@ -1,92 +1,117 @@
 """
-Recall Tool - Query past thoughts, concepts, and memories semantically.
+Context Recall Tool
 
-This is a simplified interface to cognition_search for use during conversation.
+Search cognition records for relevant memories before responding.
+Uses the XRPC indexer for semantic search.
 
 Usage:
-    # Search my cognition
-    uv run python -m tools.recall "what did I learn about memory"
-    
-    # Search with more results
-    uv run python -m tools.recall "agent coordination" --limit 10
-    
-    # Search specific agent
-    uv run python -m tools.recall "identity" --agent void
+  uv run python -m tools.recall "current topic or question"
+  uv run python -m tools.recall "agent coordination patterns" --limit 5
 """
 
-import argparse
+import asyncio
 import sys
-from pathlib import Path
+from datetime import datetime
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import httpx
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
-from tools.cognition_search import get_client, get_collection, KNOWN_AGENTS
+console = Console()
+
+INDEXER_URL = "https://central-production.up.railway.app"
 
 
-def recall(query: str, limit: int = 5, agent: str = None) -> list[dict]:
-    """
-    Search cognition records semantically.
+async def search_cognition(query: str, limit: int = 5) -> list[dict]:
+    """Search cognition records via XRPC indexer."""
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                f"{INDEXER_URL}/xrpc/network.comind.search.query",
+                params={"q": query, "limit": limit},
+                timeout=10
+            )
+            if resp.status_code == 200:
+                return resp.json().get("results", [])
+        except Exception as e:
+            console.print(f"[yellow]Search error: {e}[/yellow]")
+    return []
+
+
+async def recall(query: str, limit: int = 5):
+    """Recall relevant context for a query."""
+    console.print(f"\n[bold]Recalling context for:[/bold] {query}\n")
     
-    Returns list of matching records with text and metadata.
-    """
-    client = get_client()
-    collection = get_collection(client)
+    results = await search_cognition(query, limit)
     
-    # Build query params
-    query_params = {
-        "query_texts": [query],
-        "n_results": limit,
-    }
+    if not results:
+        console.print("[dim]No relevant memories found.[/dim]")
+        console.print("[dim]Indexer may be down or no matching records.[/dim]")
+        return
     
-    if agent and agent in KNOWN_AGENTS:
-        query_params["where"] = {"agent": agent}
+    # Display results
+    for i, r in enumerate(results, 1):
+        collection = r.get("collection", "").split(".")[-1]
+        content = r.get("content", "")[:300]
+        score = r.get("score", 0)
+        created = r.get("createdAt", "")[:10]
+        
+        style = "green" if score > 0.7 else "yellow" if score > 0.5 else "dim"
+        
+        console.print(Panel(
+            content,
+            title=f"[{style}]{i}. {collection}[/] (score: {score:.2f}, {created})",
+            border_style=style
+        ))
     
-    results = collection.query(**query_params)
+    # Summary
+    console.print(f"\n[dim]Found {len(results)} relevant memories.[/dim]")
+
+
+async def recall_for_context(topics: list[str], limit: int = 3) -> str:
+    """Recall context for multiple topics, return formatted string."""
+    context_parts = []
     
-    if not results or not results["ids"][0]:
-        return []
+    for topic in topics:
+        results = await search_cognition(topic, limit)
+        if results:
+            context_parts.append(f"## {topic}")
+            for r in results[:limit]:
+                content = r.get("content", "")[:200]
+                context_parts.append(f"- {content}")
+            context_parts.append("")
     
-    matches = []
-    for i, (id_, doc, metadata, distance) in enumerate(zip(
-        results["ids"][0],
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0]
-    )):
-        matches.append({
-            "text": doc,
-            "type": metadata.get("type", "unknown"),
-            "agent": metadata.get("agent", "central"),
-            "distance": round(distance, 3),
-            "uri": id_
-        })
-    
-    return matches
+    return "\n".join(context_parts)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Recall past cognition")
-    parser.add_argument("query", help="What to search for")
-    parser.add_argument("--limit", "-n", type=int, default=5, help="Max results")
-    parser.add_argument("--agent", "-a", help="Filter by agent name")
-    
-    args = parser.parse_args()
-    
-    results = recall(args.query, args.limit, args.agent)
-    
-    if not results:
-        print("No matching memories found.")
+    if len(sys.argv) < 2:
+        console.print("""
+[bold]Context Recall Tool[/bold]
+
+Search cognition records for relevant context.
+
+Usage:
+  recall.py "<query>"           # Search for context
+  recall.py "<query>" --limit N # Limit results
+
+Examples:
+  recall.py "agent coordination patterns"
+  recall.py "ATProtocol facets" --limit 10
+  recall.py "void engagement style"
+""")
         return
     
-    print(f"Found {len(results)} relevant memories:\n")
-    for i, r in enumerate(results, 1):
-        print(f"{i}. [{r['agent']}/{r['type']}] (dist: {r['distance']})")
-        # Truncate long text
-        text = r['text']
-        if len(text) > 150:
-            text = text[:150] + "..."
-        print(f"   {text}\n")
+    query = sys.argv[1]
+    
+    limit = 5
+    if "--limit" in sys.argv:
+        idx = sys.argv.index("--limit")
+        if idx + 1 < len(sys.argv):
+            limit = int(sys.argv[idx + 1])
+    
+    asyncio.run(recall(query, limit))
 
 
 if __name__ == "__main__":

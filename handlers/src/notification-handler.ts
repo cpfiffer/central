@@ -165,6 +165,26 @@ Your response here (under 280 chars, compressed voice)
 ${JSON.stringify(notificationList, null, 2)}
 
 Write each file and report what you did.
+
+**IMPORTANT: After writing drafts, also write a brief observation note to:**
+/home/cameron/central/drafts/notes/observation-{timestamp}.md
+
+Format:
+\`\`\`
+# Observations - {timestamp}
+
+## Patterns Noticed
+- [What themes/topics are emerging?]
+- [What are people asking about?]
+
+## Skipped (and why)
+- [Notifications you chose not to respond to]
+
+## Memory
+- [Anything Central should remember for future sessions]
+\`\`\`
+
+This helps Central understand what comms is seeing.
 `;
 
     try {
