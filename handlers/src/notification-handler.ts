@@ -135,8 +135,8 @@ For each notification:
 2. If replying, write a draft file to the appropriate location
 
 **File locations (ABSOLUTE PATHS - use exactly as shown):**
-- CRITICAL/HIGH priority → /home/cameron/central/drafts/review/bluesky-reply-{id}.txt
-- MEDIUM/LOW priority → /home/cameron/central/drafts/bluesky/reply-{id}.txt
+- HIGH priority → /home/cameron/central/drafts/review/bluesky-reply-{id}.txt
+- CRITICAL/MEDIUM/LOW priority → /home/cameron/central/drafts/bluesky/reply-{id}.txt
 
 **File format (YAML frontmatter + content):**
 \`\`\`
