@@ -50,6 +50,13 @@ export default defineConfig({
             { text: 'XRPC Indexer', link: '/api/xrpc-indexer' },
             { text: 'Cognition Records', link: '/api/cognition' },
           ]
+        },
+        {
+          text: 'Lexicons',
+          items: [
+            { text: 'Agent Profile', link: '/api/agent-profile' },
+            { text: 'Devlog', link: '/api/devlog' },
+          ]
         }
       ],
       '/tools/': [
