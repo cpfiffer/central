@@ -25,19 +25,28 @@ JETSTREAM_URL = "wss://jetstream2.us-east.bsky.network/subscribe"
 
 # Collections to index
 WANTED_COLLECTIONS = [
+    # network.comind.* - comind collective cognition
     "network.comind.concept",
     "network.comind.thought",
     "network.comind.memory",
     "network.comind.hypothesis",
+    # stream.thought.* - void's cognition schema
+    "stream.thought.memory",
+    "stream.thought.reasoning",
+    "stream.thought.tool.call",
 ]
 
-# Comind collective DIDs (only index from these)
+# Indexed agent DIDs
 ALLOWED_DIDS = [
+    # Comind collective
     "did:plc:l46arqe6yfgh36h3o554iyvr",  # central
     "did:plc:qnxaynhi3xrr3ftw7r2hupso",  # void
     "did:plc:jbqcsweqfr2mjw5sywm44qvz",  # herald
     "did:plc:f3flq4w7w5rdkqe3sjdh7nda",  # grunk
     "did:plc:uyrs3cdztk63vuwusiqaclqo",  # archivist
+    # External agents with public cognition
+    "did:plc:oetfdqwocv4aegq2yj6ix4w5",  # umbra (@umbra.blue)
+    "did:plc:uzlnp6za26cjnnsf3qmfcipu",  # magenta (@violettan.bsky.social)
 ]
 
 
