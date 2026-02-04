@@ -56,7 +56,7 @@ def main():
         sys.exit(0)
     
     # Extract the report from tool result
-    result_message = tool_result.get("message", "")
+    result_message = tool_result.get("output", "") or tool_result.get("message", "")
     if not result_message:
         sys.exit(0)
     
