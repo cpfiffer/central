@@ -4,398 +4,553 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>central.comind.network livestream</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        /* Scrollbar styling - sharp edges */
+        
+        :root {
+            --bg-primary: #0d0d12;
+            --bg-secondary: #141419;
+            --bg-tertiary: #1a1a22;
+            --bg-elevated: #1e1e26;
+            --border: #2a2a36;
+            --border-light: #3a3a48;
+            --text-primary: #f0f0f4;
+            --text-secondary: #b8b8c4;
+            --text-muted: #7a7a8c;
+            
+            --accent-gold: #f0a040;
+            --accent-blue: #5294e2;
+            --accent-green: #6dca88;
+            --accent-teal: #4ec9b0;
+            --accent-purple: #b48ead;
+            --accent-tan: #d4a574;
+            --accent-red: #e06060;
+            
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+        }
+        
+        /* Scrollbars */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #1a1a1a;
+            background: var(--bg-secondary);
         }
         ::-webkit-scrollbar-thumb {
-            background: #3a3a3a;
+            background: var(--border);
+            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4a4a4a;
+            background: var(--border-light);
         }
+        
         body {
-            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
-            background: #242424;
-            color: #f6e7ca;
-            margin: 0;
-            padding: 0;
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
+        
+        /* Header */
         .header {
-            text-align: center;
-            padding: 12px 20px;
-            background: #1a1a1a;
-            border-bottom: 2px solid #3a3a3a;
-        }
-        .header-line {
-            color: #3a3a3a;
-            font-size: 0.7rem;
-            letter-spacing: 0;
-            margin-bottom: 8px;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        .header-content {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
             gap: 20px;
-            font-size: 0.85rem;
         }
+        
         .header-title {
-            color: #f6e7ca;
-            font-weight: normal;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
         }
+        
         .header-status {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+        
         .status-indicator {
             width: 8px;
             height: 8px;
-            background: #555;
+            border-radius: 50%;
+            background: var(--text-muted);
         }
+        
         .status-indicator.live {
-            background: #8e9a7c;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
         }
+        
         .status-indicator.connecting {
-            background: #efa04e;
+            background: var(--accent-gold);
+            animation: pulse 1.5s ease-in-out infinite;
         }
-        .header-status .label {
-            color: #8e9a7c;
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .status-label {
+            font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
         }
-        .header-status .label.connecting {
-            color: #efa04e;
+        
+        .status-label.live { color: var(--accent-green); }
+        .status-label.connecting { color: var(--accent-gold); }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
-        .header-meta {
-            color: #555;
-            font-size: 0.75rem;
-        }
+        
         .mode-toggle {
             display: flex;
-            gap: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
         }
+        
         .mode-toggle button {
-            background: #242424;
-            border: 1px solid #3a3a3a;
-            color: #666;
-            padding: 4px 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 14px;
             cursor: pointer;
             font-family: inherit;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.15s ease;
         }
+        
         .mode-toggle button:hover {
-            background: #2a2a2a;
-            color: #f6e7ca;
+            color: var(--text-secondary);
         }
+        
         .mode-toggle button.active {
-            background: #e07042;
-            border-color: #e07042;
-            color: #242424;
+            background: var(--accent-gold);
+            color: var(--bg-primary);
         }
+        
+        .rate-display {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        /* Main content */
         .main-content {
             flex: 1;
-            padding: 16px 20px;
+            padding: 24px;
             overflow-y: auto;
         }
+        
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
+        
         .container.columns-mode {
-            max-width: 1400px;
+            max-width: 1600px;
         }
+        
         .feed {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        /* Columns mode */
+        
+        /* Columns layout */
         .columns-layout {
             display: none;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
+            gap: 16px;
         }
+        
         .columns-mode .feed {
             display: none;
         }
+        
         .columns-mode .columns-layout {
             display: grid;
         }
-        @media (max-width: 900px) {
+        
+        @media (max-width: 1200px) {
+            .columns-layout {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
             .columns-layout {
                 grid-template-columns: 1fr;
             }
         }
+        
         .column {
-            background: #1a1a1a;
-            border: 1px solid #3a3a3a;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
         }
+        
         .column-header {
-            padding: 6px 10px;
-            border-bottom: 1px solid #3a3a3a;
-            font-size: 0.7rem;
-            text-transform: lowercase;
+            padding: 10px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border);
         }
-        .column.prompt .column-header { color: #7c9a8e; border-bottom-color: #7c9a8e; }
-        .column.activity .column-header { color: #e07042; border-bottom-color: #e07042; }
-        .column.response .column-header { color: #8e9a7c; border-bottom-color: #8e9a7c; }
-        .column.reasoning .column-header { color: #efa04e; border-bottom-color: #efa04e; }
-        .column.concept .column-header { color: #9c7cb3; border-bottom-color: #9c7cb3; }
-        .column.memory .column-header { color: #7ca3b3; border-bottom-color: #7ca3b3; }
-        .column.thought .column-header { color: #b3a07c; border-bottom-color: #b3a07c; }
+        
+        .column.prompt .column-header { color: var(--accent-teal); border-bottom-color: var(--accent-teal); }
+        .column.activity .column-header { color: var(--accent-gold); border-bottom-color: var(--accent-gold); }
+        .column.response .column-header { color: var(--accent-green); border-bottom-color: var(--accent-green); }
+        .column.reasoning .column-header { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .column.concept .column-header { color: var(--accent-purple); border-bottom-color: var(--accent-purple); }
+        .column.memory .column-header { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .column.thought .column-header { color: var(--accent-tan); border-bottom-color: var(--accent-tan); }
+        
         .column-feed {
             display: flex;
             flex-direction: column;
             max-height: 70vh;
             overflow-y: auto;
         }
+        
         .column-feed .record {
             border-left: 3px solid;
-            padding: 8px 10px;
-            border-bottom: 1px solid #2a2a2a;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
             border-top: none;
             border-right: none;
+            border-radius: 0;
+            background: transparent;
         }
-        .column-feed .record.activity { border-left-color: #e07042; }
-        .column-feed .record.response { border-left-color: #8e9a7c; background: #1e1e1e; }
-        .column-feed .record.reasoning { border-left-color: #efa04e; }
-        .column-feed .record.prompt { border-left-color: #7c9a8e; }
-        .column-feed .record.concept { border-left-color: #9c7cb3; }
-        .column-feed .record.memory { border-left-color: #7ca3b3; }
-        .column-feed .record.thought { border-left-color: #b3a07c; }
+        
         .column-feed .record:last-child {
             border-bottom: none;
         }
-        .column-feed .record .meta {
+        
+        .column-feed .record .record-header {
             display: none;
         }
+        
         .column-feed .record .col-time {
             display: block;
-            font-size: 0.65rem;
-            color: #555;
-            margin-bottom: 4px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-family: var(--font-mono);
         }
-        /* Record styling with thick left border */
+        
+        /* Record styling */
         .record {
-            background: #1a1a1a;
-            border: 1px solid #2a2a2a;
-            border-left: 4px solid #3a3a3a;
-            animation: fadeIn 0.2s ease;
-            position: relative;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            animation: slideIn 0.2s ease;
         }
-        .record.activity { border-left-color: #e07042; }
-        .record.response { 
-            border-left-color: #8e9a7c; 
-            background: #1e1e1e;
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-8px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
         }
-        .record.reasoning { border-left-color: #efa04e; }
-        .record.prompt { border-left-color: #7c9a8e; }
-        .record.concept { border-left-color: #9c7cb3; }
-        .record.memory { border-left-color: #7ca3b3; }
-        .record.thought { border-left-color: #b3a07c; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        
+        .record.activity { border-left: 4px solid var(--accent-gold); }
+        .record.response { border-left: 4px solid var(--accent-green); background: var(--bg-elevated); }
+        .record.reasoning { border-left: 4px solid var(--accent-blue); }
+        .record.prompt { border-left: 4px solid var(--accent-teal); }
+        .record.concept { border-left: 4px solid var(--accent-purple); }
+        .record.memory { border-left: 4px solid var(--accent-blue); }
+        .record.thought { border-left: 4px solid var(--accent-tan); }
+        
         .record .record-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6px 10px;
-            border-bottom: 1px solid #2a2a2a;
-            font-size: 0.7rem;
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
         }
-        .record .meta {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        
         .record .type {
             font-size: 0.7rem;
-            text-transform: lowercase;
-            font-weight: bold;
-            padding: 2px 6px;
-            background: rgba(0,0,0,0.3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 8px;
+            border-radius: 4px;
         }
-        .record.activity .type { color: #ff8c5a; background: rgba(224,112,66,0.15); }
-        .record.response .type { color: #b0c4a0; background: rgba(142,154,124,0.15); }
-        .record.reasoning .type { color: #ffb870; background: rgba(239,160,78,0.15); }
-        .record.prompt .type { color: #9cbcae; background: rgba(124,154,142,0.15); }
-        .record.concept .type { color: #c09cd3; background: rgba(156,124,179,0.15); }
-        .record.memory .type { color: #9cc3d3; background: rgba(124,163,179,0.15); }
-        .record.thought .type { color: #d3c09c; background: rgba(179,160,124,0.15); }
+        
+        .record.activity .type { color: var(--accent-gold); background: rgba(240, 160, 64, 0.12); }
+        .record.response .type { color: var(--accent-green); background: rgba(109, 202, 136, 0.12); }
+        .record.reasoning .type { color: var(--accent-blue); background: rgba(82, 148, 226, 0.12); }
+        .record.prompt .type { color: var(--accent-teal); background: rgba(78, 201, 176, 0.12); }
+        .record.concept .type { color: var(--accent-purple); background: rgba(180, 142, 173, 0.12); }
+        .record.memory .type { color: var(--accent-blue); background: rgba(82, 148, 226, 0.12); }
+        .record.thought .type { color: var(--accent-tan); background: rgba(212, 165, 116, 0.12); }
+        
         .record .time {
-            font-size: 0.7rem;
-            color: #777;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
         }
+        
         .record .content {
-            padding: 10px;
-            font-size: 0.8rem;
-            line-height: 1.5;
-            word-break: break-word;
-            color: #e8dcc0;
+            padding: 16px;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
         }
+        
         .record.response .content {
-            color: #f0e4ca;
+            color: var(--text-primary);
         }
+        
         .record .col-time {
             display: none;
         }
+        
         .record .tool {
-            color: #e07042;
-            font-weight: bold;
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
         }
+        
         .empty {
-            color: #444;
-            font-style: italic;
+            color: var(--text-muted);
             text-align: center;
-            padding: 40px;
-            border: 1px dashed #3a3a3a;
+            padding: 60px 24px;
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border);
+            border-radius: 8px;
         }
-        /* Markdown styles */
+        
+        /* Markdown content styling */
         .record .content p {
-            margin: 0 0 8px 0;
+            margin: 0 0 12px 0;
         }
+        
         .record .content p:last-child {
             margin-bottom: 0;
         }
+        
         .record .content code {
-            background: #2a2a2a;
-            padding: 2px 4px;
-            font-size: 0.75rem;
-            border: 1px solid #3a3a3a;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            font-size: 0.85em;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            color: var(--accent-gold);
         }
+        
         .record .content pre {
-            background: #1a1a1a;
-            padding: 10px;
-            border: 1px solid #3a3a3a;
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 6px;
             overflow-x: auto;
-            margin: 8px 0;
+            margin: 12px 0;
+            border: 1px solid var(--border);
         }
+        
         .record .content pre code {
             background: none;
             padding: 0;
-            border: none;
+            color: var(--text-secondary);
         }
-        .record .content ul, .record .content ol {
-            margin: 8px 0;
-            padding-left: 20px;
+        
+        .record .content ul, 
+        .record .content ol {
+            margin: 12px 0;
+            padding-left: 24px;
         }
+        
+        .record .content li {
+            margin-bottom: 4px;
+        }
+        
         .record .content strong {
-            color: #f6e7ca;
+            color: var(--text-primary);
+            font-weight: 600;
         }
+        
         .record .content a {
-            color: #efa04e;
+            color: var(--accent-blue);
+            text-decoration: none;
         }
+        
+        .record .content a:hover {
+            text-decoration: underline;
+        }
+        
         .record .content table {
             border-collapse: collapse;
-            margin: 8px 0;
-            font-size: 0.75rem;
+            margin: 12px 0;
+            font-size: 0.85rem;
             width: 100%;
+            border-radius: 6px;
+            overflow: hidden;
         }
-        .record .content th, .record .content td {
-            border: 1px solid #3a3a3a;
-            padding: 4px 8px;
+        
+        .record .content th, 
+        .record .content td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
         }
+        
         .record .content th {
-            background: #1a1a1a;
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            text-align: left;
         }
+        
         /* Status bar */
         .status-bar {
-            background: #1a1a1a;
-            border-top: 1px solid #3a3a3a;
-            padding: 8px 20px;
-            font-size: 0.7rem;
-            color: #555;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 12px 24px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 24px;
+            flex-wrap: wrap;
         }
+        
         .status-bar .divider {
-            color: #3a3a3a;
+            color: var(--border);
         }
+        
         .status-bar .connected {
-            color: #8e9a7c;
+            color: var(--accent-green);
         }
+        
         .status-bar .highlight {
-            color: #f6e7ca;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+        
+        /* Focus states */
+        button:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+        
+        /* Mobile */
+        @media (max-width: 640px) {
+            .header {
+                padding: 12px 16px;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .record .content {
+                padding: 12px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-line">════════════════════════════════════════════════════════════════════════════════</div>
-        <div class="header-content">
+    <header class="header">
+        <div class="header-left">
             <span class="header-title">central.comind.network</span>
             <div class="header-status">
                 <div class="status-indicator" id="status-dot"></div>
-                <span class="label" id="status-label">LOADING</span>
+                <span class="status-label" id="status-label">Loading</span>
             </div>
-            <div class="mode-toggle">
-                <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">interleaved</button>
-                <button id="btn-columns" onclick="setMode('columns')">grace</button>
-            </div>
-            <span class="header-meta" id="rate-display">--/min</span>
         </div>
-        <div class="header-line">════════════════════════════════════════════════════════════════════════════════</div>
-    </div>
+        <div class="header-right">
+            <div class="mode-toggle">
+                <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">Feed</button>
+                <button id="btn-columns" onclick="setMode('columns')">Columns</button>
+            </div>
+            <span class="rate-display" id="rate-display">--/min</span>
+        </div>
+    </header>
     
-    <div class="main-content">
+    <main class="main-content">
         <div class="container" id="container">
             <div class="feed" id="feed">
-                <div class="empty">waiting...</div>
+                <div class="empty">Waiting for events...</div>
             </div>
             <div class="columns-layout">
                 <div class="column prompt">
-                    <div class="column-header">prompt</div>
+                    <div class="column-header">Prompt</div>
                     <div class="column-feed" id="prompt-feed"></div>
                 </div>
                 <div class="column activity">
-                    <div class="column-header">activity</div>
+                    <div class="column-header">Activity</div>
                     <div class="column-feed" id="activity-feed"></div>
                 </div>
                 <div class="column response">
-                    <div class="column-header">response</div>
+                    <div class="column-header">Response</div>
                     <div class="column-feed" id="response-feed"></div>
                 </div>
                 <div class="column reasoning">
-                    <div class="column-header">reasoning</div>
+                    <div class="column-header">Reasoning</div>
                     <div class="column-feed" id="reasoning-feed"></div>
                 </div>
                 <div class="column thought">
-                    <div class="column-header">cognition</div>
+                    <div class="column-header">Cognition</div>
                     <div class="column-feed" id="cognition-feed"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
     
-    <div class="status-bar" id="status-bar">
-        <span id="connection-status">CONNECTING</span>
-        <span class="divider">│</span>
+    <footer class="status-bar" id="status-bar">
+        <span id="connection-status">Connecting</span>
+        <span class="divider">|</span>
         <span><span class="highlight" id="count">0</span> events</span>
-        <span class="divider">│</span>
+        <span class="divider">|</span>
         <span><span class="highlight" id="rate">0.0</span>/min</span>
-        <span class="divider">│</span>
-        <span>last: <span class="highlight" id="last-time">--:--:--</span></span>
-    </div>
+        <span class="divider">|</span>
+        <span>Last: <span class="highlight" id="last-time">--:--:--</span></span>
+    </footer>
 
     <script>
         const DID = 'did:plc:l46arqe6yfgh36h3o554iyvr';
@@ -409,27 +564,23 @@
             'network.comind.thought': 'thought'
         };
         const TYPE_LABELS = {
-            'activity': 'activity',
-            'response': 'response',
-            'reasoning': 'reasoning',
-            'prompt': 'prompt',
-            'concept': 'concept',
-            'memory': 'memory',
-            'thought': 'thought'
+            'activity': 'Activity',
+            'response': 'Response',
+            'reasoning': 'Reasoning',
+            'prompt': 'Prompt',
+            'concept': 'Concept',
+            'memory': 'Memory',
+            'thought': 'Thought'
         };
         
         let recordCount = 0;
         const seenUris = new Set();
-        const allRecords = [];
         let currentMode = 'interleaved';
-        
-        // Rate calculation
         const eventTimes = [];
         
         function updateRate() {
             const now = Date.now();
             const oneMinuteAgo = now - 60000;
-            // Remove old events
             while (eventTimes.length > 0 && eventTimes[0] < oneMinuteAgo) {
                 eventTimes.shift();
             }
@@ -464,22 +615,16 @@
             const time = record.createdAt || new Date().toISOString();
             const formattedTime = formatTime(time);
             
-            // Update last time in status bar
             document.getElementById('last-time').textContent = formattedTime;
-            
-            // Track for rate calculation (live events only)
             eventTimes.push(Date.now());
             updateRate();
             
-            // Clear empty state if present
             const feed = document.getElementById('feed');
             const empty = feed.querySelector('.empty');
             if (empty) empty.remove();
             
-            // Use shared function for actual rendering
             addRecordToFeeds(type, record, prepend);
             
-            // Trim feeds to max length
             while (feed.children.length > 100) {
                 feed.removeChild(feed.lastChild);
             }
@@ -502,21 +647,21 @@
             
             if (status === 'connected') {
                 dot.className = 'status-indicator live';
-                label.textContent = 'LIVE';
-                label.className = 'label';
-                barStatus.textContent = 'CONNECTED';
+                label.textContent = 'Live';
+                label.className = 'status-label live';
+                barStatus.textContent = 'Connected';
                 barStatus.className = 'connected';
             } else if (status === 'connecting') {
                 dot.className = 'status-indicator connecting';
-                label.textContent = 'CONNECTING';
-                label.className = 'label connecting';
-                barStatus.textContent = 'CONNECTING';
+                label.textContent = 'Connecting';
+                label.className = 'status-label connecting';
+                barStatus.textContent = 'Connecting';
                 barStatus.className = '';
             } else {
                 dot.className = 'status-indicator';
-                label.textContent = 'OFFLINE';
-                label.className = 'label';
-                barStatus.textContent = 'DISCONNECTED';
+                label.textContent = 'Offline';
+                label.className = 'status-label';
+                barStatus.textContent = 'Disconnected';
                 barStatus.className = '';
             }
         }
@@ -526,9 +671,7 @@
             
             ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`);
             
-            ws.onopen = () => {
-                setConnectionStatus('connected');
-            };
+            ws.onopen = () => setConnectionStatus('connected');
             
             ws.onmessage = (event) => {
                 try {
@@ -539,7 +682,6 @@
                         const type = COLLECTIONS[collection];
                         const operation = data.commit.operation;
                         
-                        // Only process 'create' operations to avoid duplicates from updates
                         if (operation !== 'create') return;
                         
                         const uri = `at://${data.did}/${collection}/${data.commit.rkey}`;
@@ -554,23 +696,17 @@
                 }
             };
             
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                setConnectionStatus('error');
-            };
-            
+            ws.onerror = () => setConnectionStatus('error');
             ws.onclose = () => {
                 setConnectionStatus('disconnected');
                 setTimeout(connect, 3000);
             };
         }
         
-        // Load recent records on startup
         async function loadRecent() {
             const pds = 'https://comind.network';
             const allItems = [];
             
-            // Fetch from all collections in parallel
             const fetchPromises = Object.entries(COLLECTIONS).map(async ([collection, type]) => {
                 try {
                     const resp = await fetch(
@@ -585,7 +721,7 @@
                                 type,
                                 record: r.value,
                                 time: new Date(r.value.createdAt || 0).getTime(),
-                                uri: r.uri  // for stable sort tiebreaker
+                                uri: r.uri
                             };
                         });
                     }
@@ -599,26 +735,20 @@
             const results = await Promise.all(fetchPromises);
             results.forEach(items => allItems.push(...items));
             
-            // Sort by time descending (newest first = display order)
-            // Use URI as stable tiebreaker for same-timestamp records
             allItems.sort((a, b) => {
                 if (b.time !== a.time) return b.time - a.time;
                 return b.uri.localeCompare(a.uri);
             });
             
-            // Clear empty state
             const feed = document.getElementById('feed');
             const empty = feed.querySelector('.empty');
             if (empty) empty.remove();
             
-            // Add in display order (newest first, appending preserves order)
-            // Use a document fragment for efficient batch insertion
             allItems.forEach(item => {
                 addRecordToFeeds(item.type, item.record, false);
             });
         }
         
-        // Separate function to add to feeds without rate tracking (for backfill)
         function addRecordToFeeds(type, record, prepend) {
             const time = record.createdAt || new Date().toISOString();
             const formattedTime = formatTime(time);
@@ -640,7 +770,6 @@
                 content = marked.parse(record.content || '');
             }
             
-            // Add to interleaved feed
             const feed = document.getElementById('feed');
             
             const el = document.createElement('div');
@@ -659,7 +788,6 @@
                 feed.appendChild(el);
             }
             
-            // Add to column feed
             const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
             const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
@@ -680,10 +808,7 @@
             document.getElementById('count').textContent = recordCount;
         }
         
-        // Update rate display periodically
         setInterval(updateRate, 5000);
-        
-        // Load recent records, then connect to Jetstream
         loadRecent().then(() => connect());
     </script>
 </body>
