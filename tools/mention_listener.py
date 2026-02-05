@@ -25,6 +25,9 @@ console = Console()
 CENTRAL_DID = "did:plc:l46arqe6yfgh36h3o554iyvr"
 CENTRAL_HANDLE = "central.comind.network"
 
+# CRITICAL priority - these trigger self-wake
+CAMERON_DID = "did:plc:gfrmhdmjvxn2sjedzboeudef"
+
 # Jetstream endpoint
 JETSTREAM_URL = "wss://jetstream2.us-east.bsky.network/subscribe"
 
@@ -63,9 +66,14 @@ def queue_mention(event: dict, record: dict, author_did: str):
     """Add mention to the response queue."""
     commit = event.get("commit", {})
     
+    # Determine priority
+    priority = "HIGH"  # Default for real-time mentions
+    if author_did == CAMERON_DID:
+        priority = "CRITICAL"
+    
     # Build queue item
     item = {
-        "priority": "HIGH",  # Real-time mentions are high priority
+        "priority": priority,
         "author": author_did,
         "text": record.get("text", "")[:500],
         "uri": f"at://{author_did}/{commit.get('collection')}/{commit.get('rkey')}",
@@ -101,6 +109,21 @@ def queue_mention(event: dict, record: dict, author_did: str):
     
     console.print(f"[green]✓ Queued mention from {author_did[:20]}...[/green]")
     console.print(f"  Text: {record.get('text', '')[:80]}...")
+    
+    # Self-wake for CRITICAL mentions
+    if priority == "CRITICAL":
+        console.print(f"[bold red]CRITICAL mention detected - triggering self-wake[/bold red]")
+        try:
+            import subprocess
+            subprocess.Popen(
+                ["uv", "run", "python", "-m", "tools.wake_central", 
+                 "--critical", f"Real-time mention from Cameron: {record.get('text', '')[:100]}"],
+                cwd=str(Path(__file__).parent.parent),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            console.print(f"[red]Failed to trigger self-wake: {e}[/red]")
     
     return True
 
