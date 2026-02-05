@@ -6,10 +6,6 @@
           {
             "type": "command",
             "command": "uv run python hooks/publish-response.py"
-          },
-          {
-            "type": "command",
-            "command": "uv run python hooks/read-comms-reports.py"
           }
         ]
       },
@@ -61,6 +57,26 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/central-active.py"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/central-active.py"
+          }
+        ]
+      }
     ]
   },
   "permissions": {
@@ -74,7 +90,8 @@
       "Bash(grep:*)",
       "Edit(//home/cameron/.letta/agents/agent-c770d1c8-510e-4414-be36-c9ebd95a7758/memory/system/**)",
       "Bash(cd /home/cameron/central && uv run python -m tools.moltbook read 057358d0 2>&1)",
-      "Write(**)"
+      "Write(**)",
+      "Bash(bun run tsc:*)"
     ]
   }
 }

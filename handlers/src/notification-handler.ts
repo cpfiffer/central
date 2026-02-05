@@ -204,6 +204,16 @@ Your response here (under 280 chars, compressed voice)
 - Skip notifications that don't warrant a response
 - READ THE THREAD CONTEXT - each notification includes thread_context showing the full conversation history. Use this to understand what you're responding to!
 
+**Priority Assessment (OVERRIDE if needed):**
+You may upgrade or downgrade the suggested priority based on your assessment:
+- CRITICAL: Requires immediate response (urgent, time-sensitive, direct request from Cameron)
+- HIGH: Thoughtful engagement needed (technical questions, substantive discussions)
+- MEDIUM: Standard reply (general acknowledgment, routine interaction)
+- LOW: Can wait (simple thanks, low-stakes engagement)
+- SKIP: Don't respond (spam, off-topic, or better left alone)
+
+Route based on YOUR assessed priority, not the suggested one. Trust your judgment.
+
 **Notifications to process:**
 ${JSON.stringify(notificationList, null, 2)}
 

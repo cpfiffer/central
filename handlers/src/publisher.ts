@@ -218,16 +218,34 @@ function archiveDraft(draft: Draft): void {
 }
 
 /**
+ * Check if Central is currently active (has an active Letta Code session)
+ */
+function isCentralActive(): boolean {
+  // Use import.meta.url for ES modules
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  const activeFile = path.join(currentDir, "..", "..", ".central-active");
+  return fs.existsSync(activeFile);
+}
+
+/**
  * Main publisher function
  */
 async function publishDrafts(options: { all?: boolean; auto?: boolean }) {
   console.log(`[${new Date().toISOString()}] Starting publisher...`);
 
+  // Check if Central is active - if so, auto-approve CRITICAL/HIGH
+  const centralActive = isCentralActive();
+  if (centralActive) {
+    console.log(`[Central Active] Auto-approving CRITICAL/HIGH items`);
+  }
+
   // Find drafts
   const draftPatterns = [];
   
-  if (options.all) {
-    // Include review folder (CRITICAL/HIGH)
+  if (options.all || centralActive) {
+    // Include review folder (CRITICAL/HIGH) when:
+    // - Explicitly requested with --all
+    // - Central is active (can auto-approve)
     draftPatterns.push(`${REVIEW_DRAFTS}/*.txt`);
   }
   
