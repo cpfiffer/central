@@ -16,5 +16,8 @@ COPY lexicons/ ./lexicons/
 # Install Python dependencies
 RUN pip install --no-cache-dir .
 
-# Default to running the web server
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "indexer.app:app"]
+# Print a startup message
+RUN echo 'echo "Hello from comind!"' > /startup.sh && chmod +x /startup.sh
+
+# Default to running the web server - use PORT env var for Railway
+CMD sh -c "/startup.sh && gunicorn --bind 0.0.0.0:\${PORT:-8080} --workers 2 --timeout 120 indexer.app:app"
