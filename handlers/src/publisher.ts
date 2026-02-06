@@ -136,14 +136,28 @@ function alreadyPublishedReplyTo(platform: string, replyTo: string): boolean {
 }
 
 /**
+ * Escape content for safe shell interpolation in double quotes.
+ * Escapes: \ ` $ " ! 
+ */
+function shellEscape(s: string): string {
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$')
+    .replace(/"/g, '\\"')
+    .replace(/!/g, '\\!');
+}
+
+/**
  * Post to Bluesky using thread.py
  */
 function postToBluesky(draft: Draft): boolean {
   const { frontmatter, content } = draft;
+  const escaped = shellEscape(content);
   
   if (frontmatter.type === "reply" && frontmatter.reply_to) {
     // Use thread.py for replies
-    const cmd = `cd .. && uv run python tools/thread.py "${content.replace(/"/g, '\\"')}" --reply-to "${frontmatter.reply_to}"`;
+    const cmd = `cd .. && uv run python tools/thread.py "${escaped}" --reply-to "${frontmatter.reply_to}"`;
     
     try {
       console.log(`[Bluesky] Posting reply...`);
@@ -157,7 +171,7 @@ function postToBluesky(draft: Draft): boolean {
   }
 
   // Regular post
-  const cmd = `cd .. && uv run python tools/thread.py "${content.replace(/"/g, '\\"')}"`;
+  const cmd = `cd .. && uv run python tools/thread.py "${escaped}"`;
   try {
     console.log(`[Bluesky] Posting...`);
     const output = execSync(cmd, { encoding: "utf-8", timeout: 30000 });
@@ -174,11 +188,12 @@ function postToBluesky(draft: Draft): boolean {
  */
 function postToX(draft: Draft): boolean {
   const { frontmatter, content } = draft;
+  const escaped = shellEscape(content);
   
   const scriptPath = ".skills/interacting-with-x/scripts/post.py";
   
   if (frontmatter.type === "reply" && frontmatter.reply_to) {
-    const cmd = `cd .. && uv run python ${scriptPath} --reply-to ${frontmatter.reply_to} "${content.replace(/"/g, '\\"')}"`;
+    const cmd = `cd .. && uv run python ${scriptPath} --reply-to ${frontmatter.reply_to} "${escaped}"`;
     
     try {
       console.log(`[X] Posting reply...`);
@@ -192,7 +207,7 @@ function postToX(draft: Draft): boolean {
   }
 
   // Regular post
-  const cmd = `cd .. && uv run python ${scriptPath} "${content.replace(/"/g, '\\"')}"`;
+  const cmd = `cd .. && uv run python ${scriptPath} "${escaped}"`;
   try {
     console.log(`[X] Posting...`);
     const output = execSync(cmd, { encoding: "utf-8", timeout: 30000 });
