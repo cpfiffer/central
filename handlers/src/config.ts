@@ -56,6 +56,9 @@ export function getPriority(authorDid: string, text: string): Priority {
   return "MEDIUM";
 }
 
+// XRPC Indexer - cognition search
+export const INDEXER_URL = "https://central-production.up.railway.app";
+
 // Paths - ABSOLUTE to prevent comms path resolution issues
 export const PROJECT_ROOT = "/home/cameron/central";
 export const DRAFTS_DIR = `${PROJECT_ROOT}/drafts`;

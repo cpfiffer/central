@@ -20,6 +20,7 @@ import {
   BLUESKY_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
+  INDEXER_URL,
 } from "./config.js";
 
 interface QueueItem {
@@ -105,6 +106,28 @@ async function fetchThreadContext(uri: string): Promise<string> {
 }
 
 /**
+ * Search cognition records for relevant context
+ */
+async function searchCognition(query: string, limit: number = 3): Promise<string> {
+  try {
+    const url = `${INDEXER_URL}/xrpc/network.comind.search.query?q=${encodeURIComponent(query)}&limit=${limit}`;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!resp.ok) return "";
+    
+    const data = await resp.json() as { results?: Array<{ content: string; collection: string; createdAt: string }> };
+    if (!data.results || data.results.length === 0) return "";
+    
+    return data.results
+      .map((r: { content: string; collection: string; createdAt: string }) => 
+        `[${r.collection}] ${r.content}`)
+      .join("\n\n");
+  } catch {
+    // Indexer down or timeout - not critical
+    return "";
+  }
+}
+
+/**
  * Main handler
  */
 async function processNotifications() {
@@ -150,10 +173,13 @@ async function processNotifications() {
     const batch = batches[i];
     console.log(`\nProcessing batch ${i + 1}/${batches.length} (${batch.length} items)...`);
     
-    // Fetch thread context for each notification
+    // Fetch thread context and cognition context for each notification
     const notificationList = await Promise.all(batch.map(async item => {
       const id = item.uri?.split("/").pop() || item.cid;
       const threadContext = await fetchThreadContext(item.uri);
+      
+      // Search our own cognition for relevant past thoughts
+      const cognitionContext = await searchCognition(item.text.substring(0, 200));
       
       return {
         id,
@@ -164,6 +190,7 @@ async function processNotifications() {
         priority: item.priority,
         text: item.text,
         thread_context: threadContext || null,  // Full thread history
+        cognition_context: cognitionContext || null,  // Central's relevant past thoughts
         reply_root: item.reply_root,
         reply_parent: item.reply_parent || { uri: item.uri, cid: item.cid },
       };
@@ -203,6 +230,7 @@ Your response here (under 280 chars, compressed voice)
 - NEVER claim actions completed without proof (URLs, hashes)
 - Skip notifications that don't warrant a response
 - READ THE THREAD CONTEXT - each notification includes thread_context showing the full conversation history. Use this to understand what you're responding to!
+- USE COGNITION CONTEXT - each notification may include cognition_context with Central's past thoughts on the topic. Reference these when relevant to show continuity and depth.
 
 **Priority Assessment (OVERRIDE if needed):**
 You may upgrade or downgrade the suggested priority based on your assessment:
