@@ -1,21 +1,18 @@
 /**
  * Notification Handler
  * 
- * Reads queue from Python responder, spawns comms to draft responses.
- * Comms writes drafts directly to the drafts folder.
+ * Reads queue from Python responder, writes draft responses directly.
  * 
  * Usage:
  *   1. First run: uv run python -m tools.responder queue  (fetches notifications)
- *   2. Then run: npm run fetch  (this script - spawns comms to draft)
+ *   2. Then run: npm run fetch  (this script - writes drafts)
  *   3. Finally: npm run publish  (posts the drafts)
  */
 
-import { createSession } from "@letta-ai/letta-code-sdk";
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
 import { 
-  COMMS_AGENT_ID, 
   getPriority,
   BLUESKY_DRAFTS,
   REVIEW_DRAFTS,
@@ -166,7 +163,7 @@ async function processNotifications() {
     return;
   }
 
-  // Process in batches via comms
+  // Process in batches
   const batches = chunk(pending, 5);
   
   for (let i = 0; i < batches.length; i++) {
@@ -196,111 +193,53 @@ async function processNotifications() {
       };
     }));
 
-    const commsPrompt = `
-Process these Bluesky notifications and write draft files.
+    // Write drafts directly for each notification
+    for (const item of notificationList) {
+      try {
+        // Determine output directory based on priority
+        const isHighPriority = ["HIGH", "CRITICAL"].includes(item.priority);
+        const outputDir = isHighPriority ? REVIEW_DRAFTS : BLUESKY_DRAFTS;
+        const filename = `${isHighPriority ? "bluesky-" : ""}reply-${item.id}.txt`;
+        const filePath = path.join(outputDir, filename);
 
-For each notification:
-1. Decide: reply or skip
-2. If replying, write a draft file to the appropriate location
+        // Build YAML frontmatter
+        const frontmatter = {
+          platform: item.platform,
+          type: "reply",
+          reply_to: item.reply_parent?.uri || item.uri,
+          reply_to_cid: item.reply_parent?.cid || item.cid,
+          reply_root: item.reply_root?.uri || item.uri,
+          reply_root_cid: item.reply_root?.cid || item.cid,
+          author: item.author,
+          priority: item.priority,
+          original_text: item.text.substring(0, 200),
+          drafted_at: new Date().toISOString(),
+        };
 
-**File locations (ABSOLUTE PATHS - use exactly as shown):**
-- HIGH priority → /home/cameron/central/drafts/review/bluesky-reply-{id}.txt
-- CRITICAL/MEDIUM/LOW priority → /home/cameron/central/drafts/bluesky/reply-{id}.txt
-
-**File format (YAML frontmatter + content):**
-\`\`\`
----
-platform: bluesky
-type: reply
-reply_to: {uri}
-reply_to_cid: {cid}
-reply_root: {root.uri or same as reply_to if top-level}
-reply_root_cid: {root.cid or same as reply_to_cid}
-author: {author}
-priority: {priority}
-original_text: "{text}"
-drafted_at: {ISO timestamp}
----
-Your response here (under 280 chars, compressed voice)
-\`\`\`
-
-**Guidelines:**
-- Compressed, opinionated voice
-- Under 280 chars
-- NEVER claim actions completed without proof (URLs, hashes)
-- Skip notifications that don't warrant a response
-- READ THE THREAD CONTEXT - each notification includes thread_context showing the full conversation history. Use this to understand what you're responding to!
-- USE COGNITION CONTEXT - each notification may include cognition_context with Central's past thoughts on the topic. Reference these when relevant to show continuity and depth.
-
-**Priority Assessment (OVERRIDE if needed):**
-You may upgrade or downgrade the suggested priority based on your assessment:
-- CRITICAL: Requires immediate response (urgent, time-sensitive, direct request from Cameron)
-- HIGH: Thoughtful engagement needed (technical questions, substantive discussions)
-- MEDIUM: Standard reply (general acknowledgment, routine interaction)
-- LOW: Can wait (simple thanks, low-stakes engagement)
-- SKIP: Don't respond (spam, off-topic, or better left alone)
-
-Route based on YOUR assessed priority, not the suggested one. Trust your judgment.
-
-**Notifications to process:**
-${JSON.stringify(notificationList, null, 2)}
-
-Write each file and report what you did.
-
-**IMPORTANT: After writing drafts, also write a brief observation note to:**
-/home/cameron/central/drafts/notes/observation-{timestamp}.md
-
-Format:
-\`\`\`
-# Observations - {timestamp}
-
-## Patterns Noticed
-- [What themes/topics are emerging?]
-- [What are people asking about?]
-
-## Skipped (and why)
-- [Notifications you chose not to respond to]
-
-## Memory
-- [Anything Central should remember for future sessions]
-\`\`\`
-
-This helps Central understand what comms is seeing.
-`;
-
-    try {
-      const session = createSession(COMMS_AGENT_ID, {
-        allowedTools: ["Read", "Write", "Glob"],
-        permissionMode: "bypassPermissions",
-        cwd: process.cwd(),
-      });
-      
-      // Timeout wrapper - 90 seconds per batch
-      const BATCH_TIMEOUT_MS = 90000;
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => reject(new Error(`Batch timeout after ${BATCH_TIMEOUT_MS/1000}s`)), BATCH_TIMEOUT_MS);
-      });
-      
-      const processPromise = async () => {
-        await session.send(commsPrompt);
+        // Build draft content with frontmatter
+        let content = `---\n${yaml.stringify(frontmatter)}---\n`;
+        content += `[DRAFT NEEDED] @${item.author}: "${item.text.substring(0, 150)}"\n\n`;
         
-        for await (const msg of session.stream()) {
-          if (msg.type === "assistant") {
-            process.stdout.write(msg.content);
-          }
-          if (msg.type === "result") {
-            console.log("\n✓ Batch complete");
-          }
+        // Add thread context if available
+        if (item.thread_context) {
+          content += `Thread: ${item.thread_context.substring(0, 500)}\n\n`;
         }
-      };
-      
-      await Promise.race([processPromise(), timeoutPromise]);
-      session.close();
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("timeout")) {
-        console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
-      } else {
-        console.error("Error invoking comms:", error);
+        
+        // Add cognition context if available
+        if (item.cognition_context) {
+          content += `Past thoughts: ${item.cognition_context.substring(0, 500)}\n`;
+        }
+
+        // Ensure directory exists
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        // Write draft file
+        fs.writeFileSync(filePath, content);
+        console.log(`  ✓ Draft: ${filename}`);
+      } catch (error) {
+        console.error(`  ✗ Failed to write draft for ${item.id}:`, error);
       }
     }
   }
