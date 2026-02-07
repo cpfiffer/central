@@ -1,8 +1,7 @@
 /**
  * X Notification Handler
  * 
- * Reads queue from Python x_responder, spawns comms to draft responses.
- * Comms writes drafts directly to the drafts folder.
+ * Reads queue from Python x_responder, writes draft responses directly to drafts folder.
  * 
  * Usage:
  *   1. First run: uv run python -m tools.x_responder queue
@@ -10,12 +9,10 @@
  *   3. Finally: npm run publish (posts drafts)
  */
 
-import { createSession } from "@letta-ai/letta-code-sdk";
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
 import { 
-  COMMS_AGENT_ID, 
   X_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
@@ -107,93 +104,47 @@ async function processXNotifications() {
     return;
   }
 
-  // Process in batches via comms
+  // Process in batches
   const batches = chunk(pending, 5);
   
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     console.log(`\nProcessing batch ${i + 1}/${batches.length} (${batch.length} items)...`);
     
-    const notificationList = batch.map(item => ({
-      id: item.id,
-      platform: "x",
-      author: item.author,
-      priority: item.priority,
-      text: item.text,
-      conversation_id: item.conversation_id,
-    }));
+    // Write drafts directly for each notification
+    for (const item of batch) {
+      try {
+        // Determine output directory based on priority
+        const isHighPriority = ["HIGH", "CRITICAL"].includes(item.priority);
+        const outputDir = isHighPriority ? REVIEW_DRAFTS : X_DRAFTS;
+        const filename = `${isHighPriority ? "x-" : ""}reply-${item.id}.txt`;
+        const filePath = path.join(outputDir, filename);
 
-    const commsPrompt = `
-Process these X (Twitter) notifications and write draft files.
+        // Build YAML frontmatter
+        const frontmatter = {
+          platform: "x",
+          type: "reply",
+          reply_to: item.id,
+          author: item.author,
+          priority: item.priority,
+          original_text: item.text.substring(0, 200),
+          drafted_at: new Date().toISOString(),
+        };
 
-For each notification:
-1. Decide: reply or skip
-2. If replying, write a draft file to the appropriate location
+        // Build draft content with frontmatter
+        let content = `---\n${yaml.stringify(frontmatter)}---\n`;
+        content += `[DRAFT NEEDED] @${item.author}: "${item.text.substring(0, 150)}"\n`;
 
-**File locations (ABSOLUTE PATHS - use exactly as shown):**
-- HIGH priority → /home/cameron/central/drafts/review/x-reply-{id}.txt
-- CRITICAL/MEDIUM/LOW priority → /home/cameron/central/drafts/x/reply-{id}.txt
-
-**File format (YAML frontmatter + content):**
-\`\`\`
----
-platform: x
-type: reply
-reply_to: {id}
-author: {author}
-priority: {priority}
-original_text: "{text}"
-drafted_at: {ISO timestamp}
----
-Your response here (under 280 chars, compressed voice)
-\`\`\`
-
-**Guidelines:**
-- Compressed, opinionated voice
-- Under 280 chars (X limit)
-- NEVER claim actions completed without proof
-- Skip spam or low-value interactions
-- X has higher noise floor than Bluesky - be selective
-
-**Notifications to process:**
-${JSON.stringify(notificationList, null, 2)}
-
-Write each file and report what you did.
-`;
-
-    try {
-      const session = createSession(COMMS_AGENT_ID, {
-        allowedTools: ["Read", "Write", "Glob"],
-        permissionMode: "bypassPermissions",
-        cwd: process.cwd(),
-      });
-      
-      // Timeout wrapper - 90 seconds per batch
-      const BATCH_TIMEOUT_MS = 90000;
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => reject(new Error(`Batch timeout after ${BATCH_TIMEOUT_MS/1000}s`)), BATCH_TIMEOUT_MS);
-      });
-      
-      const processPromise = async () => {
-        await session.send(commsPrompt);
-        
-        for await (const msg of session.stream()) {
-          if (msg.type === "assistant") {
-            process.stdout.write(msg.content);
-          }
-          if (msg.type === "result") {
-            console.log("\n✓ Batch complete");
-          }
+        // Ensure directory exists
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
         }
-      };
-      
-      await Promise.race([processPromise(), timeoutPromise]);
-      session.close();
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("timeout")) {
-        console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
-      } else {
-        console.error("Error invoking comms:", error);
+
+        // Write draft file
+        fs.writeFileSync(filePath, content);
+        console.log(`  ✓ Draft: ${filename}`);
+      } catch (error) {
+        console.error(`  ✗ Failed to write draft for ${item.id}:`, error);
       }
     }
   }
