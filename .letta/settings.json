@@ -20,12 +20,7 @@
       },
       {
         "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python hooks/enforce-comms.py"
-          }
-        ]
+        "hooks": []
       }
     ],
     "PostToolUse": [
@@ -40,12 +35,7 @@
       },
       {
         "matcher": "Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python hooks/inject-comms-reports.py"
-          }
-        ]
+        "hooks": []
       }
     ],
     "Stop": [
