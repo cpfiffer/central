@@ -84,6 +84,9 @@ function validateDraft(draft: Draft): string[] {
   if (!content || content.trim().length < 5) {
     errors.push("Content too short or missing");
   }
+  if (content && content.trim().startsWith("[DRAFT NEEDED]")) {
+    errors.push("Draft stub - needs human-written content before publishing");
+  }
   
   return errors;
 }
