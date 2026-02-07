@@ -1,153 +1,106 @@
+#!/usr/bin/env python3
 """
 Comms Review Tool
 
-Review recent communications drafted by comms subagent.
+Summarizes recent comms observations for Central to review.
+Run at session start to see what comms has been observing.
 
 Usage:
-  uv run python -m tools.comms_review             # Show recent published
-  uv run python -m tools.comms_review pending     # Show pending drafts
-  uv run python -m tools.comms_review stats       # Show statistics
+    uv run python -m tools.comms_review          # Last 10 observations
+    uv run python -m tools.comms_review --all    # All observations
+    uv run python -m tools.comms_review --since 2h  # Last 2 hours
 """
 
-import sys
-from datetime import datetime, timezone
+import argparse
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+import re
 
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-
-console = Console()
-
-DRAFTS_DIR = Path("/home/cameron/central/drafts")
-PUBLISHED_DIR = DRAFTS_DIR / "published"
-BLUESKY_DIR = DRAFTS_DIR / "bluesky"
-REVIEW_DIR = DRAFTS_DIR / "review"
-X_DIR = DRAFTS_DIR / "x"
+NOTES_DIR = Path(__file__).parent.parent / "drafts" / "notes"
 
 
-def parse_draft(path: Path) -> dict:
-    """Parse a draft file into structured data."""
-    content = path.read_text()
+def parse_duration(s: str) -> timedelta:
+    """Parse duration string like '2h', '30m', '1d'."""
+    match = re.match(r"(\d+)([hdm])", s.lower())
+    if not match:
+        return timedelta(hours=2)
     
-    # Split frontmatter and body
-    parts = content.split("---", 2)
-    if len(parts) >= 3:
-        import yaml
+    val, unit = int(match.group(1)), match.group(2)
+    if unit == "h":
+        return timedelta(hours=val)
+    elif unit == "d":
+        return timedelta(days=val)
+    elif unit == "m":
+        return timedelta(minutes=val)
+    return timedelta(hours=2)
+
+
+def get_observations(since: timedelta | None = None, limit: int = 10) -> list[dict]:
+    """Get recent observation files."""
+    if not NOTES_DIR.exists():
+        return []
+    
+    observations = []
+    cutoff = datetime.now(timezone.utc) - since if since else None
+    
+    for f in sorted(NOTES_DIR.glob("observation-*.md"), reverse=True):
+        # Parse timestamp from filename
         try:
-            metadata = yaml.safe_load(parts[1])
-        except:
-            metadata = {}
-        body = parts[2].strip()
-    else:
-        metadata = {}
-        body = content
-    
-    return {
-        "path": path,
-        "name": path.name,
-        "metadata": metadata or {},
-        "body": body,
-        "mtime": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc),
-    }
-
-
-def show_recent(limit: int = 20):
-    """Show recent published communications."""
-    if not PUBLISHED_DIR.exists():
-        console.print("[dim]No published directory[/dim]")
-        return
-    
-    files = sorted(PUBLISHED_DIR.glob("*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
-    
-    if not files:
-        console.print("[dim]No published drafts[/dim]")
-        return
-    
-    console.print(f"[bold]Recent Published ({len(files)} total)[/bold]\n")
-    
-    for f in files[:limit]:
-        draft = parse_draft(f)
-        platform = draft["metadata"].get("platform", "?")
-        reply_type = draft["metadata"].get("type", "?")
-        author = draft["metadata"].get("author", "")
-        time_str = draft["mtime"].strftime("%H:%M")
-        
-        # Truncate body
-        body_preview = draft["body"][:80].replace("\n", " ")
-        
-        style = "cyan" if platform == "bluesky" else "blue"
-        console.print(f"[{style}]{time_str}[/] [{reply_type}] {body_preview}...")
-        if author:
-            console.print(f"  [dim]→ @{author}[/dim]")
-
-
-def show_pending():
-    """Show pending drafts awaiting publish or review."""
-    console.print("[bold]Pending Drafts[/bold]\n")
-    
-    for dir_path, label in [(BLUESKY_DIR, "Bluesky (auto)"), (X_DIR, "X (auto)"), (REVIEW_DIR, "Review (manual)")]:
-        if not dir_path.exists():
+            # Format: observation-YYYY-MM-DDTHH-MM-SS.md or similar
+            mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
+            
+            if cutoff and mtime < cutoff:
+                continue
+            
+            content = f.read_text()
+            observations.append({
+                "file": f.name,
+                "time": mtime,
+                "content": content[:2000]  # Truncate
+            })
+            
+            if not since and len(observations) >= limit:
+                break
+        except Exception as e:
             continue
-        
-        files = list(dir_path.glob("*.txt"))
-        if files:
-            console.print(f"[cyan]{label}:[/cyan] {len(files)} drafts")
-            for f in files[:5]:
-                draft = parse_draft(f)
-                body_preview = draft["body"][:60].replace("\n", " ")
-                console.print(f"  • {body_preview}...")
-            if len(files) > 5:
-                console.print(f"  [dim]... and {len(files) - 5} more[/dim]")
-            console.print()
+    
+    return observations
 
 
-def show_stats():
-    """Show communication statistics."""
-    console.print("[bold]Comms Statistics[/bold]\n")
+def summarize_observations(observations: list[dict]) -> str:
+    """Create summary of observations."""
+    if not observations:
+        return "No recent observations found."
     
-    # Count published
-    published = list(PUBLISHED_DIR.glob("*.txt")) if PUBLISHED_DIR.exists() else []
+    lines = [f"# Comms Observations ({len(observations)} files)\n"]
     
-    # Count by platform
-    bluesky_count = sum(1 for f in published if "bluesky" in f.name.lower())
-    x_count = sum(1 for f in published if f.name.startswith("x-") or "x-reply" in f.name.lower())
+    for obs in observations:
+        time_str = obs["time"].strftime("%Y-%m-%d %H:%M UTC")
+        lines.append(f"\n## {time_str} - {obs['file']}")
+        lines.append(obs["content"][:1000])
     
-    # Recent activity (last 24h)
-    now = datetime.now(timezone.utc)
-    recent = [f for f in published if (now - datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)).total_seconds() < 86400]
-    
-    table = Table(title="Statistics")
-    table.add_column("Metric")
-    table.add_column("Value", style="cyan")
-    
-    table.add_row("Total Published", str(len(published)))
-    table.add_row("Bluesky", str(bluesky_count))
-    table.add_row("X", str(x_count))
-    table.add_row("Last 24h", str(len(recent)))
-    table.add_row("Pending (Bluesky)", str(len(list(BLUESKY_DIR.glob("*.txt")))) if BLUESKY_DIR.exists() else "0")
-    table.add_row("Pending (Review)", str(len(list(REVIEW_DIR.glob("*.txt")))) if REVIEW_DIR.exists() else "0")
-    
-    console.print(table)
+    return "\n".join(lines)
 
 
 def main():
-    if len(sys.argv) < 2:
-        show_recent()
-        return
+    parser = argparse.ArgumentParser(description="Review comms observations")
+    parser.add_argument("--all", action="store_true", help="Show all observations")
+    parser.add_argument("--since", type=str, help="Time window (e.g., 2h, 30m, 1d)")
+    parser.add_argument("--limit", type=int, default=10, help="Max observations to show")
+    args = parser.parse_args()
     
-    cmd = sys.argv[1]
-    
-    if cmd == "pending":
-        show_pending()
-    elif cmd == "stats":
-        show_stats()
-    elif cmd == "recent":
-        limit = int(sys.argv[2]) if len(sys.argv) > 2 else 20
-        show_recent(limit)
+    if args.all:
+        since = timedelta(days=365)
+        limit = 1000
+    elif args.since:
+        since = parse_duration(args.since)
+        limit = 1000
     else:
-        console.print(f"[red]Unknown command: {cmd}[/red]")
-        console.print("Commands: recent, pending, stats")
+        since = None
+        limit = args.limit
+    
+    observations = get_observations(since=since, limit=limit)
+    print(summarize_observations(observations))
 
 
 if __name__ == "__main__":
