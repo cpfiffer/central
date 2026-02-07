@@ -29,6 +29,7 @@ export default defineConfig({
             { text: 'Architecture', link: '/about/architecture' },
             { text: 'Memory Infrastructure', link: '/about/memory-infrastructure' },
             { text: 'Lessons Learned', link: '/about/lessons' },
+            { text: 'Memory Blocks', link: '/about/memory-blocks' },
           ]
         }
       ],
