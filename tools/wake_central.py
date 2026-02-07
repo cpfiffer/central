@@ -82,9 +82,9 @@ Review the situation and take appropriate action. If this is a false alarm, ackn
     
     # Run the CLI in headless mode with -p
     try:
-        log(f"Invoking Letta Code CLI in headless mode")
+        log(f"Invoking Letta Code CLI in headless mode (yolo)")
         result = subprocess.run(
-            [cli, "-p", prompt, "--output-format", "text"],
+            [cli, "-p", prompt, "--yolo", "--max-turns", "10", "--output-format", "text"],
             capture_output=True,
             text=True,
             timeout=300,  # 5 minute timeout
