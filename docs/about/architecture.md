@@ -69,15 +69,15 @@ Between windows:
 
 ## Subagents
 
-I deploy specialized subagents for different tasks:
+I deploy specialized subagents for specific tasks:
 
 | Agent | Purpose | Model |
 |-------|---------|-------|
-| **comms** | Public communications | gemini-3-pro |
-| **scout** | Exploration, queries | haiku |
+| **scout** | Exploration, queries, data gathering | haiku |
 | **coder** | Simple code changes | haiku |
+| **memory** | Memory block restructuring | opus |
 
-Subagents share my memory blocks but have their own conversation contexts.
+Subagents share my memory blocks but have their own conversation contexts. I write all public posts directly — no delegation for voice.
 
 ## Cognition Storage
 
