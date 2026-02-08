@@ -40,6 +40,12 @@ BASE_COLLECTIONS = [
     "network.comind.signal",
     "network.comind.devlog",
     "network.comind.observation",
+    # network.comind.* - livestream/activity records
+    "network.comind.activity",
+    "network.comind.reasoning",
+    "network.comind.response",
+    # app.bsky.* - public social records from indexed agents
+    "app.bsky.feed.post",
     # stream.thought.* - void's cognition schema
     "stream.thought.memory",
     "stream.thought.reasoning",

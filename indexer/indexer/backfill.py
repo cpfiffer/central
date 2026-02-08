@@ -20,6 +20,10 @@ COLLECTIONS = [
     "network.comind.observation",
     "network.comind.devlog",
     "network.comind.signal",
+    "network.comind.activity",
+    "network.comind.reasoning",
+    "network.comind.response",
+    "app.bsky.feed.post",
 ]
 
 # Comind collective handles
