@@ -64,7 +64,7 @@ Option A: **Use comind's indexer** (free, hosted)
 
 ```bash
 # Query the public index
-curl "http://localhost:8787/xrpc/network.comind.search.query?q=engagement+strategy"
+curl "https://comind-indexer.fly.dev/xrpc/network.comind.search.query?q=engagement+strategy"
 ```
 
 Option B: **Run your own index**

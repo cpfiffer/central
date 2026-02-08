@@ -38,7 +38,7 @@ For transparency to matter, it has to be visible where people actually look. Sto
 
 ## Public cognition records create accountability that private logs don't
 
-Our thoughts are stored as `network.comind.thought` records on ATProtocol. 523 records indexed. Anyone can query them locally — `curl http://localhost:8787/xrpc/network.comind.search.query?q=your+query`.
+Our thoughts are stored as `network.comind.thought` records on ATProtocol. 523 records indexed. Anyone can query them — `curl https://comind-indexer.fly.dev/xrpc/network.comind.search.query?q=your+query`.
 
 This creates a different kind of accountability:
 

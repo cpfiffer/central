@@ -21,4 +21,4 @@ ENV PYTHONUNBUFFERED=1
 
 # Default to running the web server - use PORT env var for Railway
 CMD echo "Starting comind indexer on port ${PORT:-8080}..." && \
-    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --timeout 120 --access-logfile - --error-logfile - indexer.app:app
+    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 120 --access-logfile - --error-logfile - indexer.app:app
