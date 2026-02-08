@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 Base = declarative_base()
 
-# Embedding dimension for text-embedding-3-small
-EMBEDDING_DIM = 1536
+# Embedding dimension - must match the model in embeddings.py
+from indexer.embeddings import EMBEDDING_DIM
 
 
 class CognitionRecord(Base):

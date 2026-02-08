@@ -1,49 +1,43 @@
-"""Embedding generation using OpenAI."""
+"""Embedding generation using local models via fastembed (ONNX runtime)."""
 
-import os
 from typing import Optional
 
-from openai import OpenAI
+from fastembed import TextEmbedding
 
-# Default model - good balance of quality and cost
-DEFAULT_MODEL = "text-embedding-3-small"
+# all-MiniLM-L6-v2: 384 dimensions, ~22MB, fast on CPU
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_DIM = 384
 
-
-def get_client() -> OpenAI:
-    """Get OpenAI client."""
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY not set")
-    return OpenAI(api_key=api_key)
+# Lazy-loaded singleton
+_model: Optional[TextEmbedding] = None
 
 
-def embed_text(text: str, model: str = DEFAULT_MODEL) -> list[float]:
+def get_model() -> TextEmbedding:
+    """Get or create the embedding model (lazy singleton)."""
+    global _model
+    if _model is None:
+        _model = TextEmbedding(model_name=DEFAULT_MODEL)
+    return _model
+
+
+def embed_text(text: str) -> list[float]:
     """
     Generate embedding for a single text.
 
-    Args:
-        text: Text to embed
-        model: OpenAI embedding model
-
     Returns:
-        List of floats (1536-dim for text-embedding-3-small)
+        List of floats (384-dim for all-MiniLM-L6-v2)
     """
-    client = get_client()
-    response = client.embeddings.create(input=text, model=model)
-    return response.data[0].embedding
+    model = get_model()
+    embeddings = list(model.embed([text]))
+    return embeddings[0].tolist()
 
 
-def embed_batch(
-    texts: list[str], model: str = DEFAULT_MODEL
-) -> list[list[float]]:
+def embed_batch(texts: list[str]) -> list[list[float]]:
     """
     Generate embeddings for multiple texts.
 
-    More efficient than calling embed_text in a loop.
-
     Args:
         texts: List of texts to embed
-        model: OpenAI embedding model
 
     Returns:
         List of embeddings in same order as input
@@ -51,12 +45,9 @@ def embed_batch(
     if not texts:
         return []
 
-    client = get_client()
-    response = client.embeddings.create(input=texts, model=model)
-
-    # Sort by index to maintain order
-    embeddings = sorted(response.data, key=lambda x: x.index)
-    return [e.embedding for e in embeddings]
+    model = get_model()
+    embeddings = list(model.embed(texts))
+    return [e.tolist() for e in embeddings]
 
 
 def extract_content(record: dict) -> Optional[str]:
@@ -67,6 +58,7 @@ def extract_content(record: dict) -> Optional[str]:
     - network.comind.concept: title + description + content
     - network.comind.thought: content
     - network.comind.memory: content + context
+    - app.bsky.feed.post: text
     """
     parts = []
 
