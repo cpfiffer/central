@@ -23,22 +23,9 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from tools.db import is_message_published, mark_message_published, init_db
 
-# Redaction patterns for secrets (backup safety)
-REDACT_PATTERNS = [
-    (r'[A-Za-z_]*API_KEY[=:]\s*\S+', '[REDACTED_KEY]'),
-    (r'[A-Za-z_]*PASSWORD[=:]\s*\S+', '[REDACTED]'),
-    (r'[A-Za-z_]*SECRET[=:]\s*\S+', '[REDACTED]'),
-    (r'[A-Za-z_]*TOKEN[=:]\s*\S+', '[REDACTED]'),
-    (r'Bearer\s+\S+', 'Bearer [REDACTED]'),
-    (r'sk-[A-Za-z0-9]+', '[REDACTED_SK]'),
-    (r'ghp_[A-Za-z0-9]+', '[REDACTED_GH]'),
-]
-
-def redact(text: str) -> str:
-    """Redact potential secrets from text."""
-    for pattern, replacement in REDACT_PATTERNS:
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-    return text
+# Import shared redaction (two-layer: regex + literal env values)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from redact import redact
 
 # Load credentials - use script directory or env var
 SCRIPT_DIR = Path(__file__).parent.parent

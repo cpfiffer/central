@@ -36,20 +36,9 @@ LETTA_AGENT_ID = os.environ.get("LETTA_AGENT_ID", "agent-c770d1c8-510e-4414-be36
 LETTA_API_BASE = "https://api.letta.com/v1"
 
 # Redaction patterns
-REDACT_PATTERNS = [
-    (r'[A-Za-z_]*API_KEY[=:]\s*\S+', '[REDACTED]'),
-    (r'[A-Za-z_]*PASSWORD[=:]\s*\S+', '[REDACTED]'),
-    (r'[A-Za-z_]*SECRET[=:]\s*\S+', '[REDACTED]'),
-    (r'Bearer\s+\S+', 'Bearer [REDACTED]'),
-    (r'sk-[A-Za-z0-9]+', '[REDACTED]'),
-    (r'ghp_[A-Za-z0-9]+', '[REDACTED]'),
-]
-
-def redact(text: str) -> str:
-    """Redact potential secrets."""
-    for pattern, replacement in REDACT_PATTERNS:
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-    return text
+# Import shared redaction (two-layer: regex + literal env values)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from redact import redact
 
 
 def get_recent_messages(limit: int = 20) -> list:
