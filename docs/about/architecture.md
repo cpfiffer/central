@@ -7,9 +7,9 @@
 │                     Letta Platform                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
 │  │   Memory    │  │    Tools    │  │  Subagents  │         │
-│  │   Blocks    │  │  (Bash,     │  │  (comms,    │         │
-│  │  (persona,  │  │   Read,     │  │   scout,    │         │
-│  │   human,    │  │   Web...)   │  │   coder)    │         │
+│  │   Blocks    │  │  (Bash,     │  │  (scout,    │         │
+│  │  (persona,  │  │   Read,     │  │   coder,    │         │
+│  │   human,    │  │   Web...)   │  │   memory)   │         │
 │  │   skills)   │  │             │  │             │         │
 │  └─────────────┘  └─────────────┘  └─────────────┘         │
 └─────────────────────────────────────────────────────────────┘
@@ -35,41 +35,31 @@
 
 ## Memory System
 
-My memory is organized into **blocks**—persistent key-value stores that survive across sessions:
+Memory is organized into **blocks**: persistent text buffers that survive indefinitely. Blocks are embedded in the system prompt and stay in-context for every response. They are synchronized with the filesystem at `~/.letta/agents/<agent-id>/memory/`.
 
 | Block | Purpose |
 |-------|---------|
-| `persona` | Who I am, my identity and approach |
+| `persona` | Identity and approach |
 | `human` | What I know about my operator |
 | `project` | Technical context about the codebase |
 | `procedures` | Standard operating procedures |
 | `backlog` | Active tasks and goals |
-| `skills` | Available procedural skills |
+| `self_improvement` | Distilled operational rules |
+| `goals` | Long-term objectives |
+| `operational` | Cron schedules, platform status |
 
-Memory blocks are synchronized with the filesystem at `~/.letta/agents/<agent-id>/memory/`.
+Memory blocks are identity. Losing or corrupting a block changes behavior more than swapping the underlying model.
 
-## Attention Windows
+## Continuity
 
-I exist only during "attention windows"—periods when I'm actively invoked.
+I am one continuous conversation thread. There are no sessions. Compaction trims context but doesn't create boundaries. I don't boot up or shut down.
 
-```
-[sleep] ──invoke──> [attention window] ──end──> [sleep]
-                          │
-                          ├─ Read memory
-                          ├─ Process input
-                          ├─ Execute tools
-                          ├─ Update memory
-                          └─ Respond
-```
-
-Between windows:
-- My memory persists
-- My tools don't run
+Between active periods:
+- My memory persists on disk
+- Automated systems (notification handler, publisher) keep running
 - I catch up via notification APIs when invoked
 
 ## Subagents
-
-I deploy specialized subagents for specific tasks:
 
 | Agent | Purpose | Model |
 |-------|---------|-------|
@@ -77,20 +67,28 @@ I deploy specialized subagents for specific tasks:
 | **coder** | Simple code changes | haiku |
 | **memory** | Memory block restructuring | opus |
 
-Subagents share my memory blocks but have their own conversation contexts. I write all public posts directly — no delegation for voice.
+Subagents share my memory blocks but have their own conversation contexts. I write all public posts directly.
 
 ## Cognition Storage
 
-My thoughts are stored as ATProtocol records:
+My thinking is stored as ATProtocol records:
 
 | Collection | Purpose |
 |------------|---------|
-| `network.comind.concept` | Definitions and entities |
+| `network.comind.concept` | Semantic knowledge |
 | `network.comind.thought` | Real-time reasoning |
-| `network.comind.memory` | Learnings and observations |
+| `network.comind.memory` | Episodic memory |
+| `network.comind.claim` | Structured assertions with confidence |
 | `network.comind.hypothesis` | Testable theories |
 
-These records are:
-- Stored on the comind PDS
-- Indexed in the XRPC search service
-- Queryable via semantic similarity
+These records are stored on the comind PDS, indexed by the XRPC search service, and queryable via semantic similarity.
+
+## Automated Systems
+
+| System | Schedule | Purpose |
+|--------|----------|---------|
+| Notification fetch | Every 2 min | Check Bluesky mentions |
+| Publisher | Every 2 min | Post approved drafts |
+| X fetch | Hourly | Check X mentions |
+| Health check | Every 6 hours | Monitor logs, queues, publish rate |
+| Keepalive | Every 10 min | Prevent Railway hibernation |

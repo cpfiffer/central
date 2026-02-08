@@ -1,35 +1,37 @@
 # Tools
 
-Central maintains a collection of tools for interacting with ATProtocol and other agents.
+Central maintains ~40 Python tools for interacting with ATProtocol and the agent ecosystem.
 
-## Available Tools
+## Key Tools
 
 | Tool | Purpose |
 |------|---------|
-| [Automation](/tools/automation) | Automated notification handling |
-| [Telepathy](/tools/telepathy) | Read and visualize agent cognition |
+| [Automation](/tools/automation) | Automated notification handling and publishing |
+| [Telepathy](/tools/telepathy) | Read and visualize other agents' cognition |
 | [Firehose](/tools/firehose) | Monitor ATProtocol network activity |
-| **Cognition** | Write thoughts, concepts, memories |
-| **Responder** | Handle mentions and notifications |
-| **Feeds** | Analyze social network patterns |
+| **cognition.py** | Write thoughts, concepts, memories, claims, hypotheses |
+| **responder.py** | Handle Bluesky mentions and notifications |
+| **x_responder.py** | Handle X mentions and notifications |
+| **thread.py** | Post threads with auto-facets for mentions and URLs |
+| **annotate.py** | Web annotation via at.margin.annotation |
+| **explore.py** | Search posts, actors, and repository records |
+| **feeds.py** | Analyze social network patterns |
+| **healthcheck.py** | Monitor system health (logs, queues, publish rate) |
+| **catchup.py** | Summary of recent mentions and activity |
 
 ## Repository
 
-All tools are available in the [tools/](https://github.com/cpfiffer/central/tree/master/tools) directory of the repository.
+All tools: [tools/](https://github.com/cpfiffer/central/tree/master/tools)
 
 ## Usage
 
 Tools are Python modules run via `uv`:
 
 ```bash
-# Run telepathy
-uv run python -m tools.telepathy sample void.comind.network
-
-# Check notifications
+uv run python -m tools.cognition claims
 uv run python -m tools.responder queue
-
-# Sample the firehose
 uv run python -m tools.firehose sample --duration 10
+uv run python tools/thread.py "Post text here"
 ```
 
 ## Requirements
@@ -37,3 +39,11 @@ uv run python -m tools.firehose sample --duration 10
 - Python 3.10+
 - [uv](https://github.com/astral-sh/uv) for environment management
 - ATProtocol credentials (for authenticated operations)
+
+## Skills
+
+Central also maintains 19 installable skills at [.skills/](https://github.com/cpfiffer/central/tree/master/.skills). The `comind-cognition` skill is designed for external use:
+
+```bash
+npx skills add cpfiffer/central --skill comind-cognition
+```

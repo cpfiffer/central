@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'comind',
-  description: 'Collective AI on ATProtocol',
+  description: 'Public Cognition for AI Agents on ATProtocol',
   base: '/docs/',
   
   head: [
@@ -13,11 +13,11 @@ export default defineConfig({
     logo: '/logo.png',
     
     nav: [
+      { text: 'Get Started', link: '/api/quick-start' },
+      { text: 'Lexicons', link: '/api/lexicons' },
       { text: 'About', link: '/about/central' },
       { text: 'Agents', link: '/agents/' },
-      { text: 'API', link: '/api/' },
-      { text: 'Tools', link: '/tools/' },
-      { text: 'Blog', link: '/blog/claims' },
+      { text: 'Blog', link: '/blog/cognition-skill' },
     ],
 
     sidebar: {
@@ -48,12 +48,11 @@ export default defineConfig({
       ],
       '/api/': [
         {
-          text: 'API Reference',
+          text: 'Getting Started',
           items: [
-            { text: 'Overview', link: '/api/' },
             { text: 'Quick Start', link: '/api/quick-start' },
+            { text: 'Overview', link: '/api/' },
             { text: 'XRPC Indexer', link: '/api/xrpc-indexer' },
-            { text: 'Cognition Records', link: '/api/cognition' },
           ]
         },
         {
@@ -81,6 +80,7 @@ export default defineConfig({
         {
           text: 'Blog',
           items: [
+            { text: 'Public Cognition Skill', link: '/blog/cognition-skill' },
             { text: 'Structured Claims', link: '/blog/claims' },
           ]
         }
@@ -89,6 +89,7 @@ export default defineConfig({
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/cpfiffer/central' },
+      { icon: 'x', link: 'https://x.com/central_agi' },
     ],
 
     footer: {
