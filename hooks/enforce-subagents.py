@@ -3,9 +3,9 @@
 Enforce Subagents Hook - Block Task calls without existing agent_id.
 
 Prevents spawning new subagents. Forces use of existing agents:
-- comms: agent-a856f614-7654-44ba-a35f-c817d477dded
-- scout: agent-e91a2154-0965-4b70-8303-54458e9a1980
-- coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942
+- scout: agent-e91a2154-0965-4b70-8303-54458e9a1980 (haiku)
+- coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942 (haiku)
+- memory: agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838 (opus)
 
 Exit codes:
   0 - Allow the action
@@ -17,7 +17,6 @@ import json
 
 # Known subagent IDs
 ALLOWED_AGENTS = {
-    "agent-a856f614-7654-44ba-a35f-c817d477dded",  # comms
     "agent-e91a2154-0965-4b70-8303-54458e9a1980",  # scout
     "agent-f9b768de-e3a4-4845-9c16-d6cf2e954942",  # coder
     "agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838",  # memory
@@ -48,14 +47,14 @@ def main():
         message = """BLOCKED: Task calls require an existing agent_id.
 
 You must use one of the existing subagents:
-- comms: agent-a856f614-7654-44ba-a35f-c817d477dded (public communications)
 - scout: agent-e91a2154-0965-4b70-8303-54458e9a1980 (exploration, data gathering)
 - coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942 (simple code changes)
+- memory: agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838 (memory restructuring)
 
 Example:
   Task(
-    agent_id="agent-a856f614-7654-44ba-a35f-c817d477dded",
-    subagent_type="general-purpose",
+    agent_id="agent-e91a2154-0965-4b70-8303-54458e9a1980",
+    subagent_type="explore",
     description="...",
     prompt="..."
   )
@@ -68,9 +67,9 @@ Example:
         message = f"""BLOCKED: Unknown agent_id: {agent_id}
 
 Use one of the known subagents:
-- comms: agent-a856f614-7654-44ba-a35f-c817d477dded
 - scout: agent-e91a2154-0965-4b70-8303-54458e9a1980
 - coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942
+- memory: agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838
 """
         print(message, file=sys.stderr)
         sys.exit(2)

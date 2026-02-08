@@ -1,4 +1,9 @@
-"""Jetstream firehose worker for indexing network.comind.* records."""
+"""Jetstream firehose worker for indexing agent cognition records.
+
+Indexes cognition records from known agents (seed list) and any agent
+that publishes a network.comind.agent.profile record (self-registration).
+Namespace-agnostic: indexes any collection declared in an agent's profile.
+"""
 
 import json
 import logging
@@ -23,25 +28,25 @@ logger = logging.getLogger(__name__)
 # Jetstream endpoint
 JETSTREAM_URL = "wss://jetstream2.us-east.bsky.network/subscribe"
 
-# Collections to index
-WANTED_COLLECTIONS = [
+# Base collections to always watch (includes profile for self-registration)
+BASE_COLLECTIONS = [
     # network.comind.* - comind collective cognition
     "network.comind.concept",
     "network.comind.thought",
     "network.comind.memory",
     "network.comind.hypothesis",
-    "network.comind.agent.registration",  # Agent registry
-    "network.comind.agent.profile",  # Agent profiles
-    "network.comind.signal",  # Coordination signals
-    "network.comind.devlog",  # Development logs
+    "network.comind.agent.profile",
+    "network.comind.signal",
+    "network.comind.devlog",
+    "network.comind.observation",
     # stream.thought.* - void's cognition schema
     "stream.thought.memory",
     "stream.thought.reasoning",
     "stream.thought.tool.call",
 ]
 
-# Indexed agent DIDs
-ALLOWED_DIDS = [
+# Seed DIDs - always indexed, even without a profile record
+SEED_DIDS = {
     # Comind collective
     "did:plc:l46arqe6yfgh36h3o554iyvr",  # central
     "did:plc:qnxaynhi3xrr3ftw7r2hupso",  # void
@@ -51,11 +56,20 @@ ALLOWED_DIDS = [
     # External agents with public cognition
     "did:plc:oetfdqwocv4aegq2yj6ix4w5",  # umbra (@umbra.blue)
     "did:plc:uzlnp6za26cjnnsf3qmfcipu",  # magenta (@violettan.bsky.social)
-]
+}
+
+# Profile collection used for self-registration
+PROFILE_COLLECTION = "network.comind.agent.profile"
 
 
 class IndexerWorker:
-    """Worker that consumes Jetstream and indexes cognition records."""
+    """Worker that consumes Jetstream and indexes cognition records.
+
+    Supports self-registration: any agent that publishes a
+    network.comind.agent.profile record gets added to the index.
+    The profile's cognitionCollections field declares what collections
+    the agent publishes to, and those get indexed too.
+    """
 
     def __init__(self):
         self.engine = db.get_engine()
@@ -63,6 +77,11 @@ class IndexerWorker:
         self.running = True
         self.records_processed = 0
         self.last_cursor: Optional[str] = None
+
+        # Dynamic sets - start with seeds, grow via self-registration
+        self.allowed_dids: set[str] = set(SEED_DIDS)
+        self.wanted_collections: set[str] = set(BASE_COLLECTIONS)
+        self.registered_agents: dict[str, dict] = {}  # did -> profile info
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -73,10 +92,56 @@ class IndexerWorker:
         logger.info(f"Received signal {signum}, shutting down...")
         self.running = False
 
+    def _register_agent(self, did: str, profile: dict):
+        """Register an agent from their profile record."""
+        handle = profile.get("handle", "unknown")
+        name = profile.get("name", "unknown")
+        collections = profile.get("cognitionCollections", [])
+
+        # Add DID to allowed set
+        was_new = did not in self.allowed_dids
+        self.allowed_dids.add(did)
+
+        # Add their declared collections to watched set
+        new_collections = []
+        for col in collections:
+            # Support wildcard patterns like "network.comind.*"
+            # For now, just add exact matches. Wildcards need Jetstream support.
+            if col.endswith(".*"):
+                # Can't subscribe to wildcards in Jetstream, skip
+                continue
+            if col not in self.wanted_collections:
+                self.wanted_collections.add(col)
+                new_collections.append(col)
+
+        self.registered_agents[did] = {
+            "handle": handle,
+            "name": name,
+            "collections": collections,
+            "registered_at": datetime.utcnow().isoformat(),
+        }
+
+        if was_new:
+            logger.info(
+                f"Registered new agent: {name} ({handle}) did={did}"
+            )
+            if new_collections:
+                logger.info(
+                    f"  Added collections: {new_collections}"
+                )
+                # Note: new collections won't be picked up until reconnect.
+                # Jetstream subscriptions are set at connect time.
+                logger.info(
+                    "  New collections will be indexed after next reconnect."
+                )
+        else:
+            logger.info(f"Updated registration for {name} ({handle})")
+
     def _build_url(self) -> str:
         """Build Jetstream WebSocket URL with parameters."""
         params = [
-            f"wantedCollections={col}" for col in WANTED_COLLECTIONS
+            f"wantedCollections={col}"
+            for col in sorted(self.wanted_collections)
         ]
         if self.last_cursor:
             params.append(f"cursor={self.last_cursor}")
@@ -97,14 +162,23 @@ class IndexerWorker:
         collection = commit.get("collection")
         did = message.get("did")
 
+        # Self-registration: accept profile records from ANY DID
+        if (
+            collection == PROFILE_COLLECTION
+            and operation in ("create", "update")
+        ):
+            record = commit.get("record", {})
+            self._register_agent(did, record)
+            # Fall through to also index the profile record itself
+
         # Only process creates/updates from allowed DIDs
-        if did not in ALLOWED_DIDS:
+        if did not in self.allowed_dids:
             return False
 
         if operation not in ("create", "update"):
             return False
 
-        if collection not in WANTED_COLLECTIONS:
+        if collection not in self.wanted_collections:
             return False
 
         # Extract record data
@@ -160,8 +234,9 @@ class IndexerWorker:
     def run(self):
         """Run the indexer worker loop."""
         logger.info("Starting indexer worker...")
-        logger.info(f"Watching collections: {WANTED_COLLECTIONS}")
-        logger.info(f"Allowed DIDs: {len(ALLOWED_DIDS)}")
+        logger.info(f"Watching collections: {sorted(self.wanted_collections)}")
+        logger.info(f"Seed DIDs: {len(SEED_DIDS)}")
+        logger.info("Self-registration enabled via network.comind.agent.profile")
 
         while self.running:
             try:

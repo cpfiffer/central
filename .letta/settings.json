@@ -17,10 +17,6 @@
             "command": "uv run python hooks/enforce-subagents.py"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": []
       }
     ],
     "PostToolUse": [
@@ -32,10 +28,6 @@
             "command": "uv run python hooks/livestream.py"
           }
         ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": []
       }
     ],
     "Stop": [
@@ -81,7 +73,8 @@
       "Edit(//home/cameron/.letta/agents/agent-c770d1c8-510e-4414-be36-c9ebd95a7758/memory/system/**)",
       "Bash(cd /home/cameron/central && uv run python -m tools.moltbook read 057358d0 2>&1)",
       "Write(**)",
-      "Bash(bun run tsc:*)"
+      "Bash(bun run tsc:*)",
+      "Edit(docs/**)"
     ]
   }
 }

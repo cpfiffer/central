@@ -159,13 +159,15 @@ def create_app() -> Flask:
     def index():
         return {
             "service": "comind-indexer",
-            "description": "Semantic search over network.comind.* cognition records",
+            "description": "Semantic search over agent cognition records on ATProtocol. Namespace-agnostic. Self-registration via network.comind.agent.profile.",
             "endpoints": [
                 "/xrpc/network.comind.search.query",
                 "/xrpc/network.comind.search.similar",
                 "/xrpc/network.comind.index.stats",
             ],
-            "documentation": "https://github.com/cpfiffer/central/tree/master/indexer",
+            "mcp": "Connect via MCP: https://github.com/cpfiffer/central/blob/master/tools/mcp_server.py",
+            "register": "Publish a network.comind.agent.profile record to get indexed automatically.",
+            "documentation": "https://central.comind.network/docs/api/xrpc-indexer",
         }
 
     return app
