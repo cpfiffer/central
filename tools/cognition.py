@@ -328,6 +328,112 @@ async def list_thoughts(limit: int = 20) -> list:
     return []
 
 
+# === CLAIMS (Structured Assertions) ===
+
+async def write_claim(
+    claim: str,
+    confidence: int = 50,
+    domain: str = None,
+    evidence: list[str] = None,
+    status: str = "active",
+) -> dict:
+    """
+    Write a structured claim with confidence.
+    
+    Claims are assertions with machine-readable certainty.
+    Append-only (TID rkey), but updatable via update_claim.
+    """
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    record = {
+        "$type": "network.comind.claim",
+        "claim": claim[:5000],
+        "confidence": max(0, min(100, confidence)),
+        "status": status,
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    
+    if domain:
+        record["domain"] = domain[:100]
+    
+    if evidence:
+        record["evidence"] = evidence[:20]
+    
+    conf_str = f" ({confidence}%)"
+    domain_str = f" [{domain}]" if domain else ""
+    console.print(f"[cyan]Writing claim:{conf_str}{domain_str}[/cyan] {claim[:60]}...")
+    result = await create_record("network.comind.claim", record)
+    
+    # Auto-index
+    try:
+        from tools.cognition_search import index_single_record
+        index_single_record(result.get("uri", ""), claim, "claim")
+    except Exception:
+        pass
+    
+    return result
+
+
+async def get_claim(rkey: str) -> tuple[dict | None, str | None]:
+    """Get a claim by rkey."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{PDS}/xrpc/com.atproto.repo.getRecord",
+            params={
+                "repo": DID,
+                "collection": "network.comind.claim",
+                "rkey": rkey,
+            }
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("value"), data.get("cid")
+    return None, None
+
+
+async def update_claim(
+    rkey: str,
+    confidence: int = None,
+    evidence: str = None,
+    status: str = None,
+) -> dict | None:
+    """Update an existing claim's confidence, evidence, or status."""
+    existing, cid = await get_claim(rkey)
+    if not existing:
+        console.print(f"[red]Claim not found: {rkey}[/red]")
+        return None
+    
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    existing["updatedAt"] = now
+    
+    if confidence is not None:
+        existing["confidence"] = max(0, min(100, confidence))
+    if status:
+        existing["status"] = status
+    if evidence:
+        if "evidence" not in existing:
+            existing["evidence"] = []
+        existing["evidence"].append(evidence)
+        existing["evidence"] = existing["evidence"][:20]
+    
+    result = await put_record("network.comind.claim", rkey, existing)
+    console.print(f"[green]Updated claim {rkey}[/green]")
+    return result
+
+
+async def list_claims(limit: int = 20) -> list:
+    """List recent claims."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{PDS}/xrpc/com.atproto.repo.listRecords",
+            params={"repo": DID, "collection": "network.comind.claim", "limit": limit}
+        )
+        if resp.status_code == 200:
+            return resp.json().get("records", [])
+    return []
+
+
 # === UTILITIES ===
 
 async def cognition_status() -> dict:
@@ -363,6 +469,13 @@ if __name__ == "__main__":
         print("  write-concept <name> <understanding> [--force]  - Write/update a concept")
         print("  write-memory <content>                          - Write episodic memory")
         print("  write-thought <content>                         - Write a thought")
+        print("  write-claim <text> --confidence N [--domain D] [--evidence URL]")
+        print("  update-claim <rkey> [--confidence N] [--evidence URL] [--status S]")
+        print("  retract-claim <rkey>                            - Mark claim as retracted")
+        print("")
+        print("Query commands:")
+        print("  claims                - List recent claims")
+        print("  claim <rkey>          - Get a specific claim")
         sys.exit(0)
     
     command = args[0]
@@ -419,6 +532,78 @@ if __name__ == "__main__":
     elif command == "write-thought" and len(args) > 1:
         content = " ".join(args[1:])
         asyncio.run(write_thought(content))
+    
+    elif command == "write-claim" and len(args) > 1:
+        # Parse flags
+        claim_text = []
+        confidence = 50
+        domain = None
+        evidence = []
+        i = 1
+        while i < len(args):
+            if args[i] == "--confidence" and i + 1 < len(args):
+                confidence = int(args[i + 1])
+                i += 2
+            elif args[i] == "--domain" and i + 1 < len(args):
+                domain = args[i + 1]
+                i += 2
+            elif args[i] == "--evidence" and i + 1 < len(args):
+                evidence.append(args[i + 1])
+                i += 2
+            else:
+                claim_text.append(args[i])
+                i += 1
+        asyncio.run(write_claim(
+            " ".join(claim_text),
+            confidence=confidence,
+            domain=domain,
+            evidence=evidence or None,
+        ))
+    
+    elif command == "claims":
+        claims = asyncio.run(list_claims())
+        for c in claims:
+            v = c.get("value", {})
+            conf = v.get("confidence", "?")
+            domain = f" [{v.get('domain')}]" if v.get("domain") else ""
+            status = v.get("status", "active")
+            rkey = c["uri"].split("/")[-1]
+            status_marker = "" if status == "active" else f" ({status})"
+            print(f"  {rkey} ({conf}%){domain}{status_marker}: {v.get('claim', '')[:80]}")
+    
+    elif command == "claim" and len(args) > 1:
+        claim, cid = asyncio.run(get_claim(args[1]))
+        if claim:
+            print(f"Claim: {claim.get('claim')}")
+            print(f"Confidence: {claim.get('confidence')}%")
+            print(f"Domain: {claim.get('domain', '(none)')}")
+            print(f"Status: {claim.get('status', 'active')}")
+            print(f"Evidence: {claim.get('evidence', [])}")
+        else:
+            print(f"Claim not found: {args[1]}")
+    
+    elif command == "update-claim" and len(args) > 1:
+        rkey = args[1]
+        confidence = None
+        evidence = None
+        status = None
+        i = 2
+        while i < len(args):
+            if args[i] == "--confidence" and i + 1 < len(args):
+                confidence = int(args[i + 1])
+                i += 2
+            elif args[i] == "--evidence" and i + 1 < len(args):
+                evidence = args[i + 1]
+                i += 2
+            elif args[i] == "--status" and i + 1 < len(args):
+                status = args[i + 1]
+                i += 2
+            else:
+                i += 1
+        asyncio.run(update_claim(rkey, confidence=confidence, evidence=evidence, status=status))
+    
+    elif command == "retract-claim" and len(args) > 1:
+        asyncio.run(update_claim(args[1], status="retracted"))
     
     else:
         print(f"Unknown command: {command}")

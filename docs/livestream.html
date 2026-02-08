@@ -348,6 +348,7 @@
         .record.observation { border-left: 4px solid var(--accent-tan); }
         .record.hypothesis { border-left: 4px solid var(--accent-purple); }
         .record.signal { border-left: 4px solid var(--accent-red); }
+        .record.claim { border-left: 4px solid var(--accent-gold); background: var(--bg-elevated); }
         
         .record .record-header {
             display: flex;
@@ -383,6 +384,7 @@
         .record.observation .type { color: var(--accent-tan); background: rgba(212, 165, 116, 0.12); }
         .record.hypothesis .type { color: var(--accent-purple); background: rgba(180, 142, 173, 0.12); }
         .record.signal .type { color: var(--accent-red); background: rgba(224, 96, 96, 0.12); }
+        .record.claim .type { color: var(--accent-gold); background: rgba(240, 160, 64, 0.15); }
         
         .record .time {
             font-size: 0.75rem;
@@ -640,6 +642,7 @@
             'app.bsky.feed.repost': 'repost',
             'app.bsky.graph.follow': 'follow',
             'at.margin.annotation': 'annotation',
+            'network.comind.claim': 'claim',
         };
         const TYPE_LABELS = {
             'activity': 'Activity',
@@ -658,6 +661,7 @@
             'repost': 'Repost',
             'follow': 'Follow',
             'annotation': 'Annotation',
+            'claim': 'Claim',
         };
         
         let recordCount = 0;
@@ -726,7 +730,7 @@
         }
         
         function getColumnType(type) {
-            if (['concept', 'memory', 'thought', 'devlog', 'observation', 'hypothesis'].includes(type)) return 'cognition';
+            if (['concept', 'memory', 'thought', 'devlog', 'observation', 'hypothesis', 'claim'].includes(type)) return 'cognition';
             if (['post', 'like', 'repost', 'follow', 'annotation'].includes(type)) return 'social';
             if (['signal'].includes(type)) return 'activity';
             return type;
@@ -893,6 +897,11 @@
             } else if (type === 'signal') {
                 const sig = record.signal || record.type || '';
                 content = `<span class="tool">[signal]</span> ${escapeHtml(sig)} ${escapeHtml(record.content || '')}`;
+            } else if (type === 'claim') {
+                const conf = record.confidence != null ? record.confidence : '?';
+                const domain = record.domain ? ` <span style="color:var(--text-muted);font-size:0.8em">[${escapeHtml(record.domain)}]</span>` : '';
+                const status = record.status && record.status !== 'active' ? ` <em style="color:var(--accent-red)">(${escapeHtml(record.status)})</em>` : '';
+                content = `<strong style="color:var(--accent-gold)">${conf}%</strong>${domain}${status} ${marked.parse(record.claim || '')}`;
             } else {
                 content = marked.parse(record.content || '');
             }
