@@ -14,7 +14,6 @@ console = Console()
 
 # Subagent IDs
 SUBAGENTS = {
-    "comms": "agent-a856f614-7654-44ba-a35f-c817d477dded",
     "scout": "agent-e91a2154-0965-4b70-8303-54458e9a1980",
     "coder": "agent-f9b768de-e3a4-4845-9c16-d6cf2e954942",
 }

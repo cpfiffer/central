@@ -120,7 +120,6 @@ Your response text here (under 280 chars)
 **No drafts created:**
 - Check if queue file exists (`drafts/queue.yaml` or `drafts/x_queue.yaml`)
 - Check handler logs for errors
-- Verify comms agent is accessible
 
 **Drafts not publishing:**
 - Check `drafts/bluesky/` and `drafts/x/` for pending files

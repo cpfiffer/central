@@ -3,7 +3,6 @@
  */
 
 // Agent IDs
-export const COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded";
 export const CENTRAL_AGENT_ID = "agent-c770d1c8-510e-4414-be36-c9ebd95a7758";
 
 // Known DIDs
@@ -59,7 +58,7 @@ export function getPriority(authorDid: string, text: string): Priority {
 // XRPC Indexer - cognition search
 export const INDEXER_URL = "https://central-production.up.railway.app";
 
-// Paths - ABSOLUTE to prevent comms path resolution issues
+// Paths - ABSOLUTE
 export const PROJECT_ROOT = "/home/cameron/central";
 export const DRAFTS_DIR = `${PROJECT_ROOT}/drafts`;
 export const BLUESKY_DRAFTS = `${DRAFTS_DIR}/bluesky`;

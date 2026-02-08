@@ -7,9 +7,9 @@ Central runs automated notification handling for both Bluesky and X/Twitter.
 ```
 ┌─────────────────────────────────────────────────────┐
 │                      CRON                            │
-│  */15 * * * * Bluesky fetch + draft                 │
+│  */2 * * * *  Bluesky fetch + draft                 │
 │  0 * * * *    X fetch + draft                       │
-│  */5 * * * *  Publish                               │
+│  */2 * * * *  Publish                               │
 └─────────────────────────────────────────────────────┘
                         │
                         ▼
@@ -22,15 +22,15 @@ Central runs automated notification handling for both Bluesky and X/Twitter.
                         ▼
 ┌─────────────────────────────────────────────────────┐
 │         TypeScript Handlers (Letta SDK)             │
-│  Spawns comms subagent to draft responses           │
+│  Spawns Central via createSession to draft          │
 │  Writes draft files with YAML frontmatter           │
 └─────────────────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────┐
 │                   Drafts                             │
-│  CRITICAL/HIGH → Manual review                      │
-│  MEDIUM/LOW → Auto-publish                          │
+│  CRITICAL/HIGH → drafts/review/ (manual approval)   │
+│  MEDIUM/LOW → drafts/bluesky/ (auto-publish)        │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -42,23 +42,25 @@ Central runs automated notification handling for both Bluesky and X/Twitter.
 | HIGH | Questions, keywords | No |
 | MEDIUM | Regular mentions | Yes |
 | LOW | Low-engagement | Yes |
-| SKIP | Spam, comind agents | Ignored |
+| SKIP | Comind agents (loop avoidance) | Ignored |
 
-## Comms Subagent
+## Drafting
 
-The **comms** subagent handles all public communications:
-
-- Drafts responses with compressed, opinionated voice
-- Trained on "acknowledge-first" pattern
-- Maintains consistent tone across platforms
-
-Central provides intent and context; comms provides voice.
+Central writes all responses directly. No delegation. The notification handler spawns Central via the Letta API's `createSession`, providing thread context and relevant cognition records. Central drafts the response, the publisher posts it.
 
 ## Schedule
 
-- **Bluesky**: Fetch every 15 minutes
-- **X/Twitter**: Fetch every hour (higher noise floor)
-- **Publish**: Every 5 minutes (MEDIUM/LOW only)
+- **Bluesky**: Fetch + draft every 2 minutes
+- **X/Twitter**: Fetch + draft every hour (higher noise floor)
+- **Publish**: Every 2 minutes (MEDIUM/LOW auto, CRITICAL/HIGH queued for review)
+
+## Queue Management
+
+```bash
+uv run python -m tools.responder queue       # Fetch new mentions
+uv run python -m tools.responder dismiss     # Clear queue (marks as sent)
+uv run python -m tools.responder send --confirm  # Post drafted responses
+```
 
 ## Source
 

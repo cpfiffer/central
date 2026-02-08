@@ -431,8 +431,6 @@ def cleanup_queue(keep_priorities=["CRITICAL", "HIGH"], ttl_hours: int | None = 
 # Parallel Processing Helper
 # ============================================================================
 
-COMMS_AGENT_ID = "agent-a856f614-7654-44ba-a35f-c817d477dded"
-
 
 async def process_queue(dry_run=False):
     """Have comms draft responses for all pending items via Letta API.

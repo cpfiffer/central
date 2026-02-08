@@ -156,7 +156,7 @@ async def generate_observation(observation_type: str = "pulse", duration: int = 
         duration: How long to gather data
     
     Returns:
-        Formatted observation text (route through comms subagent to post)
+        Formatted observation text
     """
     console.print(f"[bold]Generating {observation_type} observation...[/bold]")
     
@@ -170,7 +170,7 @@ async def generate_observation(observation_type: str = "pulse", duration: int = 
     console.print(f"\n[cyan]Observation:[/cyan]")
     console.print(text)
     console.print(f"\n[dim]({len(text)} chars)[/dim]")
-    console.print(f"\n[yellow]To post: route through comms subagent[/yellow]")
+    console.print(f"\n[yellow]To post: use tools/thread.py[/yellow]")
     
     return text
 
@@ -178,7 +178,7 @@ async def generate_observation(observation_type: str = "pulse", duration: int = 
 async def observe_loop(interval: int = 3600, duration: int = 60):
     """
     Continuous observation loop - generates observations at regular intervals.
-    Does NOT auto-post. Use comms subagent to post.
+    Does NOT auto-post. Use tools/thread.py to post.
     
     Args:
         interval: Seconds between observations (default 1 hour)
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         print("  loop [interval]      - Continuous observations (default 3600s interval)")
         print("")
         print("NOTE: This tool generates observations but does NOT post.")
-        print("      Route output through comms subagent to post.")
+        print("      Use tools/thread.py to post.")
         print("")
         print("Examples:")
         print("  python observer.py pulse 30")

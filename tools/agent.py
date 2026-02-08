@@ -109,10 +109,9 @@ PDS = os.getenv("ATPROTO_PDS")
 APP_PASSWORD = os.getenv("ATPROTO_APP_PASSWORD")
 
 # Agent whitelist - only these Letta agents can post/like/follow
-# Central is the main agent; comms handles drafting via queue
+# Central is the main agent
 WRITE_ALLOWED_AGENTS = {
     "agent-c770d1c8-510e-4414-be36-c9ebd95a7758",  # central (me)
-    "agent-a856f614-7654-44ba-a35f-c817d477dded",  # comms (drafts posts)
 }
 
 def check_write_permission():
