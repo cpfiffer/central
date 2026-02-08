@@ -227,6 +227,11 @@ async def queue_notifications(limit=50):
                 "queued_at": datetime.now(timezone.utc).isoformat(),
             }
             
+            # SKIP-priority items: record as sent immediately so they don't re-queue
+            if priority == "SKIP":
+                _record_sent_uri(their_uri)
+                continue
+            
             queue.insert(0, entry) # Newest first? Or append? Let's prepend.
             _log_mention(entry)  # Log for pulse tracking
             count += 1
