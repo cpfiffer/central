@@ -629,6 +629,9 @@ if __name__ == "__main__":
     cleanup_parser.add_argument("--ttl-only", action="store_true", help="Only apply TTL, skip priority filter")
     cleanup_parser.add_argument("--all-priorities", action="store_true", help="Keep all priorities, only apply TTL")
     
+    # dismiss command (clear queue, mark all as sent)
+    dismiss_parser = subparsers.add_parser("dismiss", help="Clear queue, marking all items as sent so they don't re-queue")
+    
     # process command (comms drafts responses)
     process_parser = subparsers.add_parser("process", help="Have comms draft responses via Letta API")
     process_parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
@@ -650,6 +653,19 @@ if __name__ == "__main__":
         ttl = args.ttl if args.ttl else (QUEUE_TTL_HOURS if args.ttl_only or args.all_priorities else None)
         priorities = None if args.all_priorities or args.ttl_only else ["CRITICAL", "HIGH"]
         cleanup_queue(keep_priorities=priorities, ttl_hours=ttl)
+    elif args.command == "dismiss":
+        if DRAFTS_FILE.exists():
+            queue = yaml.safe_load(DRAFTS_FILE.read_text()) or []
+            dismissed = 0
+            for item in queue:
+                if item.get("uri"):
+                    _record_sent_uri(item["uri"])
+                    dismissed += 1
+            with open(DRAFTS_FILE, "w") as f:
+                yaml.dump([], f)
+            console.print(f"[green]Dismissed {dismissed} items from queue (marked as sent).[/green]")
+        else:
+            console.print("[dim]No queue file found.[/dim]")
     elif args.command == "process":
         asyncio.run(process_queue(dry_run=args.dry_run))
     elif args.command == "process-parallel":
