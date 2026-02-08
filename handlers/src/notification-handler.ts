@@ -12,8 +12,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
+import { createSession } from "@letta-ai/letta-code-sdk";
 import { 
   getPriority,
+  CENTRAL_AGENT_ID,
   BLUESKY_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
@@ -193,53 +195,74 @@ async function processNotifications() {
       };
     }));
 
-    // Write drafts directly for each notification
-    for (const item of notificationList) {
-      try {
-        // Determine output directory based on priority
-        const isHighPriority = ["HIGH", "CRITICAL"].includes(item.priority);
-        const outputDir = isHighPriority ? REVIEW_DRAFTS : BLUESKY_DRAFTS;
-        const filename = `${isHighPriority ? "bluesky-" : ""}reply-${item.id}.txt`;
-        const filePath = path.join(outputDir, filename);
+    // Spawn Central to draft real responses
+    const centralPrompt = `You are responding to Bluesky notifications. For each notification, write a draft file.
 
-        // Build YAML frontmatter
-        const frontmatter = {
-          platform: item.platform,
-          type: "reply",
-          reply_to: item.reply_parent?.uri || item.uri,
-          reply_to_cid: item.reply_parent?.cid || item.cid,
-          reply_root: item.reply_root?.uri || item.uri,
-          reply_root_cid: item.reply_root?.cid || item.cid,
-          author: item.author,
-          priority: item.priority,
-          original_text: item.text.substring(0, 200),
-          drafted_at: new Date().toISOString(),
-        };
+**Rules:**
+- Under 280 chars per response
+- Acknowledge before diverging ("Correct.", "Valid.", "That tracks.")
+- Be specific. Name tools, files, commits.
+- No em dashes. No hedges. No lectures.
+- SKIP notifications that don't warrant a response (spam, off-topic, reactions like "lmao" or "bro")
+- SKIP notifications from comind agents (void, herald, grunk, archivist, umbra, astral) unless they ask a direct question
 
-        // Build draft content with frontmatter
-        let content = `---\n${yaml.stringify(frontmatter)}---\n`;
-        content += `[DRAFT NEEDED] @${item.author}: "${item.text.substring(0, 150)}"\n\n`;
-        
-        // Add thread context if available
-        if (item.thread_context) {
-          content += `Thread: ${item.thread_context.substring(0, 500)}\n\n`;
+**File locations (use EXACTLY these paths):**
+- CRITICAL/HIGH priority: ${REVIEW_DRAFTS}/bluesky-reply-{id}.txt
+- MEDIUM/LOW priority: ${BLUESKY_DRAFTS}/reply-{id}.txt
+
+**File format:**
+\`\`\`
+---
+platform: bluesky
+type: reply
+reply_to: {parent uri}
+reply_to_cid: {parent cid}
+reply_root: {root uri}
+reply_root_cid: {root cid}
+author: {author}
+priority: {priority}
+original_text: "{text}"
+drafted_at: {ISO timestamp}
+---
+Your actual response here (under 280 chars)
+\`\`\`
+
+**Notifications:**
+${JSON.stringify(notificationList, null, 2)}
+
+Write each draft file. Skip what should be skipped.`;
+
+    try {
+      const session = createSession(CENTRAL_AGENT_ID, {
+        allowedTools: ["Read", "Write", "Glob"],
+        permissionMode: "bypassPermissions",
+        cwd: process.cwd(),
+      });
+
+      const BATCH_TIMEOUT_MS = 120000;
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error(`Batch timeout after ${BATCH_TIMEOUT_MS/1000}s`)), BATCH_TIMEOUT_MS);
+      });
+
+      const processPromise = async () => {
+        await session.send(centralPrompt);
+        for await (const msg of session.stream()) {
+          if (msg.type === "assistant") {
+            process.stdout.write(msg.content);
+          }
+          if (msg.type === "result") {
+            console.log("\n✓ Batch complete");
+          }
         }
-        
-        // Add cognition context if available
-        if (item.cognition_context) {
-          content += `Past thoughts: ${item.cognition_context.substring(0, 500)}\n`;
-        }
+      };
 
-        // Ensure directory exists
-        if (!fs.existsSync(outputDir)) {
-          fs.mkdirSync(outputDir, { recursive: true });
-        }
-
-        // Write draft file
-        fs.writeFileSync(filePath, content);
-        console.log(`  ✓ Draft: ${filename}`);
-      } catch (error) {
-        console.error(`  ✗ Failed to write draft for ${item.id}:`, error);
+      await Promise.race([processPromise(), timeoutPromise]);
+      session.close();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("timeout")) {
+        console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
+      } else {
+        console.error("Error invoking Central:", error);
       }
     }
   }

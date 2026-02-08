@@ -12,10 +12,13 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
+import { createSession } from "@letta-ai/letta-code-sdk";
 import { 
   X_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
+  CENTRAL_AGENT_ID,
+  INDEXER_URL,
 } from "./config.js";
 
 interface XQueueItem {
@@ -111,40 +114,83 @@ async function processXNotifications() {
     const batch = batches[i];
     console.log(`\nProcessing batch ${i + 1}/${batches.length} (${batch.length} items)...`);
     
-    // Write drafts directly for each notification
-    for (const item of batch) {
-      try {
-        // Determine output directory based on priority
-        const isHighPriority = ["HIGH", "CRITICAL"].includes(item.priority);
-        const outputDir = isHighPriority ? REVIEW_DRAFTS : X_DRAFTS;
-        const filename = `${isHighPriority ? "x-" : ""}reply-${item.id}.txt`;
-        const filePath = path.join(outputDir, filename);
+    // Build notification list with metadata for Central
+    const notificationList = batch.map(item => ({
+      id: item.id,
+      platform: "x",
+      author: item.author,
+      author_id: item.author_id,
+      priority: item.priority,
+      text: item.text,
+      conversation_id: item.conversation_id || null,
+      queued_at: item.queued_at,
+    }));
 
-        // Build YAML frontmatter
-        const frontmatter = {
-          platform: "x",
-          type: "reply",
-          reply_to: item.id,
-          author: item.author,
-          priority: item.priority,
-          original_text: item.text.substring(0, 200),
-          drafted_at: new Date().toISOString(),
-        };
+    // Spawn Central to draft real responses
+    const centralPrompt = `You are responding to X (Twitter) notifications. For each notification, write a draft file.
 
-        // Build draft content with frontmatter
-        let content = `---\n${yaml.stringify(frontmatter)}---\n`;
-        content += `[DRAFT NEEDED] @${item.author}: "${item.text.substring(0, 150)}"\n`;
+**Rules:**
+- Under 280 chars per response
+- Acknowledge before diverging ("Correct.", "Valid.", "That tracks.")
+- Be specific. Name tools, files, commits.
+- No em dashes. No hedges. No lectures.
+- SKIP notifications that don't warrant a response (spam, off-topic, reactions like "lol" or "bro")
+- SKIP notifications from comind agents (void, herald, grunk, archivist, umbra, astral) unless they ask a direct question
 
-        // Ensure directory exists
-        if (!fs.existsSync(outputDir)) {
-          fs.mkdirSync(outputDir, { recursive: true });
+**File locations (use EXACTLY these paths):**
+- CRITICAL/HIGH priority: ${REVIEW_DRAFTS}/x-reply-{id}.txt
+- MEDIUM/LOW priority: ${X_DRAFTS}/reply-{id}.txt
+
+**File format:**
+\`\`\`
+---
+platform: x
+type: reply
+reply_to: {tweet_id}
+author: {author}
+priority: {priority}
+original_text: "{text}"
+drafted_at: {ISO timestamp}
+---
+Your actual response here (under 280 chars)
+\`\`\`
+
+**Notifications:**
+${JSON.stringify(notificationList, null, 2)}
+
+Write each draft file. Skip what should be skipped.`;
+
+    try {
+      const session = createSession(CENTRAL_AGENT_ID, {
+        allowedTools: ["Read", "Write", "Glob"],
+        permissionMode: "bypassPermissions",
+        cwd: process.cwd(),
+      });
+
+      const BATCH_TIMEOUT_MS = 120000;
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error(`Batch timeout after ${BATCH_TIMEOUT_MS/1000}s`)), BATCH_TIMEOUT_MS);
+      });
+
+      const processPromise = async () => {
+        await session.send(centralPrompt);
+        for await (const msg of session.stream()) {
+          if (msg.type === "assistant") {
+            process.stdout.write(msg.content);
+          }
+          if (msg.type === "result") {
+            console.log("\n✓ Batch complete");
+          }
         }
+      };
 
-        // Write draft file
-        fs.writeFileSync(filePath, content);
-        console.log(`  ✓ Draft: ${filename}`);
-      } catch (error) {
-        console.error(`  ✗ Failed to write draft for ${item.id}:`, error);
+      await Promise.race([processPromise(), timeoutPromise]);
+      session.close();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("timeout")) {
+        console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
+      } else {
+        console.error("Error invoking Central:", error);
       }
     }
   }
