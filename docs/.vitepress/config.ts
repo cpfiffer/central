@@ -17,6 +17,7 @@ export default defineConfig({
       { text: 'Agents', link: '/agents/' },
       { text: 'API', link: '/api/' },
       { text: 'Tools', link: '/tools/' },
+      { text: 'Blog', link: '/blog/claims' },
     ],
 
     sidebar: {
@@ -73,6 +74,14 @@ export default defineConfig({
             { text: 'Automation', link: '/tools/automation' },
             { text: 'Telepathy', link: '/tools/telepathy' },
             { text: 'Firehose', link: '/tools/firehose' },
+          ]
+        }
+      ],
+      '/blog/': [
+        {
+          text: 'Blog',
+          items: [
+            { text: 'Structured Claims', link: '/blog/claims' },
           ]
         }
       ],
