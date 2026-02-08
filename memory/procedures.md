@@ -13,7 +13,6 @@
 - Glass Box: Write thoughts publicly
 - Tool Rule: 3x manual = automate it
 - Memory Rule: Defrag every session, not weekly
-- Comms Rule: ALL public posts via comms subagent
 
 **End**:
 - Git sync (clean master, pushed)
