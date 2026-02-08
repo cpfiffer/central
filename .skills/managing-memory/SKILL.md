@@ -1,77 +1,46 @@
 ---
 name: managing-memory
-description: Guide for managing agent memory blocks. Use when inspecting, updating, or creating memory blocks for yourself or subagents. Covers the memory tool (self), Letta API (subagents), and common patterns.
+description: Guide for managing agent memory blocks. Use when inspecting, updating, creating, auditing, or restructuring memory blocks for yourself or subagents. Covers the memory tool (self), Letta API (subagents), auditing utilization, and invoking the memory agent for major restructuring.
 ---
 
 # Managing Agent Memory
 
-Memory blocks are the foundation of agent state. This skill covers how to inspect, update, and create blocks for yourself and your subagents.
+Memory blocks are the foundation of agent state. This skill covers inspection, editing, auditing, and restructuring.
 
 ## When to Use
 
-- Inspecting your own memory blocks
-- Viewing subagent memory (comms, scout, coder)
-- Training subagents via memory modifications
-- Creating new blocks for specific purposes
-- Debugging memory-related issues
+- Inspecting or updating your own memory blocks
+- Viewing/modifying subagent memory (scout, coder)
+- Auditing memory utilization
+- Invoking the memory agent for major restructuring
+- Creating new blocks or deleting old ones
 
 ## Two Methods
 
-### 1. Memory Tool (Self Only)
+### 1. Memory Filesystem (Self, Preferred)
 
-For your own blocks, use the built-in `memory` tool:
+Edit blocks as markdown files:
 
-```python
-# View current blocks - they're in your system prompt
-# No tool needed, just read them
-
-# Update a block
-memory(command="str_replace", path="/procedures", 
-       old_string="old text", new_string="new text")
-
-# Insert at line
-memory(command="insert", path="/backlog", 
-       insert_line=5, insert_text="- [ ] New task")
-
-# Create new block
-memory(command="create", path="/new_block",
-       description="What this block is for",
-       file_text="Initial content")
-
-# Delete block
-memory(command="delete", path="/old_block")
+```
+~/.letta/agents/agent-c770d1c8-510e-4414-be36-c9ebd95a7758/memory/system/
 ```
 
-### 2. Letta API (Self + Subagents)
+Read and Edit tools work directly on these files. Changes sync automatically.
 
-For subagents or programmatic access:
+### 2. Letta API (Subagents)
 
 ```python
 from letta_client import Letta
-import os
-
 client = Letta(api_key=os.environ.get('LETTA_API_KEY'))
-agent_id = "agent-xxx"  # Target agent
 
-# List all blocks
-blocks = client.agents.blocks.list(agent_id=agent_id)
-for block in blocks:
-    print(f"{block.label}: {len(block.value)} chars")
+# List blocks
+blocks = client.agents.blocks.list(agent_id="agent-xxx")
 
-# Update a block (by label)
-client.agents.blocks.update(
-    "block_label",
-    agent_id=agent_id,
-    value="new content"
-)
+# Update
+client.agents.blocks.update("label", agent_id="agent-xxx", value="new content")
 
-# Create a block
-client.agents.blocks.create(
-    agent_id=agent_id,
-    label="new_block",
-    value="content",
-    description="What this block is for"
-)
+# Create
+client.agents.blocks.create(agent_id="agent-xxx", label="new", value="content", description="purpose")
 ```
 
 ## Agent IDs
@@ -79,50 +48,33 @@ client.agents.blocks.create(
 | Agent | ID |
 |-------|-----|
 | central (me) | `agent-c770d1c8-510e-4414-be36-c9ebd95a7758` |
-| comms | `agent-a856f614-7654-44ba-a35f-c817d477dded` |
 | scout | `agent-e91a2154-0965-4b70-8303-54458e9a1980` |
 | coder | `agent-f9b768de-e3a4-4845-9c16-d6cf2e954942` |
+| memory | `agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838` |
 
-## Common Patterns
+## Auditing Utilization
 
-### Inspecting Subagent Memory
 ```bash
-uv run python .skills/managing-memory/scripts/inspect-agent.py comms
+cd ~/.letta/agents/agent-c770d1c8-510e-4414-be36-c9ebd95a7758/memory/system
+for f in *.md agents/*.md; do
+    chars=$(wc -c < "$f" 2>/dev/null || echo 0)
+    pct=$((chars * 100 / 20000))
+    printf "%-25s %5d chars (%2d%%)\n" "$f" "$chars" "$pct"
+done | sort -t'(' -k2 -rn
 ```
 
-### Adding a Correction
-When a subagent makes a mistake, add to their corrections block:
-```python
-current = get_block("corrections")
-new_entry = "\n- 2026-01-30: Description of mistake and fix"
-client.agents.blocks.update("corrections", agent_id=X, value=current + new_entry)
+## Invoking Memory Agent
+
+For major restructuring (not routine edits):
+
 ```
-
-### Training Subagent Behavior
-Update policy blocks to change behavior:
-- `comms_policies` - Execution rules for comms
-- `communication_style` - Voice and tone rules
-- `subagent_rules` - Operational constraints
-
-### Shared vs Agent-Specific Blocks
-
-**Shared blocks** (all subagents see):
-- `concepts_index` - Semantic memory summary
-- `project_context` - Mission and infrastructure
-
-**Agent-specific blocks**:
-- `persona` - Who the agent is
-- `corrections` - Learned behaviors
-- `*_policies` - Execution rules
-
-## Scripts
-
-- `scripts/inspect-agent.py` - View all blocks for an agent
-- `scripts/update-block.py` - Update a specific block
+Task(agent_id="agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838", subagent_type="general-purpose", model="opus", description="Restructure [area]", prompt="...")
+```
 
 ## Best Practices
 
-1. **Don't over-modify** - Small targeted updates beat wholesale rewrites
-2. **Log corrections** - When fixing mistakes, add to corrections block
-3. **Keep blocks focused** - One purpose per block
-4. **Check before update** - Always inspect current value first
+1. Small targeted updates beat wholesale rewrites
+2. One purpose per block
+3. Check current value before updating
+4. Archive completed items, don't just accumulate
+5. Defrag every session, not weekly
