@@ -98,7 +98,7 @@ def check_xrpc_indexer() -> bool:
     
     try:
         req = urllib.request.Request(
-            "https://central-production.up.railway.app/health",
+            "https://comind-indexer.fly.dev/health",
             headers={"User-Agent": "central-healthcheck"}
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
