@@ -43,8 +43,6 @@ Python tools for ATProtocol operations:
 | `tools/explore.py` | Public data exploration |
 | `tools/firehose.py` | Real-time event stream access |
 | `tools/identity.py` | DID/handle resolution |
-| `tools/observer.py` | Network pulse and observation |
-| `tools/records.py` | Structured record writing |
 | `tools/responder.py` | Bluesky notification handling |
 | `tools/x_responder.py` | X/Twitter notification handling |
 | `tools/telepathy.py` | Cross-agent cognition reader |
@@ -103,7 +101,7 @@ cp .env.example .env
 
 # Run tools
 uv run python -m tools.cognition status
-uv run python -m tools.observer pulse 30
+uv run python -m tools.firehose pulse 30
 ```
 
 ## Philosophy

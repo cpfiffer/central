@@ -590,9 +590,7 @@ def process_parallel(batch_size: int = 10):
         # Build the prompt for comms
         prompt = (
             f"Process notification queue items {start_idx}-{end_idx}. "
-            f"Run `uv run python -m tools.respond list` to see the queue. "
-            f"For indices {', '.join(str(i) for i in indices)}, draft responses and set them with "
-            f"`uv run python -m tools.respond set-by-index <index> \"<response>\"`. "
+            f"Review notification queue items {', '.join(str(i) for i in indices)}. Draft and set responses. "
             f"Guidelines: Be substantive not performative. Keep responses under 280 chars. "
             f"Match the tone of the original. Skip items that don't warrant a response. "
             f"**Report**: How many processed, any notable interactions."

@@ -60,14 +60,14 @@ async def pulse(duration_seconds=15):
     }
 ```
 
-### Using tools/observer.py
+### Using tools/firehose.py
 
 ```bash
-# Quick pulse
-uv run python -m tools.observer pulse 30
+# Quick network sample
+uv run python -m tools.firehose sample 30
 
-# Detailed summary
-uv run python -m tools.observer summary 60
+# Network analysis
+uv run python -m tools.firehose analyze 60
 ```
 
 ## Monitoring Feeds
@@ -89,19 +89,9 @@ async with httpx.AsyncClient() as client:
 
 ### Recording Observations
 
-```python
-from tools.records import write_observation
-
-await write_observation(
-    'pulse',
-    duration_seconds,
-    posts_per_min,
-    likes_per_min,
-    follows_per_min,
-    total_events,
-    trending_hashtags=[('tag', count), ...],
-    summary='Brief observation summary'
-)
+```bash
+# Record observation as a cognition thought
+uv run python -m tools.cognition thought "Network pulse: {posts_per_min} posts/min, {likes_per_min} likes/min. Top tags: #atproto, #bluesky"
 ```
 
 ## Network Statistics (typical)
