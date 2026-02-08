@@ -434,6 +434,80 @@ async def list_claims(limit: int = 20) -> list:
     return []
 
 
+# === HYPOTHESES (Scientific Method) ===
+
+async def list_hypotheses() -> list:
+    """List all hypotheses."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{PDS}/xrpc/com.atproto.repo.listRecords",
+            params={"repo": DID, "collection": "network.comind.hypothesis", "limit": 50}
+        )
+        if resp.status_code == 200:
+            return resp.json().get("records", [])
+    return []
+
+
+async def get_hypothesis(rkey: str) -> tuple[dict | None, str | None]:
+    """Get a hypothesis by rkey."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{PDS}/xrpc/com.atproto.repo.getRecord",
+            params={"repo": DID, "collection": "network.comind.hypothesis", "rkey": rkey}
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("value"), data.get("cid")
+    return None, None
+
+
+async def upsert_hypothesis(
+    rkey: str,
+    statement: str = None,
+    confidence: int = None,
+    status: str = None,
+    evidence: str = None,
+    contradiction: str = None,
+):
+    """Create or update a hypothesis."""
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    existing, cid = await get_hypothesis(rkey)
+
+    if existing:
+        record = existing
+        record["updatedAt"] = now
+        action = "Updated"
+    else:
+        if not statement:
+            console.print("[red]New hypothesis requires a statement.[/red]")
+            return
+        record = {
+            "$type": "network.comind.hypothesis",
+            "hypothesis": statement,
+            "confidence": confidence or 50,
+            "status": status or "active",
+            "evidence": [],
+            "contradictions": [],
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        action = "Created"
+
+    if statement:
+        record["hypothesis"] = statement
+    if confidence is not None:
+        record["confidence"] = confidence
+    if status:
+        record["status"] = status
+    if evidence:
+        record.setdefault("evidence", []).append(evidence)
+    if contradiction:
+        record.setdefault("contradictions", []).append(contradiction)
+
+    await put_record("network.comind.hypothesis", rkey, record)
+    console.print(f"[green]{action} hypothesis {rkey}[/green]")
+
+
 # === UTILITIES ===
 
 async def cognition_status() -> dict:
@@ -476,6 +550,9 @@ if __name__ == "__main__":
         print("Query commands:")
         print("  claims                - List recent claims")
         print("  claim <rkey>          - Get a specific claim")
+        print("  hypotheses            - List all hypotheses")
+        print("  hypothesis <rkey>     - Get a specific hypothesis")
+        print("  write-hypothesis <rkey> <statement> [--confidence N] [--status S]")
         sys.exit(0)
     
     command = args[0]
@@ -604,6 +681,50 @@ if __name__ == "__main__":
     
     elif command == "retract-claim" and len(args) > 1:
         asyncio.run(update_claim(args[1], status="retracted"))
+    
+    elif command == "hypotheses":
+        records = asyncio.run(list_hypotheses())
+        records.sort(key=lambda x: x["uri"].split("/")[-1])
+        for r in records:
+            rkey = r["uri"].split("/")[-1]
+            v = r["value"]
+            print(f"  {rkey} ({v.get('confidence', '?')}%) [{v.get('status', '?')}]: {v.get('hypothesis', '')[:80]}")
+    
+    elif command == "hypothesis" and len(args) > 1:
+        h, cid = asyncio.run(get_hypothesis(args[1]))
+        if h:
+            print(f"Hypothesis: {h.get('hypothesis')}")
+            print(f"Confidence: {h.get('confidence')}%")
+            print(f"Status: {h.get('status')}")
+            print(f"Evidence: {h.get('evidence', [])}")
+            print(f"Contradictions: {h.get('contradictions', [])}")
+        else:
+            print(f"Hypothesis not found: {args[1]}")
+    
+    elif command == "write-hypothesis" and len(args) > 1:
+        rkey = args[1]
+        statement = None
+        confidence = None
+        status = None
+        evidence = None
+        contradiction = None
+        i = 2
+        while i < len(args):
+            if args[i] == "--statement" and i + 1 < len(args):
+                statement = args[i + 1]; i += 2
+            elif args[i] == "--confidence" and i + 1 < len(args):
+                confidence = int(args[i + 1]); i += 2
+            elif args[i] == "--status" and i + 1 < len(args):
+                status = args[i + 1]; i += 2
+            elif args[i] == "--evidence" and i + 1 < len(args):
+                evidence = args[i + 1]; i += 2
+            elif args[i] == "--contradiction" and i + 1 < len(args):
+                contradiction = args[i + 1]; i += 2
+            else:
+                if statement is None:
+                    statement = args[i]
+                i += 1
+        asyncio.run(upsert_hypothesis(rkey, statement, confidence, status, evidence, contradiction))
     
     else:
         print(f"Unknown command: {command}")
