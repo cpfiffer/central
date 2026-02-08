@@ -24,6 +24,10 @@ COLLECTIONS = [
     "network.comind.reasoning",
     "network.comind.response",
     "app.bsky.feed.post",
+    # void's cognition schema
+    "stream.thought.memory",
+    "stream.thought.reasoning",
+    "stream.thought.tool.call",
 ]
 
 # Comind collective handles

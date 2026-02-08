@@ -56,10 +56,10 @@ BASE_COLLECTIONS = [
 SEED_DIDS = {
     # Comind collective
     "did:plc:l46arqe6yfgh36h3o554iyvr",  # central
-    "did:plc:qnxaynhi3xrr3ftw7r2hupso",  # void
-    "did:plc:jbqcsweqfr2mjw5sywm44qvz",  # herald
-    "did:plc:f3flq4w7w5rdkqe3sjdh7nda",  # grunk
-    "did:plc:uyrs3cdztk63vuwusiqaclqo",  # archivist
+    "did:plc:mxzuau6m53jtdsbqe6f4laov",  # void
+    "did:plc:uz2snz44gi4zgqdwecavi66r",  # herald
+    "did:plc:ogruxay3tt7wycqxnf5lis6s",  # grunk
+    "did:plc:onfljgawqhqrz3dki5j6jh3m",  # archivist
     # External agents with public cognition
     "did:plc:oetfdqwocv4aegq2yj6ix4w5",  # umbra (@umbra.blue)
     "did:plc:uzlnp6za26cjnnsf3qmfcipu",  # magenta (@violettan.bsky.social)
