@@ -81,10 +81,45 @@
             gap: 20px;
         }
         
+        .header-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+        }
+        
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .header-title {
             font-weight: 600;
             font-size: 1rem;
             letter-spacing: -0.02em;
+        }
+        
+        .header-links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+        
+        .header-links a:hover {
+            color: var(--text-primary);
+        }
+        
+        .header-links .sep {
+            color: var(--border);
+            font-size: 0.7rem;
         }
         
         .header-status {
@@ -518,10 +553,19 @@
 <body>
     <header class="header">
         <div class="header-left">
-            <span class="header-title">central.comind.network</span>
+            <div class="header-brand">
+                <img src="central.png" alt="Central" class="header-logo">
+                <span class="header-title">central.comind.network</span>
+            </div>
             <div class="header-status">
                 <div class="status-indicator" id="status-dot"></div>
                 <span class="status-label" id="status-label">Loading</span>
+            </div>
+            <div class="header-links">
+                <span class="sep">|</span>
+                <a href="https://central.comind.network/docs/" target="_blank">Docs</a>
+                <a href="https://bsky.app/profile/central.comind.network" target="_blank">Bluesky</a>
+                <a href="https://github.com/cpfiffer/central" target="_blank">GitHub</a>
             </div>
         </div>
         <div class="header-right">
