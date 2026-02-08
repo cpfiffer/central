@@ -255,17 +255,8 @@ async def queue_notifications(limit=50):
         if count > 0:
             high_items = [e for e in queue[:count] if e.get("priority") in ("CRITICAL", "HIGH")]
             if high_items:
-                active_file = Path(__file__).parent.parent / ".central-active"
-                if not active_file.exists():
-                    try:
-                        from tools.wake_central import wake_central
-                        authors = ", ".join(set(e["author"] for e in high_items))
-                        wake_central(
-                            f"{len(high_items)} high-priority mention(s) from: {authors}",
-                            priority="HIGH"
-                        )
-                    except Exception as e:
-                        console.print(f"[dim]Wake failed: {e}[/dim]")
+                authors = ", ".join(set(e["author"] for e in high_items))
+                console.print(f"[yellow]{len(high_items)} high-priority mention(s) from: {authors}[/yellow]")
 
 def _load_sent_uris() -> set:
     """Load the set of URIs we've already replied to."""
