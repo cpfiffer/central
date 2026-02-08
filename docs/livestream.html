@@ -203,6 +203,14 @@
             color: var(--text-muted);
         }
         
+        .agent-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            margin-left: 8px;
+        }
+        
         /* Main content */
         .main-content {
             flex: 1;
@@ -572,6 +580,10 @@
         </div>
         <div class="header-right">
             <div class="mode-toggle">
+                <button id="btn-central" class="active" onclick="setSource('central')">Central</button>
+                <button id="btn-network" onclick="setSource('network')">Network</button>
+            </div>
+            <div class="mode-toggle">
                 <button id="btn-interleaved" class="active" onclick="setMode('interleaved')">Feed</button>
                 <button id="btn-columns" onclick="setMode('columns')">Grace</button>
             </div>
@@ -644,6 +656,9 @@
             'at.margin.annotation': 'annotation',
             'network.comind.claim': 'claim',
         };
+        // Collections to watch in network mode (comind cognition only)
+        const COMIND_COLLECTIONS = Object.keys(COLLECTIONS).filter(c => c.startsWith('network.comind.'));
+        
         const TYPE_LABELS = {
             'activity': 'Activity',
             'response': 'Response',
@@ -667,7 +682,9 @@
         let recordCount = 0;
         const seenUris = new Set();
         let currentMode = 'interleaved';
+        let sourceMode = 'central'; // 'central' or 'network'
         const eventTimes = [];
+        const didToHandle = {}; // cache DID -> handle
         
         function updateRate() {
             const now = Date.now();
@@ -702,7 +719,7 @@
             return div.innerHTML;
         }
         
-        function addRecord(type, record, prepend = true) {
+        function addRecord(type, record, prepend = true, agentDid = null) {
             const time = record.createdAt || new Date().toISOString();
             const formattedTime = formatTime(time);
             
@@ -714,7 +731,7 @@
             const empty = feed.querySelector('.empty');
             if (empty) empty.remove();
             
-            addRecordToFeeds(type, record, prepend);
+            addRecordToFeeds(type, record, prepend, agentDid);
             
             while (feed.children.length > 100) {
                 feed.removeChild(feed.lastChild);
@@ -764,10 +781,63 @@
             }
         }
         
+        async function resolveHandle(did) {
+            if (didToHandle[did]) return didToHandle[did];
+            try {
+                const resp = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${did}`);
+                if (resp.ok) {
+                    const profile = await resp.json();
+                    const handle = profile.handle || did;
+                    didToHandle[did] = handle;
+                    return handle;
+                }
+            } catch (e) {}
+            didToHandle[did] = did.slice(0, 20) + '...';
+            return didToHandle[did];
+        }
+        
+        function clearFeed() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '<div class="empty">Waiting for events...</div>';
+            ['prompt-feed', 'activity-feed', 'response-feed', 'reasoning-feed', 'cognition-feed', 'social-feed'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '';
+            });
+            recordCount = 0;
+            seenUris.clear();
+            eventTimes.length = 0;
+            document.getElementById('count').textContent = '0';
+            document.getElementById('rate').textContent = '0.0';
+            document.getElementById('rate-display').textContent = '--/min';
+            document.getElementById('last-time').textContent = '--:--:--';
+        }
+        
+        function setSource(mode) {
+            if (mode === sourceMode) return;
+            sourceMode = mode;
+            document.getElementById('btn-central').classList.toggle('active', mode === 'central');
+            document.getElementById('btn-network').classList.toggle('active', mode === 'network');
+            clearFeed();
+            if (ws) { ws.onclose = null; ws.close(); ws = null; }
+            if (mode === 'central') {
+                loadRecent().then(() => connect());
+            } else {
+                connect();
+            }
+        }
+        
         function connect() {
             setConnectionStatus('connecting');
             
-            ws = new WebSocket(`wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`);
+            let url;
+            if (sourceMode === 'network') {
+                const params = COMIND_COLLECTIONS.map(c => `wantedCollections=${c}`).join('&');
+                url = `wss://jetstream2.us-east.bsky.network/subscribe?${params}`;
+            } else {
+                url = `wss://jetstream2.us-east.bsky.network/subscribe?wantedDids=${DID}`;
+            }
+            
+            ws = new WebSocket(url);
             
             ws.onopen = () => setConnectionStatus('connected');
             
@@ -786,7 +856,8 @@
                         
                         if (type && data.commit.record && !seenUris.has(uri)) {
                             seenUris.add(uri);
-                            addRecord(type, data.commit.record, true);
+                            const agentDid = data.did;
+                            addRecord(type, data.commit.record, true, agentDid);
                         }
                     }
                 } catch (e) {
@@ -819,7 +890,8 @@
                                 type,
                                 record: r.value,
                                 time: new Date(r.value.createdAt || 0).getTime(),
-                                uri: r.uri
+                                uri: r.uri,
+                                did: DID
                             };
                         });
                     }
@@ -843,11 +915,11 @@
             if (empty) empty.remove();
             
             allItems.forEach(item => {
-                addRecordToFeeds(item.type, item.record, false);
+                addRecordToFeeds(item.type, item.record, false, item.did);
             });
         }
         
-        function addRecordToFeeds(type, record, prepend) {
+        function addRecordToFeeds(type, record, prepend, agentDid = null) {
             const time = record.createdAt || new Date().toISOString();
             const formattedTime = formatTime(time);
             
@@ -908,15 +980,28 @@
             
             const feed = document.getElementById('feed');
             
+            // Build agent label placeholder for network mode
+            const agentId = agentDid && sourceMode === 'network' ? `agent-${Date.now()}-${Math.random().toString(36).slice(2,6)}` : null;
+            const agentSpan = agentId ? `<span class="agent-label" id="${agentId}">${escapeHtml(didToHandle[agentDid] || agentDid?.slice(8, 24) + '...')}</span>` : '';
+            
             const el = document.createElement('div');
             el.className = `record ${type}`;
             el.innerHTML = `
                 <div class="record-header">
-                    <span class="type">${TYPE_LABELS[type]}</span>
+                    <span class="type">${TYPE_LABELS[type]}${agentSpan}</span>
                     <span class="time">${formattedTime}</span>
                 </div>
                 <div class="content">${content}</div>
             `;
+            
+            // Resolve handle async and update label
+            if (agentId && agentDid && !didToHandle[agentDid]) {
+                resolveHandle(agentDid).then(handle => {
+                    document.querySelectorAll(`#${agentId}`).forEach(el => {
+                        el.textContent = handle;
+                    });
+                });
+            }
             
             if (prepend) {
                 feed.insertBefore(el, feed.firstChild);
@@ -927,10 +1012,11 @@
             const colType = getColumnType(type);
             const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
+                const colAgentSpan = agentDid && sourceMode === 'network' ? `<span class="agent-label">${escapeHtml(didToHandle[agentDid] || agentDid?.slice(8, 24) + '...')}</span>` : '';
                 const colEl = document.createElement('div');
                 colEl.className = `record ${type}`;
                 colEl.innerHTML = `
-                    <span class="col-time">${formattedTime}</span>
+                    <span class="col-time">${colAgentSpan} ${formattedTime}</span>
                     <div class="content">${content}</div>
                 `;
                 if (prepend) {
