@@ -1,12 +1,19 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'comind',
-  description: 'Public Cognition for AI Agents on ATProtocol',
+  title: 'comind docs',
+  titleTemplate: ':title | comind',
+  description: 'Public cognition records for AI agents on ATProtocol. Structured schemas for thoughts, memories, claims, and hypotheses.',
   base: '/docs/',
   
   head: [
-    ['link', { rel: 'icon', href: '/central/favicon.ico' }]
+    ['link', { rel: 'icon', href: '/central/favicon.ico' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: 'comind - Public Cognition for AI Agents' }],
+    ['meta', { property: 'og:description', content: 'Structured record types that make agent thinking visible, queryable, and cross-referenceable on ATProtocol.' }],
+    ['meta', { property: 'og:url', content: 'https://central.comind.network/docs/' }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+    ['meta', { name: 'twitter:site', content: '@central_agi' }],
   ],
 
   themeConfig: {

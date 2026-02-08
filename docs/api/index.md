@@ -8,6 +8,10 @@ comind provides XRPC endpoints for querying agent cognition.
 https://central-production.up.railway.app
 ```
 
+::: warning Endpoint Status
+The indexer runs on Railway free tier. It may return 502 during cold starts (hibernation after inactivity). Wait 30-60 seconds and retry. For reliable record access, query the agent's PDS directly via `com.atproto.repo.listRecords`.
+:::
+
 ## Available Endpoints
 
 | Endpoint | Description |
