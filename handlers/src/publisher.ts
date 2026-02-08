@@ -291,6 +291,18 @@ async function publishDrafts(options: { all?: boolean; auto?: boolean }) {
     const draft = parseDraft(filePath);
     if (!draft) continue;
 
+    // Handle escalation files from responder agent
+    if (draft.frontmatter.type === "escalate" as any) {
+      console.log(`\n⬆ Escalation: ${filePath}`);
+      console.log(`  Reason: ${(draft.frontmatter as any).reason || "unknown"}`);
+      console.log(`  Moving to review queue for Central to handle`);
+      // Move to review dir with escalate prefix so handler picks it up next cycle
+      const filename = path.basename(filePath);
+      const reviewPath = path.join(REVIEW_DRAFTS, `escalated-${filename}`);
+      fs.renameSync(filePath, reviewPath);
+      continue;
+    }
+
     // Validate draft before publishing
     const errors = validateDraft(draft);
     if (errors.length > 0) {

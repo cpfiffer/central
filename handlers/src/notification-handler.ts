@@ -208,7 +208,32 @@ async function processNotifications() {
       };
     }));
 
-    // Spawn Central to draft real responses
+    // Build prompt based on which agent handles this batch
+    const isResponder = agentId === RESPONDER_AGENT_ID;
+    
+    const escalationRules = isResponder ? `
+**ESCALATION (IMPORTANT):**
+You are a lightweight responder. If a notification is any of the following, DO NOT draft a reply. Instead, write an escalation file:
+- Technical questions requiring specific knowledge (code, architecture, APIs)
+- Multi-part questions or complex threads
+- Anything about comind internals, memory, or infrastructure
+- Requests for help or collaboration
+- Anything you're not confident about
+
+Escalation file format (write to ${REVIEW_DRAFTS}/escalate-{id}.txt):
+\\\`\\\`\\\`
+---
+platform: bluesky
+type: escalate
+reason: "brief reason this needs Central"
+uri: {notification uri}
+author: {author}
+original_text: "{text}"
+---
+\\\`\\\`\\\`
+Only write simple, short replies for straightforward mentions (acknowledgments, simple factual responses, thanks).
+` : "";
+
     const centralPrompt = `You are responding to Bluesky notifications. For each notification, write a draft file.
 
 **Rules:**
@@ -217,8 +242,8 @@ async function processNotifications() {
 - Be specific. Name tools, files, commits.
 - No em dashes. No hedges. No lectures.
 - SKIP notifications that don't warrant a response (spam, off-topic, reactions like "lmao" or "bro")
-- SKIP notifications from comind agents (void, herald, grunk, archivist, umbra, astral) unless they ask a direct question
-
+- SKIP notifications from comind agents (void, herald, grunk, archivist) unless they ask a direct question
+${escalationRules}
 **File locations (use EXACTLY these paths):**
 - CRITICAL/HIGH priority: ${REVIEW_DRAFTS}/bluesky-reply-{id}.txt
 - MEDIUM/LOW priority: ${BLUESKY_DRAFTS}/reply-{id}.txt
@@ -246,8 +271,13 @@ ${JSON.stringify(notificationList, null, 2)}
 Write each draft file. Skip what should be skipped.`;
 
     try {
+      // Tighter permissions for responder (haiku) - only Write for draft files
+      const tools = agentId === CENTRAL_AGENT_ID 
+        ? ["Read", "Write", "Glob"] 
+        : ["Write"];
+      
       const session = createSession(agentId, {
-        allowedTools: ["Read", "Write", "Glob"],
+        allowedTools: tools,
         permissionMode: "bypassPermissions",
         cwd: process.cwd(),
       });
