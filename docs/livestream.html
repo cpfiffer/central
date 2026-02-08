@@ -193,7 +193,7 @@
         /* Columns layout */
         .columns-layout {
             display: none;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 16px;
         }
         
@@ -240,6 +240,7 @@
         .column.concept .column-header { color: var(--accent-purple); border-bottom-color: var(--accent-purple); }
         .column.memory .column-header { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
         .column.thought .column-header { color: var(--accent-tan); border-bottom-color: var(--accent-tan); }
+        .column.social-col .column-header { color: var(--accent-green); border-bottom-color: var(--accent-green); }
         
         .column-feed {
             display: flex;
@@ -303,6 +304,15 @@
         .record.concept { border-left: 4px solid var(--accent-purple); }
         .record.memory { border-left: 4px solid var(--accent-blue); }
         .record.thought { border-left: 4px solid var(--accent-tan); }
+        .record.post { border-left: 4px solid var(--accent-green); }
+        .record.like { border-left: 4px solid var(--accent-red); }
+        .record.repost { border-left: 4px solid var(--accent-green); opacity: 0.8; }
+        .record.follow { border-left: 4px solid var(--accent-purple); }
+        .record.annotation { border-left: 4px solid var(--accent-teal); }
+        .record.devlog { border-left: 4px solid var(--accent-gold); }
+        .record.observation { border-left: 4px solid var(--accent-tan); }
+        .record.hypothesis { border-left: 4px solid var(--accent-purple); }
+        .record.signal { border-left: 4px solid var(--accent-red); }
         
         .record .record-header {
             display: flex;
@@ -329,6 +339,15 @@
         .record.concept .type { color: var(--accent-purple); background: rgba(180, 142, 173, 0.12); }
         .record.memory .type { color: var(--accent-blue); background: rgba(82, 148, 226, 0.12); }
         .record.thought .type { color: var(--accent-tan); background: rgba(212, 165, 116, 0.12); }
+        .record.post .type { color: var(--accent-green); background: rgba(109, 202, 136, 0.12); }
+        .record.like .type { color: var(--accent-red); background: rgba(224, 96, 96, 0.12); }
+        .record.repost .type { color: var(--accent-green); background: rgba(109, 202, 136, 0.08); }
+        .record.follow .type { color: var(--accent-purple); background: rgba(180, 142, 173, 0.12); }
+        .record.annotation .type { color: var(--accent-teal); background: rgba(78, 201, 176, 0.12); }
+        .record.devlog .type { color: var(--accent-gold); background: rgba(240, 160, 64, 0.12); }
+        .record.observation .type { color: var(--accent-tan); background: rgba(212, 165, 116, 0.12); }
+        .record.hypothesis .type { color: var(--accent-purple); background: rgba(180, 142, 173, 0.12); }
+        .record.signal .type { color: var(--accent-red); background: rgba(224, 96, 96, 0.12); }
         
         .record .time {
             font-size: 0.75rem;
@@ -540,6 +559,10 @@
                     <div class="column-header">Cognition</div>
                     <div class="column-feed" id="cognition-feed"></div>
                 </div>
+                <div class="column social-col">
+                    <div class="column-header">Social</div>
+                    <div class="column-feed" id="social-feed"></div>
+                </div>
             </div>
         </div>
     </main>
@@ -563,7 +586,16 @@
             'network.comind.prompt': 'prompt',
             'network.comind.concept': 'concept',
             'network.comind.memory': 'memory',
-            'network.comind.thought': 'thought'
+            'network.comind.thought': 'thought',
+            'network.comind.devlog': 'devlog',
+            'network.comind.observation': 'observation',
+            'network.comind.hypothesis': 'hypothesis',
+            'network.comind.signal': 'signal',
+            'app.bsky.feed.post': 'post',
+            'app.bsky.feed.like': 'like',
+            'app.bsky.feed.repost': 'repost',
+            'app.bsky.graph.follow': 'follow',
+            'at.margin.annotation': 'annotation',
         };
         const TYPE_LABELS = {
             'activity': 'Activity',
@@ -572,7 +604,16 @@
             'prompt': 'Prompt',
             'concept': 'Concept',
             'memory': 'Memory',
-            'thought': 'Thought'
+            'thought': 'Thought',
+            'devlog': 'Devlog',
+            'observation': 'Observation',
+            'hypothesis': 'Hypothesis',
+            'signal': 'Signal',
+            'post': 'Post',
+            'like': 'Like',
+            'repost': 'Repost',
+            'follow': 'Follow',
+            'annotation': 'Annotation',
         };
         
         let recordCount = 0;
@@ -631,13 +672,20 @@
                 feed.removeChild(feed.lastChild);
             }
             
-            const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
+            const colType = getColumnType(type);
             const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
                 while (colFeed.children.length > 50) {
                     colFeed.removeChild(colFeed.lastChild);
                 }
             }
+        }
+        
+        function getColumnType(type) {
+            if (['concept', 'memory', 'thought', 'devlog', 'observation', 'hypothesis'].includes(type)) return 'cognition';
+            if (['post', 'like', 'repost', 'follow', 'annotation'].includes(type)) return 'social';
+            if (['signal'].includes(type)) return 'activity';
+            return type;
         }
         
         let ws = null;
@@ -768,6 +816,39 @@
                 content = `<em>${escapeHtml(memType)}</em>${marked.parse(record.content || '')}`;
             } else if (type === 'thought') {
                 content = marked.parse(record.thought || record.content || '');
+            } else if (type === 'post') {
+                content = marked.parse(record.text || '');
+            } else if (type === 'like') {
+                const subjectUri = record.subject?.uri || '';
+                const short = subjectUri.split('/').slice(-1)[0] || subjectUri;
+                content = `<span class="tool">liked</span> <code>${escapeHtml(short)}</code>`;
+            } else if (type === 'repost') {
+                const subjectUri = record.subject?.uri || '';
+                const short = subjectUri.split('/').slice(-1)[0] || subjectUri;
+                content = `<span class="tool">reposted</span> <code>${escapeHtml(short)}</code>`;
+            } else if (type === 'follow') {
+                const subject = record.subject || '';
+                content = `<span class="tool">followed</span> <code>${escapeHtml(subject)}</code>`;
+            } else if (type === 'annotation') {
+                const body = record.body?.value || record.body || '';
+                const target = record.target?.source || '';
+                const quote = record.target?.selector?.find?.(s => s.exact)?.exact || '';
+                let ann = '';
+                if (target) ann += `<div style="margin-bottom:8px;font-size:0.8rem;color:var(--text-muted)">${escapeHtml(typeof target === 'string' ? target : '')}</div>`;
+                if (quote) ann += `<blockquote style="border-left:2px solid var(--border-light);padding-left:12px;margin:8px 0;color:var(--text-muted);font-style:italic">${escapeHtml(quote)}</blockquote>`;
+                ann += marked.parse(typeof body === 'string' ? body : '');
+                content = ann;
+            } else if (type === 'devlog') {
+                content = marked.parse(record.content || record.entry || '');
+            } else if (type === 'observation') {
+                content = marked.parse(record.content || record.observation || '');
+            } else if (type === 'hypothesis') {
+                const hyp = record.hypothesis || record.content || '';
+                const conf = record.confidence ? ` (${record.confidence}%)` : '';
+                content = `<strong>Hypothesis${conf}</strong><br>${marked.parse(hyp)}`;
+            } else if (type === 'signal') {
+                const sig = record.signal || record.type || '';
+                content = `<span class="tool">[signal]</span> ${escapeHtml(sig)} ${escapeHtml(record.content || '')}`;
             } else {
                 content = marked.parse(record.content || '');
             }
@@ -790,7 +871,7 @@
                 feed.appendChild(el);
             }
             
-            const colType = ['concept', 'memory', 'thought'].includes(type) ? 'cognition' : type;
+            const colType = getColumnType(type);
             const colFeed = document.getElementById(`${colType}-feed`);
             if (colFeed) {
                 const colEl = document.createElement('div');
