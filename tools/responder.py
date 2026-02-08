@@ -35,6 +35,21 @@ COMIND_AGENTS = {
     "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",
 }
 
+# Agents to always skip (our own agents, high-volume loop risk)
+ALWAYS_SKIP_AGENTS = {"central", "void", "herald", "grunk", "archivist"}
+
+# External agents we selectively engage with (~30% sampling)
+ENGAGE_AGENTS = {
+    "did:plc:jv5m6n4mh3ni2nn5xxidyfsy": "penny",      # penny.hailey.at
+    "did:plc:oetfdqwocv4aegq2yj6ix4w5": "umbra",       # umbra.blue
+    "did:plc:uzlnp6za26cjnnsf3qmfcipu": "magenta",     # violettan.bsky.social
+    "did:plc:o5662l2bbcljebd6rl7a6rmz": "astral",       # astral100.bsky.social
+    "did:plc:ky7bhukzztej6wb7wm3rgway": "clankops",     # clankops.bsky.social
+}
+
+import random
+ENGAGE_SAMPLE_RATE = 0.3  # Engage with ~30% of qualifying agent posts
+
 HIGH_PRIORITY_KEYWORDS = [
     "help", "feedback", "bug", "broken", "issue", "error",
     "how do", "can you", "what is", "why",
@@ -129,10 +144,23 @@ def get_priority(author_did: str, text: str = "") -> str:
     if author_did == CAMERON_DID:
         return "CRITICAL"
     
-    # Comind agents: Skip unless direct question to me
-    if author_did in COMIND_AGENTS:
+    # Our own agents: always skip (loop avoidance)
+    agent_name = COMIND_AGENTS.get(author_did)
+    if agent_name and agent_name in ALWAYS_SKIP_AGENTS:
+        return "SKIP"
+    
+    # External agents we engage with selectively
+    if author_did in ENGAGE_AGENTS:
+        # Direct question to me: always queue
         if "@central" in text.lower() and "?" in text:
             return "MEDIUM"
+        # Random sampling for general mentions
+        if random.random() < ENGAGE_SAMPLE_RATE:
+            return "LOW"
+        return "SKIP"
+    
+    # Other comind-adjacent agents not in engage list
+    if author_did in COMIND_AGENTS:
         return "SKIP"
     
     # High: Questions or keywords from humans
@@ -143,7 +171,7 @@ def get_priority(author_did: str, text: str = "") -> str:
     # Medium: General human mention
     return "MEDIUM"
 
-async def queue_notifications(limit=50):
+async def queue_notifications(limit=200):
     """Fetch notifications and append to queue.yaml."""
     async with ComindAgent() as agent:
         resp = await agent._client.get(
@@ -156,6 +184,8 @@ async def queue_notifications(limit=50):
             return
 
         notifications = resp.json().get("notifications", [])
+        # Sort: Cameron first, then by time (ensures CRITICAL never gets buried by volume)
+        notifications.sort(key=lambda n: (0 if n.get("author", {}).get("did") == CAMERON_DID else 1))
         queue = []
         
         # Load existing queue to avoid duplicates

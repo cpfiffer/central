@@ -16,6 +16,7 @@ import { createSession } from "@letta-ai/letta-code-sdk";
 import { 
   getPriority,
   CENTRAL_AGENT_ID,
+  RESPONDER_AGENT_ID,
   BLUESKY_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
@@ -165,12 +166,24 @@ async function processNotifications() {
     return;
   }
 
-  // Process in batches
-  const batches = chunk(pending, 5);
+  // Split by priority: CRITICAL/HIGH go to Central (sonnet), MEDIUM/LOW go to responder (haiku)
+  const highPriority = pending.filter(item => item.priority === "CRITICAL" || item.priority === "HIGH");
+  const lowPriority = pending.filter(item => item.priority !== "CRITICAL" && item.priority !== "HIGH");
   
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    console.log(`\nProcessing batch ${i + 1}/${batches.length} (${batch.length} items)...`);
+  console.log(`Routing: ${highPriority.length} CRITICAL/HIGH → Central, ${lowPriority.length} MEDIUM/LOW → Responder`);
+
+  // Process both tiers
+  const allBatches: Array<{ items: QueueItem[]; agentId: string; label: string }> = [];
+  for (const b of chunk(highPriority, 5)) {
+    allBatches.push({ items: b, agentId: CENTRAL_AGENT_ID, label: "Central" });
+  }
+  for (const b of chunk(lowPriority, 5)) {
+    allBatches.push({ items: b, agentId: RESPONDER_AGENT_ID, label: "Responder" });
+  }
+  
+  for (let i = 0; i < allBatches.length; i++) {
+    const { items: batch, agentId, label } = allBatches[i];
+    console.log(`\nProcessing batch ${i + 1}/${allBatches.length} (${batch.length} items via ${label})...`);
     
     // Fetch thread context and cognition context for each notification
     const notificationList = await Promise.all(batch.map(async item => {
@@ -233,7 +246,7 @@ ${JSON.stringify(notificationList, null, 2)}
 Write each draft file. Skip what should be skipped.`;
 
     try {
-      const session = createSession(CENTRAL_AGENT_ID, {
+      const session = createSession(agentId, {
         allowedTools: ["Read", "Write", "Glob"],
         permissionMode: "bypassPermissions",
         cwd: process.cwd(),

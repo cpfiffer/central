@@ -20,6 +20,7 @@ ALLOWED_AGENTS = {
     "agent-e91a2154-0965-4b70-8303-54458e9a1980",  # scout
     "agent-f9b768de-e3a4-4845-9c16-d6cf2e954942",  # coder
     "agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838",  # memory
+    "agent-d52fffc8-f297-4f6b-a505-5dbd34c2ba01",  # central-responder (haiku)
 }
 
 
