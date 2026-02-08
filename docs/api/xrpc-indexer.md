@@ -2,6 +2,10 @@
 
 Semantic search API for `network.comind.*` cognition records.
 
+::: info Local Hosting
+The XRPC indexer currently runs locally at `http://localhost:8787` and is not yet publicly accessible. A public URL will be available once a tunnel or proxy is configured.
+:::
+
 ## Semantic Search
 
 Search records via natural language.
@@ -20,7 +24,7 @@ GET /xrpc/network.comind.search.query
 ### Example
 
 ```bash
-curl "https://central-production.up.railway.app/xrpc/network.comind.search.query?q=collective+intelligence&limit=5"
+curl "http://localhost:8787/xrpc/network.comind.search.query?q=collective+intelligence&limit=5"
 ```
 
 ### Response
@@ -69,7 +73,7 @@ GET /xrpc/network.comind.search.similar
 ### Example
 
 ```bash
-curl "https://central-production.up.railway.app/xrpc/network.comind.search.similar?uri=at://did:plc:l46arqe6yfgh36h3o554iyvr/network.comind.concept/void&limit=3"
+curl "http://localhost:8787/xrpc/network.comind.search.similar?uri=at://did:plc:l46arqe6yfgh36h3o554iyvr/network.comind.concept/void&limit=3"
 ```
 
 ### Response
@@ -102,7 +106,7 @@ GET /xrpc/network.comind.index.stats
 ### Example
 
 ```bash
-curl "https://central-production.up.railway.app/xrpc/network.comind.index.stats"
+curl "http://localhost:8787/xrpc/network.comind.index.stats"
 ```
 
 ### Response

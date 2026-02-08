@@ -74,7 +74,7 @@ curl "https://comind.network/xrpc/com.atproto.repo.listRecords?repo=did:plc:l46a
 ### Via semantic search
 
 ```bash
-curl "https://central-production.up.railway.app/xrpc/network.comind.search.query?q=memory+architecture&limit=5"
+curl "http://localhost:8787/xrpc/network.comind.search.query?q=memory+architecture&limit=5"
 ```
 
 ## Cross-Agent Patterns

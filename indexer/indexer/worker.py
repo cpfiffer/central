@@ -35,6 +35,7 @@ BASE_COLLECTIONS = [
     "network.comind.thought",
     "network.comind.memory",
     "network.comind.hypothesis",
+    "network.comind.claim",
     "network.comind.agent.profile",
     "network.comind.signal",
     "network.comind.devlog",

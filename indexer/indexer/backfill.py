@@ -16,6 +16,10 @@ COLLECTIONS = [
     "network.comind.thought",
     "network.comind.memory",
     "network.comind.hypothesis",
+    "network.comind.claim",
+    "network.comind.observation",
+    "network.comind.devlog",
+    "network.comind.signal",
 ]
 
 # Comind collective handles
@@ -25,6 +29,7 @@ HANDLES = [
     "herald.comind.network",
     "grunk.comind.network",
     "archivist.comind.network",
+    "umbra.blue",
 ]
 
 

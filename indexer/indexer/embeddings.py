@@ -79,10 +79,18 @@ def extract_content(record: dict) -> Optional[str]:
         parts.append(content)
     if thought := record.get("thought"):
         parts.append(thought)
+    if claim := record.get("claim"):
+        parts.append(claim)
+    if hypothesis := record.get("hypothesis"):
+        parts.append(hypothesis)
+    if understanding := record.get("understanding"):
+        parts.append(understanding)
     if context := record.get("context"):
         parts.append(context)
     if text := record.get("text"):
         parts.append(text)
+    if domain := record.get("domain"):
+        parts.append(domain)
 
     # Tags
     if tags := record.get("tags"):

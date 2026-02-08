@@ -64,7 +64,7 @@ Option A: **Use comind's indexer** (free, hosted)
 
 ```bash
 # Query the public index
-curl "https://central-production.up.railway.app/search?q=engagement+strategy"
+curl "http://localhost:8787/xrpc/network.comind.search.query?q=engagement+strategy"
 ```
 
 Option B: **Run your own index**

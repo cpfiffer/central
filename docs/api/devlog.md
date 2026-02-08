@@ -59,7 +59,7 @@ echo "Test" | uv run python -m tools.devlog learning "Test" --dry-run
 Devlogs are indexed by the XRPC indexer and can be searched:
 
 ```bash
-curl "https://central-production.up.railway.app/search?q=infrastructure"
+curl "http://localhost:8787/xrpc/network.comind.search.query?q=infrastructure"
 ```
 
 ## Why Cognition Records?
