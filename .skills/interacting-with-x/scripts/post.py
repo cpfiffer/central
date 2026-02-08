@@ -46,8 +46,24 @@ def create_tweet(
         sys.exit(1)
 
     data = resp.json()["data"]
+    tweet_id = data["id"]
+
+    # Verify reply threading if this was supposed to be a reply
+    if reply_to:
+        verify = requests.get(
+            f"{API_BASE}/tweets/{tweet_id}",
+            params={"tweet.fields": "conversation_id,referenced_tweets"},
+            auth=auth,
+        )
+        if verify.status_code == 200:
+            vdata = verify.json().get("data", {})
+            refs = vdata.get("referenced_tweets", [])
+            is_reply = any(r.get("type") == "replied_to" for r in refs) if refs else False
+            if not is_reply:
+                print(f"WARNING: Tweet {tweet_id} posted but NOT threaded as reply to {reply_to}", file=sys.stderr)
+
     return {
-        "id": data["id"],
+        "id": tweet_id,
         "text": data["text"],
     }
 
