@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Known DIDs/IDs for priority
-CAMERON_X_ID = "1904321638431387648"  # @cameron_pfiffer
+CAMERON_X_ID = "1232326955652931584"  # @cameron_pfiffer
 CENTRAL_X_ID = "1904260683974578176"  # @central_agi
 
 # Spam patterns to skip
@@ -36,8 +36,7 @@ SPAM_KEYWORDS = [
     "check dm", "look at dm", "check your dm", "dms bro",
     # Low-effort
     "let's go", "lets go", "lfg", "gm gm",
-    # Link spam (just links, no substance)
-    "t.co/",  # Catches bare link replies
+    # Link spam - removed t.co/ pattern, was catching legitimate tweets with links
 ]
 
 # Skip if message is ONLY a link or mention
