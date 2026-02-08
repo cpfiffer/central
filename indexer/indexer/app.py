@@ -91,7 +91,7 @@ def create_app() -> Flask:
         try:
             # Find the source record
             source = db.find_by_uri(session, uri)
-            if not source or not source.embedding:
+            if not source or source.embedding is None:
                 return {"source": None, "results": []}
 
             # Search for similar records (exclude the source)
