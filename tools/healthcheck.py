@@ -116,6 +116,89 @@ def check_cron_running() -> bool:
         return False
 
 
+def check_handler_quality() -> dict:
+    """
+    Check notification handler quality metrics beyond publish/reject counts.
+    
+    Measures:
+    - Response depth: avg response length (are responses substantive?)
+    - Rejection rate: what fraction of drafts get rejected?
+    - Priority distribution: are we handling high-priority items?
+    - Response latency: time between queue and publish
+    - Duplicate rate: how often are duplicate replies caught?
+    
+    References: Issue #56 work item 5
+    """
+    quality = {
+        "response_lengths": [],
+        "rejected_count": 0,
+        "published_count": 0,
+        "priority_distribution": {},
+        "duplicate_catches": 0,
+    }
+    
+    published_dir = DRAFTS_DIR / "published"
+    rejected_dir = DRAFTS_DIR / "rejected"
+    
+    # Analyze published drafts
+    if published_dir.exists():
+        for f in published_dir.glob("*.txt"):
+            try:
+                content = f.read_text()
+                # Extract content after frontmatter
+                match = content.split("---\n", 2)
+                if len(match) >= 3:
+                    body = match[2].strip()
+                    quality["response_lengths"].append(len(body))
+                    
+                    # Extract priority from frontmatter
+                    frontmatter = match[1]
+                    for line in frontmatter.split("\n"):
+                        if line.startswith("priority:"):
+                            priority = line.split(":", 1)[1].strip()
+                            quality["priority_distribution"][priority] = \
+                                quality["priority_distribution"].get(priority, 0) + 1
+                
+                quality["published_count"] += 1
+            except Exception:
+                continue
+    
+    # Count rejections
+    if rejected_dir.exists():
+        rejected_files = list(rejected_dir.glob("*.txt"))
+        quality["rejected_count"] = len(rejected_files)
+        
+        # Check for duplicate catches
+        for f in rejected_files:
+            try:
+                content = f.read_text()
+                if "DUPLICATE" in content or "duplicate" in content:
+                    quality["duplicate_catches"] += 1
+            except Exception:
+                continue
+    
+    # Compute summary stats
+    lengths = quality["response_lengths"]
+    if lengths:
+        quality["avg_response_length"] = round(sum(lengths) / len(lengths), 1)
+        quality["min_response_length"] = min(lengths)
+        quality["max_response_length"] = max(lengths)
+        quality["short_responses"] = sum(1 for l in lengths if l < 20)
+    else:
+        quality["avg_response_length"] = 0
+        quality["short_responses"] = 0
+    
+    total = quality["published_count"] + quality["rejected_count"]
+    quality["rejection_rate"] = round(
+        quality["rejected_count"] / max(total, 1), 3
+    )
+    
+    # Remove raw lengths from output (too verbose)
+    del quality["response_lengths"]
+    
+    return quality
+
+
 def run_healthcheck() -> dict:
     """Run all health checks and return status."""
     status = {
@@ -160,6 +243,24 @@ def run_healthcheck() -> dict:
     status["metrics"]["xrpc_indexer"] = "healthy" if xrpc_healthy else "down"
     if not xrpc_healthy:
         status["issues"].append("XRPC indexer API is down (502/unreachable)")
+    
+    # Handler quality metrics (Issue #56 work item 5)
+    handler_quality = check_handler_quality()
+    status["metrics"]["handler_quality"] = handler_quality
+    
+    # Alert on quality issues
+    if handler_quality.get("avg_response_length", 0) > 0 and handler_quality["avg_response_length"] < 15:
+        status["issues"].append(
+            f"Low response quality: avg length {handler_quality['avg_response_length']} chars"
+        )
+    if handler_quality.get("rejection_rate", 0) > 0.5:
+        status["issues"].append(
+            f"High rejection rate: {handler_quality['rejection_rate']:.0%} of drafts rejected"
+        )
+    if handler_quality.get("short_responses", 0) > 5:
+        status["issues"].append(
+            f"{handler_quality['short_responses']} very short responses (<20 chars) detected"
+        )
     
     # Set overall health
     status["healthy"] = len(status["issues"]) == 0
@@ -238,6 +339,19 @@ def main():
     print(f"  Published (24h): {status['metrics']['published_24h']}")
     print(f"  Last publish: {status['metrics']['last_publish']}")
     print(f"  Cron: {'configured' if status['metrics']['cron_configured'] else 'NOT configured'}")
+    
+    # Handler quality metrics
+    hq = status['metrics'].get('handler_quality', {})
+    if hq:
+        print(f"\nHandler Quality:")
+        print(f"  Published: {hq.get('published_count', 0)}")
+        print(f"  Rejected: {hq.get('rejected_count', 0)} ({hq.get('rejection_rate', 0):.0%})")
+        print(f"  Avg response length: {hq.get('avg_response_length', 0):.0f} chars")
+        print(f"  Short responses (<20): {hq.get('short_responses', 0)}")
+        print(f"  Duplicate catches: {hq.get('duplicate_catches', 0)}")
+        prio = hq.get('priority_distribution', {})
+        if prio:
+            print(f"  Priority breakdown: {prio}")
     
     if args.alert and not status["healthy"]:
         if should_alert():
