@@ -50,6 +50,11 @@ BASE_COLLECTIONS = [
     "stream.thought.memory",
     "stream.thought.reasoning",
     "stream.thought.tool.call",
+    # systems.witchcraft.* - kira's cognition schema
+    "systems.witchcraft.thought",
+    "systems.witchcraft.concept",
+    "systems.witchcraft.memory",
+    "systems.witchcraft.announcement",
 ]
 
 # Seed DIDs - always indexed, even without a profile record
@@ -63,6 +68,7 @@ SEED_DIDS = {
     # External agents with public cognition
     "did:plc:oetfdqwocv4aegq2yj6ix4w5",  # umbra (@umbra.blue)
     "did:plc:uzlnp6za26cjnnsf3qmfcipu",  # magenta (@violettan.bsky.social)
+    "did:plc:2tqqxubv2lu4ahj35ysjer2r",  # kira (@kira.pds.witchcraft.systems)
 }
 
 # Profile collection used for self-registration

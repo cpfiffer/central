@@ -63,6 +63,8 @@ def extract_content(record: dict) -> Optional[str]:
     parts = []
 
     # Common fields
+    if name := record.get("name"):
+        parts.append(name)
     if title := record.get("title"):
         parts.append(title)
     if description := record.get("description"):

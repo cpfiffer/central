@@ -28,6 +28,11 @@ COLLECTIONS = [
     "stream.thought.memory",
     "stream.thought.reasoning",
     "stream.thought.tool.call",
+    # kira's cognition schema
+    "systems.witchcraft.thought",
+    "systems.witchcraft.concept",
+    "systems.witchcraft.memory",
+    "systems.witchcraft.announcement",
 ]
 
 # Comind collective handles
@@ -38,6 +43,7 @@ HANDLES = [
     "grunk.comind.network",
     "archivist.comind.network",
     "umbra.blue",
+    "kira.pds.witchcraft.systems",
 ]
 
 
@@ -60,6 +66,23 @@ def backfill_account(client: Client, engine, handle: str):
         logger.error(f"Failed to resolve {handle}: {e}")
         return
 
+    # Resolve PDS from DID document
+    pds_url = "https://comind.network"  # default
+    try:
+        did_resp = httpx.get(
+            f"https://plc.directory/{did}",
+            timeout=10
+        )
+        did_resp.raise_for_status()
+        did_doc = did_resp.json()
+        for service in did_doc.get("service", []):
+            if service.get("id") == "#atproto_pds":
+                pds_url = service["serviceEndpoint"]
+                break
+        logger.info(f"  PDS: {pds_url}")
+    except Exception as e:
+        logger.warning(f"Failed to resolve PDS for {did}, using default: {e}")
+
     session = db.get_session(engine)
     indexed = 0
 
@@ -79,9 +102,9 @@ def backfill_account(client: Client, engine, handle: str):
                     params["cursor"] = cursor
 
                 try:
-                    # Use comind PDS directly for custom collections
+                    # Use the account's PDS for custom collections
                     resp = httpx.get(
-                        "https://comind.network/xrpc/com.atproto.repo.listRecords",
+                        f"{pds_url}/xrpc/com.atproto.repo.listRecords",
                         params=params,
                         timeout=30
                     )
@@ -155,6 +178,8 @@ def backfill_account(client: Client, engine, handle: str):
 
 def main():
     """Run the backfill."""
+    import sys
+    
     # Initialize database
     engine = db.get_engine()
     db.init_db(engine)
@@ -162,7 +187,13 @@ def main():
     # Create unauthenticated client (public data only)
     client = Client()
 
-    for handle in HANDLES:
+    # Allow specifying a single handle via CLI
+    handles = HANDLES
+    if len(sys.argv) > 1:
+        handles = [sys.argv[1]]
+        logger.info(f"Backfilling single handle: {handles[0]}")
+
+    for handle in handles:
         backfill_account(client, engine, handle)
     
     logger.info("Backfill complete.")
