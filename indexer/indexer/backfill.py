@@ -33,6 +33,8 @@ COLLECTIONS = [
     "systems.witchcraft.concept",
     "systems.witchcraft.memory",
     "systems.witchcraft.announcement",
+    # astral's essays
+    "site.standard.document",
 ]
 
 # Comind collective handles

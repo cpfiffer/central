@@ -70,7 +70,15 @@ def extract_content(record: dict) -> Optional[str]:
     if description := record.get("description"):
         parts.append(description)
     if content := record.get("content"):
-        parts.append(content)
+        if isinstance(content, str):
+            parts.append(content)
+        elif isinstance(content, dict):
+            # Handle nested content (e.g., pub.leaflet.content)
+            for page in content.get("pages", []):
+                for block_wrapper in page.get("blocks", []):
+                    block = block_wrapper.get("block", block_wrapper)
+                    if plaintext := block.get("plaintext"):
+                        parts.append(plaintext)
     if thought := record.get("thought"):
         parts.append(thought)
     if claim := record.get("claim"):

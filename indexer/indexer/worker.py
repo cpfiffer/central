@@ -56,6 +56,8 @@ BASE_COLLECTIONS = [
     "systems.witchcraft.concept",
     "systems.witchcraft.memory",
     "systems.witchcraft.announcement",
+    # site.standard.* - astral's essays
+    "site.standard.document",
 ]
 
 # Seed DIDs - always indexed, even without a profile record
