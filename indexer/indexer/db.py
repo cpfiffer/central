@@ -35,6 +35,7 @@ class CognitionRecord(Base):
     collection = Column(String(100), nullable=False)
     rkey = Column(String(100), nullable=False)
     content = Column(Text)
+    handle = Column(String(200), nullable=True)
     embedding = Column(Vector(EMBEDDING_DIM))
     created_at = Column(DateTime(timezone=True))
     indexed_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -74,6 +75,20 @@ def init_db(engine):
     # Create tables
     Base.metadata.create_all(engine)
 
+    # Add handle column if missing (migration for existing DBs)
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name='cognition_records' AND column_name='handle'"
+            )
+        )
+        if not result.fetchone():
+            conn.execute(
+                text("ALTER TABLE cognition_records ADD COLUMN handle VARCHAR(200)")
+            )
+            conn.commit()
+
     # Create IVFFlat index for vector similarity (after table exists)
     with engine.connect() as conn:
         # Check if index exists
@@ -106,6 +121,7 @@ def upsert_record(
     content: str,
     embedding: list[float],
     created_at: Optional[datetime] = None,
+    handle: Optional[str] = None,
 ) -> CognitionRecord:
     """Insert or update a cognition record."""
     record = session.query(CognitionRecord).filter_by(uri=uri).first()
@@ -113,6 +129,8 @@ def upsert_record(
         record.content = content
         record.embedding = embedding
         record.indexed_at = datetime.utcnow()
+        if handle:
+            record.handle = handle
     else:
         record = CognitionRecord(
             uri=uri,
@@ -120,6 +138,7 @@ def upsert_record(
             collection=collection,
             rkey=rkey,
             content=content,
+            handle=handle,
             embedding=embedding,
             created_at=created_at,
             indexed_at=datetime.utcnow(),
@@ -134,6 +153,9 @@ def search_similar(
     query_embedding: list[float],
     limit: int = 10,
     collections: Optional[list[str]] = None,
+    did: Optional[str] = None,
+    after: Optional[datetime] = None,
+    before: Optional[datetime] = None,
 ) -> list[tuple[CognitionRecord, float]]:
     """
     Search for records similar to the query embedding.
@@ -152,6 +174,16 @@ def search_similar(
     if collections:
         query = query.filter(CognitionRecord.collection.in_(collections))
 
+    # Filter by DID
+    if did:
+        query = query.filter(CognitionRecord.did == did)
+
+    # Filter by time range
+    if after:
+        query = query.filter(CognitionRecord.created_at >= after)
+    if before:
+        query = query.filter(CognitionRecord.created_at <= before)
+
     # Order by similarity (cosine distance ascending = most similar first)
     query = query.order_by(
         CognitionRecord.embedding.cosine_distance(query_embedding)
@@ -163,6 +195,50 @@ def search_similar(
 def find_by_uri(session: Session, uri: str) -> Optional[CognitionRecord]:
     """Find a record by its AT URI."""
     return session.query(CognitionRecord).filter_by(uri=uri).first()
+
+
+def get_agents(session: Session) -> list[dict]:
+    """Get all indexed agents with metadata."""
+    from sqlalchemy import distinct
+
+    # Get per-agent stats (group by DID only, pick max handle)
+    agent_rows = (
+        session.query(
+            CognitionRecord.did,
+            func.max(CognitionRecord.handle).label("handle"),
+            func.count(CognitionRecord.id).label("record_count"),
+            func.max(CognitionRecord.created_at).label("last_active"),
+            func.array_agg(distinct(CognitionRecord.collection)).label("collections"),
+        )
+        .group_by(CognitionRecord.did)
+        .order_by(func.count(CognitionRecord.id).desc())
+        .all()
+    )
+
+    agents = []
+    for row in agent_rows:
+        agent = {
+            "did": row.did,
+            "recordCount": row.record_count,
+            "collections": sorted(row.collections) if row.collections else [],
+        }
+        if row.handle:
+            agent["handle"] = row.handle
+        if row.last_active:
+            agent["lastActive"] = row.last_active.isoformat()
+
+        # Check for profile record
+        profile = (
+            session.query(CognitionRecord)
+            .filter_by(did=row.did, collection="network.comind.agent.profile")
+            .first()
+        )
+        if profile and profile.content:
+            agent["profile"] = profile.content[:1000]
+
+        agents.append(agent)
+
+    return agents
 
 
 def get_stats(session: Session) -> dict:

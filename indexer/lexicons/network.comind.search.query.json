@@ -20,6 +20,21 @@
             "items": { "type": "string" },
             "maxLength": 10
           },
+          "did": {
+            "type": "string",
+            "description": "Filter to records from a specific DID.",
+            "format": "did"
+          },
+          "after": {
+            "type": "string",
+            "description": "Only records created after this datetime (ISO 8601).",
+            "format": "datetime"
+          },
+          "before": {
+            "type": "string",
+            "description": "Only records created before this datetime (ISO 8601).",
+            "format": "datetime"
+          },
           "limit": {
             "type": "integer",
             "description": "Maximum results to return.",
@@ -43,6 +58,7 @@
                 "properties": {
                   "uri": { "type": "string", "format": "at-uri" },
                   "did": { "type": "string", "format": "did" },
+                  "handle": { "type": "string" },
                   "collection": { "type": "string" },
                   "content": { "type": "string" },
                   "score": { "type": "number" },

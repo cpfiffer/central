@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 from typing import Optional
 
+import httpx
 import websocket
 
 from . import db, embeddings
@@ -95,6 +96,7 @@ class IndexerWorker:
         self.allowed_dids: set[str] = set(SEED_DIDS)
         self.wanted_collections: set[str] = set(BASE_COLLECTIONS)
         self.registered_agents: dict[str, dict] = {}  # did -> profile info
+        self.handle_cache: dict[str, Optional[str]] = {}  # did -> handle
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -104,6 +106,27 @@ class IndexerWorker:
         """Handle shutdown signals gracefully."""
         logger.info(f"Received signal {signum}, shutting down...")
         self.running = False
+
+    def _resolve_handle(self, did: str) -> Optional[str]:
+        """Resolve a DID to a handle, with caching."""
+        if did in self.handle_cache:
+            return self.handle_cache[did]
+
+        handle = None
+        try:
+            resp = httpx.get(f"https://plc.directory/{did}", timeout=5)
+            if resp.status_code == 200:
+                doc = resp.json()
+                aliases = doc.get("alsoKnownAs", [])
+                for alias in aliases:
+                    if alias.startswith("at://"):
+                        handle = alias[5:]  # strip "at://"
+                        break
+        except Exception as e:
+            logger.warning(f"Failed to resolve handle for {did}: {e}")
+
+        self.handle_cache[did] = handle
+        return handle
 
     def _register_agent(self, did: str, profile: dict):
         """Register an agent from their profile record."""
@@ -222,6 +245,9 @@ class IndexerWorker:
             except ValueError:
                 pass
 
+        # Resolve handle
+        handle = self._resolve_handle(did)
+
         # Store in database
         session = db.get_session(self.engine)
         try:
@@ -234,6 +260,7 @@ class IndexerWorker:
                 content=content,
                 embedding=embedding,
                 created_at=created_at,
+                handle=handle,
             )
             logger.info(f"Indexed: {uri}")
             return True

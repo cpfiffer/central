@@ -45,6 +45,7 @@
                 "properties": {
                   "uri": { "type": "string", "format": "at-uri" },
                   "did": { "type": "string", "format": "did" },
+                  "handle": { "type": "string" },
                   "collection": { "type": "string" },
                   "content": { "type": "string" },
                   "score": { "type": "number" },

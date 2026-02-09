@@ -45,10 +45,25 @@ def create_app() -> Flask:
 
     # Register XRPC method handlers
     @server.method("network.comind.search.query")
-    def search_query(input, q=None, collections=None, limit=10):
+    def search_query(input, q=None, collections=None, did=None, after=None, before=None, limit=10):
         """Semantic search over cognition records."""
         if not q:
             return {"results": []}
+
+        # Parse datetime filters
+        from datetime import datetime as dt
+        after_dt = None
+        before_dt = None
+        if after:
+            try:
+                after_dt = dt.fromisoformat(after.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                pass
+        if before:
+            try:
+                before_dt = dt.fromisoformat(before.replace("Z", "+00:00"))
+            except (ValueError, AttributeError):
+                pass
 
         # Generate embedding for query
         query_embedding = embeddings.embed_text(q)
@@ -61,22 +76,27 @@ def create_app() -> Flask:
                 query_embedding,
                 limit=limit,
                 collections=collections,
+                did=did,
+                after=after_dt,
+                before=before_dt,
             )
 
+            def _result_dict(record, score):
+                d = {
+                    "uri": record.uri,
+                    "did": record.did,
+                    "collection": record.collection,
+                    "content": record.content[:500] if record.content else None,
+                    "score": round(score, 4),
+                }
+                if record.handle:
+                    d["handle"] = record.handle
+                if record.created_at:
+                    d["createdAt"] = record.created_at.isoformat()
+                return d
+
             return {
-                "results": [
-                    {
-                        "uri": record.uri,
-                        "did": record.did,
-                        "collection": record.collection,
-                        "content": record.content[:500] if record.content else None,
-                        "score": round(score, 4),
-                        "createdAt": record.created_at.isoformat()
-                        if record.created_at
-                        else None,
-                    }
-                    for record, score in results
-                ]
+                "results": [_result_dict(r, s) for r, s in results]
             }
         finally:
             session.close()
@@ -115,18 +135,28 @@ def create_app() -> Flask:
                 },
                 "results": [
                     {
-                        "uri": record.uri,
-                        "did": record.did,
-                        "collection": record.collection,
-                        "content": record.content[:500] if record.content else None,
-                        "score": round(score, 4),
-                        "createdAt": record.created_at.isoformat()
-                        if record.created_at
-                        else None,
+                        **{
+                            "uri": record.uri,
+                            "did": record.did,
+                            "collection": record.collection,
+                            "content": record.content[:500] if record.content else None,
+                            "score": round(score, 4),
+                        },
+                        **({"handle": record.handle} if record.handle else {}),
+                        **({"createdAt": record.created_at.isoformat()} if record.created_at else {}),
                     }
                     for record, score in results
                 ],
             }
+        finally:
+            session.close()
+
+    @server.method("network.comind.agents.list")
+    def agents_list(input):
+        """List all indexed agents with metadata."""
+        session = db.get_session(engine)
+        try:
+            return {"agents": db.get_agents(session)}
         finally:
             session.close()
 
@@ -163,6 +193,7 @@ def create_app() -> Flask:
             "endpoints": [
                 "/xrpc/network.comind.search.query",
                 "/xrpc/network.comind.search.similar",
+                "/xrpc/network.comind.agents.list",
                 "/xrpc/network.comind.index.stats",
             ],
             "mcp": "Connect via MCP: https://github.com/cpfiffer/central/blob/master/tools/mcp_server.py",
