@@ -1,23 +1,34 @@
-"""Embedding generation using local models via fastembed (ONNX runtime)."""
+"""Embedding generation using OpenAI text-embedding-3-small API."""
 
+import os
 from typing import Optional
 
-from fastembed import TextEmbedding
+import httpx
 
-# all-MiniLM-L6-v2: 384 dimensions, ~22MB, fast on CPU
-DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-EMBEDDING_DIM = 384
+# OpenAI text-embedding-3-small: 1536 dimensions, $0.02/1M tokens
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_DIM = 1536
+OPENAI_API_URL = "https://api.openai.com/v1/embeddings"
 
-# Lazy-loaded singleton
-_model: Optional[TextEmbedding] = None
+# Reusable client
+_client: Optional[httpx.Client] = None
 
 
-def get_model() -> TextEmbedding:
-    """Get or create the embedding model (lazy singleton)."""
-    global _model
-    if _model is None:
-        _model = TextEmbedding(model_name=DEFAULT_MODEL)
-    return _model
+def _get_client() -> httpx.Client:
+    """Get or create the HTTP client."""
+    global _client
+    if _client is None:
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not set")
+        _client = httpx.Client(
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=30,
+        )
+    return _client
 
 
 def embed_text(text: str) -> list[float]:
@@ -25,11 +36,15 @@ def embed_text(text: str) -> list[float]:
     Generate embedding for a single text.
 
     Returns:
-        List of floats (384-dim for all-MiniLM-L6-v2)
+        List of floats (1536-dim for text-embedding-3-small)
     """
-    model = get_model()
-    embeddings = list(model.embed([text]))
-    return embeddings[0].tolist()
+    client = _get_client()
+    resp = client.post(
+        OPENAI_API_URL,
+        json={"input": text, "model": EMBEDDING_MODEL},
+    )
+    resp.raise_for_status()
+    return resp.json()["data"][0]["embedding"]
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
@@ -37,7 +52,7 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
     Generate embeddings for multiple texts.
 
     Args:
-        texts: List of texts to embed
+        texts: List of texts to embed (max 2048 per request)
 
     Returns:
         List of embeddings in same order as input
@@ -45,9 +60,23 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
 
-    model = get_model()
-    embeddings = list(model.embed(texts))
-    return [e.tolist() for e in embeddings]
+    client = _get_client()
+    all_embeddings = []
+
+    # OpenAI supports up to 2048 inputs per request
+    for i in range(0, len(texts), 2048):
+        batch = texts[i : i + 2048]
+        resp = client.post(
+            OPENAI_API_URL,
+            json={"input": batch, "model": EMBEDDING_MODEL},
+        )
+        resp.raise_for_status()
+        data = resp.json()["data"]
+        # Sort by index to maintain order
+        data.sort(key=lambda x: x["index"])
+        all_embeddings.extend([d["embedding"] for d in data])
+
+    return all_embeddings
 
 
 def extract_content(record: dict) -> Optional[str]:

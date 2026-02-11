@@ -7,7 +7,7 @@ dependencies = [
     "flask>=3.0",
     "lexrpc[flask]>=2.0",
     "atproto>=0.0.55",
-    "fastembed>=0.4",
+
     "psycopg2-binary>=2.9",
     "pgvector>=0.3",
     "sqlalchemy>=2.0",

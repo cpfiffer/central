@@ -89,6 +89,35 @@ def init_db(engine):
             )
             conn.commit()
 
+    # Migrate embedding dimension if needed (384 -> 1536)
+    with engine.connect() as conn:
+        result = conn.execute(
+            text(
+                "SELECT atttypmod FROM pg_attribute "
+                "WHERE attrelid = 'cognition_records'::regclass "
+                "AND attname = 'embedding'"
+            )
+        )
+        row = result.fetchone()
+        if row and row[0] != EMBEDDING_DIM:
+            old_dim = row[0]
+            print(f"Migrating embedding column: {old_dim} -> {EMBEDDING_DIM} dimensions")
+            # Drop old IVFFlat index first
+            conn.execute(text("DROP INDEX IF EXISTS idx_embedding_ivfflat"))
+            # Clear old embeddings first (can't alter type with mismatched dimensions)
+            conn.execute(
+                text("UPDATE cognition_records SET embedding = NULL")
+            )
+            # Alter column dimension
+            conn.execute(
+                text(
+                    f"ALTER TABLE cognition_records "
+                    f"ALTER COLUMN embedding TYPE vector({EMBEDDING_DIM})"
+                )
+            )
+            conn.commit()
+            print(f"Migration complete. All embeddings cleared for re-generation.")
+
     # Create IVFFlat index for vector similarity (after table exists)
     with engine.connect() as conn:
         # Check if index exists
@@ -98,18 +127,22 @@ def init_db(engine):
             )
         )
         if not result.fetchone():
-            # Create IVFFlat index with cosine similarity
-            conn.execute(
-                text(
-                    """
-                    CREATE INDEX idx_embedding_ivfflat 
-                    ON cognition_records 
-                    USING ivfflat (embedding vector_cosine_ops) 
-                    WITH (lists = 100)
-                    """
+            # Need enough records for IVFFlat (lists * 39 minimum)
+            count = conn.execute(
+                text("SELECT count(*) FROM cognition_records WHERE embedding IS NOT NULL")
+            ).scalar()
+            if count and count >= 100:
+                conn.execute(
+                    text(
+                        """
+                        CREATE INDEX idx_embedding_ivfflat 
+                        ON cognition_records 
+                        USING ivfflat (embedding vector_cosine_ops) 
+                        WITH (lists = 50)
+                        """
+                    )
                 )
-            )
-            conn.commit()
+                conn.commit()
 
 
 def upsert_record(

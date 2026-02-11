@@ -297,8 +297,10 @@ async function publishDrafts(options: { all?: boolean; auto?: boolean }) {
       console.log(`  Reason: ${(draft.frontmatter as any).reason || "unknown"}`);
       console.log(`  Moving to review queue for Central to handle`);
       // Move to review dir with escalate prefix so handler picks it up next cycle
-      const filename = path.basename(filePath);
-      const reviewPath = path.join(REVIEW_DRAFTS, `escalated-${filename}`);
+      let filename = path.basename(filePath);
+      // Strip any existing escalate/escalated prefixes to prevent name growth
+      filename = filename.replace(/^(escalated?-)+/, "");
+      const reviewPath = path.join(REVIEW_DRAFTS, `escalate-${filename}`);
       fs.renameSync(filePath, reviewPath);
       continue;
     }

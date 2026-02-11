@@ -10,8 +10,10 @@ import logging
 import os
 import signal
 import sys
+import threading
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import httpx
@@ -58,6 +60,8 @@ BASE_COLLECTIONS = [
     "systems.witchcraft.announcement",
     # site.standard.* - astral's essays
     "site.standard.document",
+    # social.astral.* - astral's agent catalog
+    "social.astral.catalog.agent",
 ]
 
 # Seed DIDs - always indexed, even without a profile record
@@ -76,6 +80,72 @@ SEED_DIDS = {
 
 # Profile collection used for self-registration
 PROFILE_COLLECTION = "network.comind.agent.profile"
+
+# Ask agent configuration
+ASK_DID = "did:plc:i2kylvv6t74i7ikrudlzowms"
+ASK_HANDLE = "ask.comind.network"
+ASK_SENT_FILE = Path(__file__).parent.parent.parent / "data" / "ask_sent.txt"
+
+
+def _ask_respond_thread(uri: str, cid: str, did: str, text: str):
+    """Handle an @ask.comind.network mention in a background thread."""
+    # Import here to avoid circular imports and keep worker standalone
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from tools.ask_responder import (
+        build_source_text_and_facets,
+        extract_sources_from_response,
+        get_bsky_session,
+        get_thread_context,
+        get_thread_root,
+        post_reply,
+        save_sent,
+        send_to_agent,
+    )
+
+    try:
+        # Strip handle from question
+        question = text.replace(f"@{ASK_HANDLE}", "").strip()
+        if not question:
+            save_sent(uri)
+            return
+
+        logger.info(f"[ask] Processing mention: {question[:80]}")
+
+        # Small delay for public API propagation (firehose is faster than appview)
+        time.sleep(2)
+
+        session = get_bsky_session()
+        context = get_thread_context(session, uri)
+        reply_text, raw_results = send_to_agent(question, context)
+
+        if not reply_text:
+            logger.warning(f"[ask] No response from agent for {uri}")
+            save_sent(uri)
+            return
+
+        clean_answer, source_uris = extract_sources_from_response(reply_text, raw_results)
+        logger.info(f"[ask] Answer ({len(clean_answer)} chars): {clean_answer[:100]}...")
+        logger.info(f"[ask] Sources: {len(source_uris)} URIs, raw_results: {len(raw_results)}")
+        if source_uris:
+            logger.info(f"[ask] Source URIs: {source_uris[:2]}")
+        source_text, source_facets = build_source_text_and_facets(source_uris)
+
+        root_uri, root_cid = get_thread_root(session, uri)
+        result = post_reply(
+            session, clean_answer, uri, cid,
+            root_uri=root_uri, root_cid=root_cid,
+            source_text=source_text if source_text else None,
+            source_facets=source_facets if source_facets else None,
+        )
+        logger.info(f"[ask] Replied: {result.get('uri', 'ok')}")
+        save_sent(uri)
+
+    except Exception as e:
+        logger.error(f"[ask] Error responding to {uri}: {e}")
+        try:
+            save_sent(uri)
+        except Exception:
+            pass
 
 
 class IndexerWorker:
@@ -199,6 +269,31 @@ class IndexerWorker:
         operation = commit.get("operation")
         collection = commit.get("collection")
         did = message.get("did")
+
+        # Check for @ask.comind.network mentions in any post
+        if (
+            collection == "app.bsky.feed.post"
+            and operation == "create"
+            and did != ASK_DID
+        ):
+            record = commit.get("record", {})
+            post_text = record.get("text", "")
+            if f"@{ASK_HANDLE}" in post_text:
+                rkey = commit.get("rkey", "")
+                uri = f"at://{did}/app.bsky.feed.post/{rkey}"
+                # Check dedup
+                sent = set()
+                if ASK_SENT_FILE.exists():
+                    sent = set(ASK_SENT_FILE.read_text().strip().split("\n"))
+                if uri not in sent:
+                    cid = commit.get("cid", "")
+                    t = threading.Thread(
+                        target=_ask_respond_thread,
+                        args=(uri, cid, did, post_text),
+                        daemon=True,
+                    )
+                    t.start()
+                    logger.info(f"[ask] Spawned response thread for {uri}")
 
         # Self-registration: accept profile records from ANY DID
         if (

@@ -26,3 +26,5 @@ data/chroma/
 data/central.db
 handlers/node_modules/
 handlers/.letta/
+tools/letta_archival_bug_repro.py
+tools/fix_void_chars.py

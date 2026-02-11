@@ -35,6 +35,15 @@ interface XQueueItem {
 /**
  * Check if we've already processed this notification
  */
+function yamlEscape(text: string): string {
+  const clean = text
+    .replace(/\n/g, " ")
+    .replace(/"/g, '\\"')
+    .replace(/\\/g, "\\\\")
+    .slice(0, 500);
+  return `"${clean}"`;
+}
+
 function alreadyProcessed(id: string): boolean {
   const patterns = [
     path.join(X_DRAFTS, `reply-${id}.txt`),
@@ -149,7 +158,7 @@ type: reply
 reply_to: {tweet_id}
 author: {author}
 priority: {priority}
-original_text: "{text}"
+original_text: ${yamlEscape(text)}
 drafted_at: {ISO timestamp}
 ---
 Your actual response here (under 280 chars)
