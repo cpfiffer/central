@@ -39,16 +39,6 @@ interface QueueItem {
 /**
  * Check if we've already processed this notification
  */
-function yamlEscape(text: string): string {
-  // Replace newlines with spaces, escape quotes, and wrap in quotes
-  const clean = text
-    .replace(/\n/g, " ")
-    .replace(/"/g, '\\"')
-    .replace(/\\/g, "\\\\")
-    .slice(0, 500); // Truncate long texts
-  return `"${clean}"`;
-}
-
 function alreadyProcessed(id: string): boolean {
   const patterns = [
     path.join(BLUESKY_DRAFTS, `reply-${id}.txt`),
@@ -238,7 +228,7 @@ type: escalate
 reason: "brief reason this needs Central"
 uri: {notification uri}
 author: {author}
-original_text: ${yamlEscape(text)}
+original_text: {text without quotes or newlines}
 ---
 \\\`\\\`\\\`
 Only write simple, short replies for straightforward mentions (acknowledgments, simple factual responses, thanks).
@@ -269,7 +259,7 @@ reply_root: {root uri}
 reply_root_cid: {root cid}
 author: {author}
 priority: {priority}
-original_text: ${yamlEscape(text)}
+original_text: {text without quotes or newlines}
 drafted_at: {ISO timestamp}
 ---
 Your actual response here (under 280 chars)
