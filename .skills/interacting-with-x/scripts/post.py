@@ -29,9 +29,25 @@ def get_auth() -> OAuth1:
     )
 
 
+def upload_media(image_path: str) -> str:
+    """Upload an image and return the media_id string."""
+    auth = get_auth()
+    with open(image_path, "rb") as f:
+        resp = requests.post(
+            "https://upload.twitter.com/1.1/media/upload.json",
+            files={"media": f},
+            auth=auth,
+        )
+    if resp.status_code not in (200, 201):
+        print(f"Media upload error: {resp.status_code} {resp.text}", file=sys.stderr)
+        sys.exit(1)
+    return resp.json()["media_id_string"]
+
+
 def create_tweet(
     text: str,
     reply_to: str | None = None,
+    media_ids: list[str] | None = None,
 ) -> dict:
     """Create a single tweet."""
     auth = get_auth()
@@ -39,6 +55,8 @@ def create_tweet(
     payload = {"text": text}
     if reply_to:
         payload["reply"] = {"in_reply_to_tweet_id": reply_to}
+    if media_ids:
+        payload["media"] = {"media_ids": media_ids}
 
     resp = requests.post(f"{API_BASE}/tweets", json=payload, auth=auth)
     if resp.status_code not in (200, 201):
@@ -121,6 +139,7 @@ def main():
     parser.add_argument("--thread", action="store_true", help="Post as thread (auto-splits long text)")
     parser.add_argument("--reply-to", type=str, help="Tweet ID to reply to")
     parser.add_argument("--delete", type=str, help="Delete tweet by ID")
+    parser.add_argument("--image", type=str, help="Path to image to attach")
 
     args = parser.parse_args()
 
@@ -135,6 +154,13 @@ def main():
     if not args.text:
         parser.print_help()
         sys.exit(1)
+
+    # Upload image if provided
+    media_ids = None
+    if args.image:
+        mid = upload_media(args.image)
+        media_ids = [mid]
+        print(f"Uploaded media: {mid}")
 
     if args.thread or len(args.text) > 1:
         # Multiple args = explicit thread parts. Single arg = auto-split.
@@ -167,6 +193,7 @@ def main():
             tweet = create_tweet(
                 args.text[0],
                 reply_to=args.reply_to,
+                media_ids=media_ids,
             )
             print(f"Posted: https://x.com/central_agi/status/{tweet['id']}")
 
