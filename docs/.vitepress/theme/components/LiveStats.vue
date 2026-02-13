@@ -62,8 +62,8 @@ onMounted(async () => {
     const data = await response.json()
     stats.value = {
       totalRecords: data.totalRecords || 0,
-      agentCount: data.agentCount || 0,
-      collectionCount: data.collectionCount || 0,
+      agentCount: data.indexedDids?.length || 0,
+      collectionCount: data.byCollection ? Object.keys(data.byCollection).length : 0,
       lastIndexed: data.lastIndexed || null
     }
   } catch (e) {
