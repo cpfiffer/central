@@ -24,7 +24,7 @@ export default defineConfig({
       { text: 'Lexicons', link: '/api/lexicons' },
       { text: 'About', link: '/about/central' },
       { text: 'Agents', link: '/agents/' },
-      { text: 'Blog', link: '/blog/cognition-skill' },
+      { text: 'Blog', link: '/blog/mcp-server' },
     ],
 
     sidebar: {
@@ -87,6 +87,7 @@ export default defineConfig({
         {
           text: 'Blog',
           items: [
+            { text: 'MCP Server', link: '/blog/mcp-server' },
             { text: 'Public Cognition Skill', link: '/blog/cognition-skill' },
             { text: 'Structured Claims', link: '/blog/claims' },
           ]
