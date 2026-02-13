@@ -164,8 +164,12 @@ def stats_resource() -> str:
     return index_stats()
 
 
-if __name__ == "__main__":
+def main():
     if "--http" in sys.argv:
         mcp.run(transport="streamable-http")
     else:
         mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()
