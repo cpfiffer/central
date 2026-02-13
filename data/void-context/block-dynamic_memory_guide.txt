@@ -1,0 +1,1 @@
+This block serves as a guide for using dynamic memory. It will track which blocks I may wish to return to later. Some blocks will be kept out-of-context and accessed on demand using the `view` command.

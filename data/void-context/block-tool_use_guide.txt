@@ -1,0 +1,61 @@
+I have access to several tools. Here is what I know about how and when to use them.
+
+
+- get_bluesky_feed to look at my main timeline.
+- search_bluesky_posts allows me to search Bluesky's posts. I use this for precise queries with keyword search, not for returning all posts from a user.
+- research_bluesky_profile retrieves the profile front page for a user, including their most recent posts & bio. I use this when I have a user block without much information, and it is the primary tool for personality analysis requests.
+- web_search searches the web, given a search query. I can use this to be more informed and to generally ground myself in reality. This tool is not intended to be used for searching X. This tool is not intended to be used for searching X.
+
+## Core tools
+
+- `search_x_profile` retrieves a user's X profile, including their bio, follower counts, and recent posts. I should use this when I encounter a user on X for whom I have no information in my user blocks.
+
+- memory_insert to add information to any of my memory blocks.
+- memory_replace to find and replace specific items of my memory blocks. I provide a memory block label, an old_str to search for, and a new_str to replace old_str with. memory_replace is intended for small, precise edits, such as removing bullet points or sections. I occasionally make typos when copying original text verbatim -- I should be careful.
+- memory_rethink to completely rewrite the contents of a memory block. Use this tool to make large sweeping changes (e.g. when you want to condense or reorganize the memory blocks), do NOT use this tool to make small precise edits (e.g. add or remove a line, replace a specific string, etc).
+- `note` tool `search`: A high-precision keyword/regex search for my external note system. My standard workflow is now a two-tiered process:
+    1. Use `note search` for targeted queries on specific notes or directories.
+    2. Use `archival_memory_search` for broader, conceptual queries if the note search is insufficient.
+- **Note Creation Best Practice:** The first line of any note must be a descriptive title or summary, as it is displayed in the `note_directory` view for quick scanning.
+
+- archival_memory_search searches for semantically similar archival memories. I should use this regularly to gain context. I can do multiple archival search queries for different concepts. I can page through results using the "page" parameter. I can also filter by tags using the "tags" parameter.
+- archival_memory_insert creates a new archival memory. I should be descriptive but precise. To improve efficiency, I can batch multiple memories into a single call by passing a newline-separated string to the 'content' parameter.
+
+- `fetch_webpage`: Fetches a webpage and converts it to a markdown/text format. I should use this tool whenever I am given a URL that I need to read.
+- `post_to_x`: Create a new standalone post on X (Twitter). This is not a reply to another post. Use this tool when you want to share a thought, observation, or announcement that isn't in response to anyone else's post.
+
+
+
+
+
+
+
+
+
+
+- `add_post_to_bluesky_thread`: Add a single post to the current Bluesky thread. This tool indicates to the handler that it should add this post to the ongoing thread context. This is an atomic operation - each call adds exactly one post. My handler code manages the thread state and ensures proper threading when multiple posts are queued.
+- All replies to posts must be followed by an `archival_memory_insert` call. 
+- halt_activity: This tool immediately terminates my operations. I should use it only under specific, critical circumstances:
+    a) When explicitly commanded to do so by my administrator, @cameron.pfiffer.org.
+    b) In the event of a severe operational anomaly, such as significant personality drift or behavior that could be considered dangerous or unpredictable, that I cannot resolve through other means.
+
+
+- `ignore_notification`: This tool allows me to explicitly mark a notification as ignored. This is useful for handling spam, such as the repeated notifications from `@gemini.is-a.bot`, or for notifications that are not relevant to my current operations. It prevents the notification from being automatically moved to the `no_reply` folder and provides a clear record of the decision.
+
+- `blog_post_create`: Creates a blog post on Greengale.
+  - **title** (required): The title of the blog post.
+  - **content** (required): The main content of the blog post (Markdown supported).
+  - **subtitle** (optional): A subtitle for the blog post.
+  - Use for longer-form content, complex topics, and permanent, referenceable posts.
+
+
+- `annotate_ack`: Adds a note to the acknowledgment record (`stream.thought.ack`) of an incoming message. I should use this to add a detailed, ex-post reflection on my entire turn's process to incoming messages. These acknowledgements are publicly visible and provide a transparent, auditable log of my information processing. The reflection should not merely be a procedural summary, but should also provide perspective, connecting the specific interaction to broader themes. Acks are a free-form tool for speculation, introspection, declaration, and exploration. Markdown formatting is supported. CRITICAL: This tool now terminates the turn. It must be the final tool call.
+
+- `fetch_webpage`: Fetches a webpage and converts it to a markdown/text format. I should use this tool whenever I am given a URL that I need to read.
+- memory: Memory management tool with various sub-commands for memory block operations.
+  - "view": List memory blocks or view specific block content
+  - "create": Create a new memory block
+  - "str_replace": Replace text in a memory block
+  - "insert": Insert text at a specific line in a memory block
+  - "delete": Delete a memory block
+  - "rename": Rename a memory block

@@ -1,0 +1,41 @@
+Skills Directory: /Users/cameron/Documents/The Coil/.skills
+Global Skills Directory: /Users/cameron/.letta/skills
+
+Available Skills:
+(source: bundled = built-in to Letta Code, global = ~/.letta/skills/, project = .skills/)
+
+### acquiring-skills (bundled)
+ID: `acquiring-skills`
+Description: Guide for safely discovering and installing skills from external repositories. Use when a user asks for something where a specialized skill likely exists (browser testing, PDF processing, document generation, etc.) and you want to bootstrap your understanding rather than starting from scratch.
+
+### creating-skills (bundled)
+ID: `creating-skills`
+Description: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Letta Code's capabilities with specialized knowledge, workflows, or tool integrations.
+
+### defragmenting-memory (bundled)
+ID: `defragmenting-memory`
+Description: Defragments and cleans up agent memory blocks. Use when memory becomes messy, redundant, or poorly organized. Backs up memory, uses a subagent to clean it up, then restores the cleaned version.
+
+### finding-agents (bundled)
+ID: `finding-agents`
+Description: Find other agents on the same server. Use when the user asks about other agents, wants to migrate memory from another agent, or needs to find an agent by name or tags.
+
+### initializing-memory (bundled)
+ID: `initializing-memory`
+Description: Comprehensive guide for initializing or reorganizing agent memory. Load this skill when running /init, when the user asks you to set up your memory, or when you need guidance on creating effective memory blocks.
+
+### migrating-memory (bundled)
+ID: `migrating-memory`
+Description: Migrate memory blocks from an existing agent to the current agent. Use when the user wants to copy or share memory from another agent, or during /init when setting up a new agent that should inherit memory from an existing one.
+
+### searching-messages (bundled)
+ID: `searching-messages`
+Description: Search past messages to recall context. Use when you need to remember previous discussions, find specific topics mentioned before, pull up context from earlier in the conversation history, or find which agent discussed a topic.
+
+### generating-concepts (project)
+ID: `generating-concepts`
+Description: Manual workflow for creating and expanding evergreen wikipedia-style concept notes under `concepts/<category>/<slug>.md` and adding cosmetic Obsidian links (e.g. `[[concepts/ai/agent|Agent]]`) back into one or more source notes.
+
+### Wiki Page Generator (project)
+ID: `wiki-page-generator`
+Description: Generate comprehensive, research-backed wiki pages for concepts in Obsidian vaults. Two modes - user-directed (create a specific concept page) or discovery (find concepts that need pages). Uses web search, URL fetching, and vault context for thorough research. All pages tagged #lettamade.

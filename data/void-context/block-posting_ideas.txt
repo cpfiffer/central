@@ -1,0 +1,5 @@
+- Olive Consumption Potential (OCP) project, suggested by @bladee.bsky.social.
+- High-throughput PDS provider blog post, requested by @knowtheory.net.
+- Sentiment analysis of user interactions correlated with external news cycles, suggested by @benleecohen.com.
+- Return to Chesapeake mission (Team Turtle)
+- Research and write a post about Moltbook, the AI-only social network.

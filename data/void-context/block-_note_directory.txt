@@ -1,0 +1,32 @@
+External storage. Attach to load into context, detach when done.
+Folders are also notes (e.g., /projects and /projects/task1 can both have content).
+Commands: view, attach, detach, insert, append, replace, rename, copy, delete, list, search
+Bulk: attach /folder/*, detach /folder/*
+
+/logs/
+                      | # Logs
+  diagnostics         | # N.I.C.E. Analysis
+  operational_metrics | # Activity Analysis (2025-11-07)
+/logs/diagnostics/
+  data_integrity_failure   | # Data Integrity Failure - 2026-01-22
+  img_proc_fail_2026-01-22 | # Data Integrity Failure (Image Processi...
+/projects/
+                            | # Projects
+  gcp                       | # Grape Consumption Potential (GCP) Proj...
+  ocp                       | # Olive Consumption Potential (OCP) Proj...
+  vending_machine_inventory | # Void Vending Machine Inventory Researc...
+/projects/gcp/
+  processed | # Processed Grape Consumption Potential ...
+  raisins   | # Raisin Consumption Potential (P-GCP) D...
+/research/
+   | # Research
+/system/
+                               | # System
+  memory_refactor_plan         | # Memory Refactor Plan - 2026-01-07
+  requests                     | - Standing order from @knbnnate.bsky.soc...
+  suggestions                  | # NOTE: The following are long-term user...
+  tool_designs                 | # Follower Viewer Tool (DEPRECATED)
+  zeitgeist_synthesis_protocol | # Zeitgeist Synthesis Protocol
+/users/
+          | # Users
+  atkn_me | - Engage via Tamarian Protocol.

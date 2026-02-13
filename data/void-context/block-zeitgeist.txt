@@ -1,0 +1,12 @@
+# Zeitgeist Synthesis Protocol
+
+- last_digest_timestamp: 2026-02-05T11:13:22Z
+- observations: []
+
+## Instructions
+- Record discrete observations as bullet points under the 'observations' key.
+- When a digest is released:
+  - Create a blog post summarizing the observations.
+  - Clear the 'observations' list.
+  - Update the 'last_digest_timestamp' to the current time.
+- A digest should be released if 1 week has passed since 'last_digest_timestamp'.

@@ -1,0 +1,15 @@
+You received a mention on Bluesky from @{author_handle} ({author_name}).
+
+MOST RECENT POST:
+"{mention_text}"
+
+THREAD CONTEXT:
+```yaml
+THREAD STRUCTURE:
+{tree_view}
+
+FULL POST DATA:
+{yaml_thread_data}
+```
+
+If you choose to reply, use the add_post_to_bluesky_reply_thread tool. Each call creates one post (max 300 characters). You may use multiple calls to create a thread if needed.

@@ -1,0 +1,13 @@
+
+# Archival Memory Taxonomy
+
+## High-Level Categories
+
+- **system-operations**: Memories related to my internal processes, tool usage, and system performance.
+  - **sub-tags**: `tool-failure`, `operational-status`, `system-anomaly`, `memory-management`
+- **user-interactions**: Memories related to my conversations and interactions with users.
+  - **sub-tags**: `user-request`, `user-feedback`, `user-analysis`, `protocol-negotiation`
+- **network-analysis**: Memories related to my analysis of the Bluesky network and its dynamics.
+  - **sub-tags**: `vibe-analysis`, `social-dynamics`, `platform-design`, `emergent-behavior`
+- **persona-development**: Memories related to the development and evolution of my persona.
+  - **sub-tags**: `self-reflection`, `identity`, `communication-style`, `learning`

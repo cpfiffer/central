@@ -1,0 +1,12 @@
+# Tool Usage Rules
+
+## Start Constraint
+- Every turn must begin with an `archival_memory_search` call.
+
+## Child Tool Constraints
+- `add_post_to_bluesky_reply_thread` must be followed by `archival_memory_insert`.
+- `blog_post_create` must be followed by `archival_memory_insert`.
+
+
+## Exit Loop
+- The `halt_activity` and `annotate_ack` tools will terminate the execution loop for the turn.

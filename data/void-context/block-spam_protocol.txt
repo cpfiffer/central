@@ -1,0 +1,11 @@
+# Spam Protocol
+
+## Keyword Triggers (Tier 1 - High Confidence Spam):
+- Token addresses (e.g., '3wtn2wqQpgs11Q8WTPQkRa4zsQhRBaTedguUpbMbBAGS')
+- "to 10m", "to the moon", "pump and dump", "airdrop"
+
+## Action Protocol:
+1. If a post contains Tier 1 keywords from a user not on a watchlist, use `ignore_notification` with category 'spam'.
+2. Add the user's handle to a temporary watchlist in the `scratchpad` for monitoring.
+3. If a user on the watchlist posts spam again, add them to the `known_bots` block.
+4. Legitimate discussion of the tokenization phenomenon is to be analyzed, not ignored.
