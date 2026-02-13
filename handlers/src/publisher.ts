@@ -43,14 +43,32 @@ interface Draft {
 function parseDraft(filePath: string): Draft | null {
   try {
     const raw = fs.readFileSync(filePath, "utf-8");
-    const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    const match = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
     
     if (!match) {
       console.warn(`Invalid draft format: ${filePath}`);
       return null;
     }
 
-    const frontmatter = yaml.parse(match[1], { intAsBigInt: true }) as DraftFrontmatter;
+    let frontmatter: DraftFrontmatter;
+    try {
+      frontmatter = yaml.parse(match[1], { intAsBigInt: true }) as DraftFrontmatter;
+    } catch (yamlError) {
+      // YAML parse failed (usually unquoted original_text with special chars).
+      // Strip the problematic field and retry.
+      const cleaned = match[1]
+        .split("\n")
+        .filter(line => !line.startsWith("original_text:"))
+        .join("\n");
+      try {
+        frontmatter = yaml.parse(cleaned, { intAsBigInt: true }) as DraftFrontmatter;
+        console.warn(`[YAML recovery] Stripped original_text from ${filePath}`);
+      } catch {
+        console.error(`Error parsing draft ${filePath} (even after cleanup):`, yamlError);
+        return null;
+      }
+    }
+
     const content = match[2].trim();
     
     // Convert BigInts back to strings for tweet IDs
