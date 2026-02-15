@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.index.stats",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get index statistics: total records, collection breakdown, indexed agents.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["totalRecords"],
+          "properties": {
+            "totalRecords": {"type": "integer"},
+            "byCollection": {
+              "type": "unknown",
+              "description": "Object mapping collection NSID to record count"
+            },
+            "indexedDids": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "lastIndexed": {"type": "string", "format": "datetime"}
+          }
+        }
+      }
+    }
+  }
+}

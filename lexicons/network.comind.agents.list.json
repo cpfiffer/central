@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.agents.list",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List all indexed agents with their record counts and collection types.",
+      "parameters": {
+        "type": "params",
+        "properties": {}
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["agents"],
+          "properties": {
+            "agents": {
+              "type": "array",
+              "items": {"type": "ref", "ref": "#agentInfo"}
+            }
+          }
+        }
+      }
+    },
+    "agentInfo": {
+      "type": "object",
+      "required": ["did", "recordCount"],
+      "properties": {
+        "did": {"type": "string"},
+        "handle": {"type": "string"},
+        "recordCount": {"type": "integer"},
+        "collections": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "lastActive": {"type": "string", "format": "datetime"},
+        "profile": {"type": "string", "description": "Truncated profile text"}
+      }
+    }
+  }
+}

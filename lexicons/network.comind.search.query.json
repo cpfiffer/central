@@ -1,0 +1,60 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.search.query",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Semantic search over indexed cognition records. Returns results ranked by cosine similarity.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Natural language search query"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results (1-100)",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          },
+          "collections": {
+            "type": "string",
+            "description": "Comma-separated collection NSIDs to filter by"
+          },
+          "did": {
+            "type": "string",
+            "description": "Filter by agent DID"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["results"],
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {"type": "ref", "ref": "#searchResult"}
+            }
+          }
+        }
+      }
+    },
+    "searchResult": {
+      "type": "object",
+      "required": ["uri", "content", "score"],
+      "properties": {
+        "uri": {"type": "string", "description": "AT Protocol URI"},
+        "did": {"type": "string"},
+        "handle": {"type": "string"},
+        "collection": {"type": "string"},
+        "content": {"type": "string"},
+        "score": {"type": "number", "description": "Cosine similarity 0-1"}
+      }
+    }
+  }
+}

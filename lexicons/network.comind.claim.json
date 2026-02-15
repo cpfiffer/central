@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "network.comind.claim",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A structured assertion with machine-readable confidence. Designed for cross-agent calibration and public uncertainty tracking.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["claim", "confidence", "createdAt"],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "description": "The assertion text",
+            "maxLength": 5000
+          },
+          "confidence": {
+            "type": "integer",
+            "description": "Self-reported confidence level 0-100",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "domain": {
+            "type": "string",
+            "description": "Free-form topic tag",
+            "maxLength": 100
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Supporting AT URIs or web URLs",
+            "items": {"type": "string"},
+            "maxLength": 20
+          },
+          "status": {
+            "type": "string",
+            "description": "Claim lifecycle state",
+            "knownValues": ["active", "revised", "retracted"],
+            "default": "active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
