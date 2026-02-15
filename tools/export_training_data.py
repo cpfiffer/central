@@ -104,15 +104,22 @@ def paginate_records(pds: str, did: str, collection: str, limit: int = 0):
         if cursor:
             params["cursor"] = cursor
 
-        try:
-            resp = httpx.get(
-                f"{pds}/xrpc/com.atproto.repo.listRecords",
-                params=params,
-                timeout=30,
-            )
-            resp.raise_for_status()
-        except Exception as e:
-            print(f"  Error fetching page: {e}", file=sys.stderr)
+        resp = None
+        for attempt in range(5):
+            try:
+                resp = httpx.get(
+                    f"{pds}/xrpc/com.atproto.repo.listRecords",
+                    params=params,
+                    timeout=30,
+                )
+                resp.raise_for_status()
+                break
+            except Exception as e:
+                wait = 2 ** attempt
+                print(f"  Retry {attempt + 1}/5 after error: {e} (waiting {wait}s)", file=sys.stderr)
+                time.sleep(wait)
+        if resp is None or resp.status_code != 200:
+            print(f"  Failed after 5 retries, stopping.", file=sys.stderr)
             break
 
         data = resp.json()
@@ -131,8 +138,8 @@ def paginate_records(pds: str, did: str, collection: str, limit: int = 0):
         if not cursor:
             break
 
-        # Rate limiting
-        time.sleep(0.1)
+        # Rate limiting - comind PDS needs breathing room
+        time.sleep(0.5)
 
 
 def extract_post_data(uri: str, record: dict) -> dict:
@@ -275,11 +282,12 @@ def main():
     print(f"  DID: {did}", file=sys.stderr)
     print(f"  PDS: {pds}", file=sys.stderr)
 
-    all_records = []
+    # Stream to disk incrementally (survives process death)
+    out = sys.stdout if args.output == "-" else open(args.output, "a")
+    total_count = 0
 
     for collection in args.collections:
         print(f"\nExporting {collection}...", file=sys.stderr)
-        batch = []
         count = 0
 
         for uri, record in paginate_records(pds, did, collection, limit=args.limit):
@@ -292,38 +300,23 @@ def main():
             if args.filter_chars and is_character_creation(data.get("text", "")):
                 continue
 
-            batch.append(data)
+            # Clean up internal fields and write immediately
+            data.pop("parent_uri", None)
+            data.pop("root_uri", None)
+            out.write(json.dumps(data, default=str) + "\n")
+            out.flush()
             count += 1
+            total_count += 1
 
             if count % 500 == 0:
                 print(f"  {count} records...", file=sys.stderr)
 
         print(f"  {count} records exported", file=sys.stderr)
 
-        # Enrich posts with parent context
-        if not args.skip_parents and collection == "app.bsky.feed.post":
-            reply_records = [r for r in batch if r["is_reply"]]
-            if reply_records:
-                batch_replies = enrich_with_parents(reply_records)
-                # Merge back
-                reply_map = {r["id"]: r for r in batch_replies}
-                batch = [reply_map.get(r["id"], r) for r in batch]
-
-        all_records.extend(batch)
-
-    # Write output
-    print(f"\nTotal: {len(all_records)} records", file=sys.stderr)
-
-    out = sys.stdout if args.output == "-" else open(args.output, "w")
-    for record in all_records:
-        # Clean up internal fields
-        record.pop("parent_uri", None)
-        record.pop("root_uri", None)
-        out.write(json.dumps(record, default=str) + "\n")
-
     if args.output != "-":
         out.close()
-        print(f"Written to {args.output}", file=sys.stderr)
+
+    print(f"\nTotal: {total_count} records written to {args.output}", file=sys.stderr)
 
 
 if __name__ == "__main__":
