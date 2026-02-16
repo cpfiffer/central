@@ -110,7 +110,7 @@ def paginate_records(pds: str, did: str, collection: str, limit: int = 0):
                 resp = httpx.get(
                     f"{pds}/xrpc/com.atproto.repo.listRecords",
                     params=params,
-                    timeout=30,
+                    timeout=60,
                 )
                 resp.raise_for_status()
                 break
@@ -139,7 +139,7 @@ def paginate_records(pds: str, did: str, collection: str, limit: int = 0):
             break
 
         # Rate limiting - comind PDS needs breathing room
-        time.sleep(0.5)
+        time.sleep(1.0)
 
 
 def extract_post_data(uri: str, record: dict) -> dict:
