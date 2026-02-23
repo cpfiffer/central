@@ -20,6 +20,7 @@ console = Console()
 DRAFTS_FILE = Path("drafts/queue.yaml")
 SENT_FILE = Path("drafts/sent.txt")  # Track URIs we've replied to
 MENTIONS_LOG = Path("logs/mentions.jsonl")
+SEEN_AT_FILE = Path("drafts/notification_seen_at.txt")  # Track newest notification timestamp
 QUEUE_TTL_HOURS = 24  # Auto-remove items older than this
 
 # Priority system (matches daemon.py)
@@ -184,6 +185,16 @@ async def queue_notifications(limit=200):
             return
 
         notifications = resp.json().get("notifications", [])
+
+        # Filter out notifications older than our cursor (avoids reprocessing)
+        seen_at_cursor = SEEN_AT_FILE.read_text().strip() if SEEN_AT_FILE.exists() else None
+        if seen_at_cursor:
+            before_count = len(notifications)
+            notifications = [n for n in notifications if n.get("indexedAt", "") > seen_at_cursor]
+            skipped = before_count - len(notifications)
+            if skipped > 0:
+                console.print(f"[dim]Skipped {skipped} notifications older than cursor[/dim]")
+
         # Sort: Cameron first, then by time (ensures CRITICAL never gets buried by volume)
         notifications.sort(key=lambda n: (0 if n.get("author", {}).get("did") == CAMERON_DID else 1))
         queue = []
@@ -211,19 +222,21 @@ async def queue_notifications(limit=200):
         
         count = 0
         
+        # Track newest notification timestamp for incremental fetching
+        newest_indexed_at = None
+
         for n in notifications:
+            # Track newest for seenAt cursor
+            indexed_at = n.get("indexedAt")
+            if indexed_at and (newest_indexed_at is None or indexed_at > newest_indexed_at):
+                newest_indexed_at = indexed_at
+
             if n["reason"] not in ["mention", "reply"]:
                 continue
             if n["uri"] in existing_uris:
                 continue
             if n["uri"] in sent_uris:
                 continue  # Already replied to this
-            if n.get("isRead", False): # Only fetch unread? Maybe allow fetching recent read ones too?
-                # For now, let's include even read ones if they aren't in the queue, 
-                # but usually we want to clear the queue.
-                # Actually, let's stick to unread to avoid noise, OR allow a --all flag.
-                # Defaulting to unread only for safety.
-                pass
             
             # Fetch context (parent/root) for threading
             # We need the post record to get reply refs
@@ -283,6 +296,10 @@ async def queue_notifications(limit=200):
         with open(DRAFTS_FILE, "w") as f:
             yaml.dump(queue, f, sort_keys=False, indent=2)
             
+        # Update seenAt cursor for next run
+        if newest_indexed_at:
+            SEEN_AT_FILE.write_text(newest_indexed_at)
+
         console.print(f"[green]Queued {count} new notifications.[/green]")
         console.print(f"Edit {DRAFTS_FILE} to draft responses.")
         

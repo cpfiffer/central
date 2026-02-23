@@ -53,6 +53,7 @@ def is_low_effort(text: str) -> bool:
 QUEUE_PATH = Path("drafts/x_queue.yaml")
 SENT_PATH = Path("drafts/x_sent.txt")
 MENTIONS_LOG = Path("logs/x_mentions.jsonl")
+SINCE_ID_PATH = Path("drafts/x_since_id.txt")  # Track newest mention seen
 
 
 def _log_mention(entry: dict):
@@ -119,16 +120,36 @@ def save_sent_id(tweet_id: str):
         f.write(f"{tweet_id}\n")
 
 
+def load_since_id() -> str | None:
+    """Load the most recent mention ID we've seen."""
+    if SINCE_ID_PATH.exists():
+        return SINCE_ID_PATH.read_text().strip()
+    return None
+
+
+def save_since_id(tweet_id: str):
+    """Save the most recent mention ID we've seen."""
+    SINCE_ID_PATH.write_text(tweet_id)
+
+
 def fetch_mentions(limit: int = 20) -> list[dict]:
-    """Fetch recent mentions."""
+    """Fetch recent mentions newer than since_id."""
     client = get_client()
     me = client.get_me()
-    
+
+    # Only fetch mentions newer than last seen
+    since_id = load_since_id()
+    params = {
+        "max_results": min(limit, 100),
+        "tweet_fields": ["created_at", "author_id", "conversation_id"],
+        "expansions": ["author_id"],
+    }
+    if since_id:
+        params["since_id"] = since_id
+
     response = client.get_users_mentions(
         me.data.id,
-        max_results=min(limit, 100),
-        tweet_fields=["created_at", "author_id", "conversation_id"],
-        expansions=["author_id"],
+        **params
     )
     
     if not response.data:
@@ -150,7 +171,11 @@ def fetch_mentions(limit: int = 20) -> list[dict]:
             "created_at": str(tweet.created_at) if tweet.created_at else None,
             "conversation_id": str(tweet.conversation_id) if tweet.conversation_id else None,
         })
-    
+
+    # Save newest mention ID for next run (mentions are newest-first)
+    if mentions:
+        save_since_id(mentions[0]["id"])
+
     return mentions
 
 

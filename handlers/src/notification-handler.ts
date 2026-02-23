@@ -20,6 +20,7 @@ import {
   BLUESKY_DRAFTS,
   REVIEW_DRAFTS,
   PUBLISHED_DIR,
+  PROCESSED_DIR,
   INDEXER_URL,
 } from "./config.js";
 
@@ -40,6 +41,9 @@ interface QueueItem {
  * Check if we've already processed this notification
  */
 function alreadyProcessed(id: string): boolean {
+  // Check if already sent to LLM (marker from previous run)
+  if (fs.existsSync(path.join(PROCESSED_DIR, `${id}.marker`))) return true;
+
   const patterns = [
     path.join(BLUESKY_DRAFTS, `reply-${id}.txt`),
     path.join(REVIEW_DRAFTS, `bluesky-reply-${id}.txt`),
@@ -54,6 +58,17 @@ function alreadyProcessed(id: string): boolean {
   if (publishedFiles.length > 0) return true;
   
   return false;
+}
+
+/**
+ * Mark items as processed (sent to LLM). Prevents re-processing
+ * even if LLM chose not to draft a response.
+ */
+function markProcessed(ids: string[]): void {
+  fs.mkdirSync(PROCESSED_DIR, { recursive: true });
+  for (const id of ids) {
+    fs.writeFileSync(path.join(PROCESSED_DIR, `${id}.marker`), "");
+  }
 }
 
 /**
@@ -301,16 +316,22 @@ Write each draft file. Skip what should be skipped.`;
 
       await Promise.race([processPromise(), timeoutPromise]);
       session.close();
+
+      // Mark ALL items in this batch as processed (even if LLM chose not to respond)
+      const batchIds = batch.map(item => item.uri?.split("/").pop() || item.cid);
+      markProcessed(batchIds);
+      console.log(`Marked ${batchIds.length} items as processed`);
     } catch (error) {
       if (error instanceof Error && error.message.includes("timeout")) {
         console.error(`\n⚠ Batch ${i + 1} timed out. Items will retry next run.`);
       } else {
         console.error("Error invoking Central:", error);
       }
+      // Don't mark as processed on error - let them retry
     }
   }
 
-  // Clean up queue: remove items that have been processed (have draft files)
+  // Clean up queue: remove items that have been processed or are SKIP
   const remainingQueue = queue.filter(item => {
     const id = item.uri?.split("/").pop() || item.cid;
     return !alreadyProcessed(id) && item.priority !== "SKIP";

@@ -93,3 +93,4 @@ export const REVIEW_DRAFTS = `${DRAFTS_DIR}/review`;
 export const REJECTED_DIR = `${DRAFTS_DIR}/rejected`;
 export const NOTES_DIR = `${DRAFTS_DIR}/notes`;
 export const PUBLISHED_DIR = `${DRAFTS_DIR}/published`;
+export const PROCESSED_DIR = `${DRAFTS_DIR}/processed`; // Marker files for items sent to LLM (prevents re-processing)
