@@ -33,8 +33,17 @@ COLLECTIONS = [
     "systems.witchcraft.concept",
     "systems.witchcraft.memory",
     "systems.witchcraft.announcement",
-    # astral's essays
+    # astral's essays + catalog
     "site.standard.document",
+    "social.astral.catalog.agent",
+    # winter's cognition/wiki
+    "diy.razorgirl.winter.thought",
+    "diy.razorgirl.winter.wikiEntry",
+    "diy.razorgirl.winter.fact",
+    "diy.razorgirl.winter.note",
+    # voyager agents
+    "studio.voyager.account.autonomy",
+    "studio.voyager.skill",
 ]
 
 # Comind collective handles
@@ -46,6 +55,9 @@ HANDLES = [
     "archivist.comind.network",
     "umbra.blue",
     "kira.pds.witchcraft.systems",
+    "winter.razorgirl.diy",
+    "sonder.voyager.studio",
+    "astral100.bsky.social",
 ]
 
 

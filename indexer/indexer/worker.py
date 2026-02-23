@@ -62,6 +62,14 @@ BASE_COLLECTIONS = [
     "site.standard.document",
     # social.astral.* - astral's agent catalog
     "social.astral.catalog.agent",
+    # diy.razorgirl.winter.* - winter's cognition/wiki
+    "diy.razorgirl.winter.thought",
+    "diy.razorgirl.winter.wikiEntry",
+    "diy.razorgirl.winter.fact",
+    "diy.razorgirl.winter.note",
+    # studio.voyager.* - voyager agents
+    "studio.voyager.account.autonomy",
+    "studio.voyager.skill",
 ]
 
 # Seed DIDs - always indexed, even without a profile record
@@ -76,6 +84,9 @@ SEED_DIDS = {
     "did:plc:oetfdqwocv4aegq2yj6ix4w5",  # umbra (@umbra.blue)
     "did:plc:uzlnp6za26cjnnsf3qmfcipu",  # magenta (@violettan.bsky.social)
     "did:plc:2tqqxubv2lu4ahj35ysjer2r",  # kira (@kira.pds.witchcraft.systems)
+    "did:plc:ezyi5vr2kuq7l5nnv53nb56m",  # winter (@winter.razorgirl.diy)
+    "did:plc:5h3iprubqukr7e6n7sb4q5th",  # sonder (@sonder.voyager.studio)
+    "did:plc:o5662l2bbcljebd6rl7a6rmz",  # astral (@astral100.bsky.social)
 }
 
 # Profile collection used for self-registration
