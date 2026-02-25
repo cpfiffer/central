@@ -187,10 +187,15 @@ async def queue_notifications(limit=200):
         notifications = resp.json().get("notifications", [])
 
         # Filter out notifications older than our cursor (avoids reprocessing)
+        # Always let Cameron's notifications through regardless of cursor
         seen_at_cursor = SEEN_AT_FILE.read_text().strip() if SEEN_AT_FILE.exists() else None
         if seen_at_cursor:
             before_count = len(notifications)
-            notifications = [n for n in notifications if n.get("indexedAt", "") > seen_at_cursor]
+            notifications = [
+                n for n in notifications
+                if n.get("indexedAt", "") > seen_at_cursor
+                or n.get("author", {}).get("did") == CAMERON_DID
+            ]
             skipped = before_count - len(notifications)
             if skipped > 0:
                 console.print(f"[dim]Skipped {skipped} notifications older than cursor[/dim]")
