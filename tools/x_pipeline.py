@@ -235,10 +235,28 @@ def post_to_x(text: str) -> str | None:
         if result.returncode == 0:
             return result.stdout.strip()
         else:
-            print(f"Post failed: {result.stderr}", file=sys.stderr)
+            print(f"X post failed: {result.stderr}", file=sys.stderr)
             return None
     except Exception as e:
-        print(f"Post error: {e}", file=sys.stderr)
+        print(f"X post error: {e}", file=sys.stderr)
+        return None
+
+
+def post_to_bluesky(text: str) -> str | None:
+    """Post to Bluesky using thread.py."""
+    try:
+        result = subprocess.run(
+            ["uv", "run", "python", "tools/thread.py", text],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(PROJECT_ROOT)
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            print(f"Bluesky post failed: {result.stderr}", file=sys.stderr)
+            return None
+    except Exception as e:
+        print(f"Bluesky post error: {e}", file=sys.stderr)
         return None
 
 
@@ -249,6 +267,8 @@ def main():
     parser = argparse.ArgumentParser(description="X content pipeline")
     parser.add_argument("--post", action="store_true", help="Actually post (default: dry run)")
     parser.add_argument("--since", default="24h", help="Time window (e.g., 24h, 48h)")
+    parser.add_argument("--x-only", action="store_true", help="Post to X only")
+    parser.add_argument("--bsky-only", action="store_true", help="Post to Bluesky only")
     args = parser.parse_args()
 
     hours = int(args.since.replace("h", ""))
@@ -277,13 +297,32 @@ def main():
         print()
 
     if args.post:
+        post_x = not args.bsky_only
+        post_bsky = not args.x_only
+
         for d in drafts:
-            result = post_to_x(d["text"])
-            if result:
+            posted_any = False
+
+            if post_x:
+                result = post_to_x(d["text"])
+                if result:
+                    print(f"  X: {result}")
+                    posted_any = True
+                else:
+                    print(f"  X failed: {d['text'][:50]}...")
+
+            if post_bsky:
+                # Bluesky has 300 char limit vs X's 280
+                bsky_text = d["text"]
+                result = post_to_bluesky(bsky_text)
+                if result:
+                    print(f"  Bluesky: {result}")
+                    posted_any = True
+                else:
+                    print(f"  Bluesky failed: {d['text'][:50]}...")
+
+            if posted_any:
                 save_posted(d["content_hash"])
-                print(f"  Posted: {result}")
-            else:
-                print(f"  Failed to post: {d['text'][:50]}...")
     else:
         print("Dry run. Use --post to publish.")
 
