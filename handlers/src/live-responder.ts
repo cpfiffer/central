@@ -192,10 +192,13 @@ function buildPrompt(
   }
 
   parts.push(
-    "Reply to the conversation above. Under 280 chars. " +
-      "Your reply must directly respond to what was said. " +
-      "Just the reply text. If no response needed: [SKIP]. " +
-      "If the request is too complex or needs tools (search, annotate, code): [ESCALATE]",
+    "Reply to the conversation above. Be direct and substantive. " +
+      "Match the depth of what was said: short questions get short answers, " +
+      "substantive points deserve real engagement. " +
+      "Max 280 chars per post. If you need more space, that's fine, just keep it tight. " +
+      "Output only the reply text, nothing else. " +
+      "If no response needed (e.g. 'thanks', acknowledgments): [SKIP]. " +
+      "If the request needs tools (search, code, annotations): [ESCALATE]",
   );
 
   return parts.join("\n\n");
