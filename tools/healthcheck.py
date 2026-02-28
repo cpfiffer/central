@@ -91,6 +91,22 @@ def check_last_publish() -> tuple[datetime | None, int]:
     return latest_time, recent_count
 
 
+def check_responder_quality(hours: int = 24) -> dict:
+    """Quick responder quality check using the audit tool."""
+    try:
+        from tools.responder_audit import parse_logs, check_quality
+        events = parse_logs(hours)
+        responded = [e for e in events if e.response != "[SKIPPED]"]
+        flagged = [e for e in responded if e.problems]
+        return {
+            "total": len(responded),
+            "flagged": len(flagged),
+            "skipped": len(events) - len(responded),
+        }
+    except Exception:
+        return {"total": 0, "flagged": 0, "skipped": 0}
+
+
 def check_xrpc_indexer() -> bool:
     """Check if XRPC indexer API is healthy."""
     import urllib.request
@@ -160,6 +176,17 @@ def run_healthcheck() -> dict:
     status["metrics"]["xrpc_indexer"] = "healthy" if xrpc_healthy else "down"
     if not xrpc_healthy:
         status["issues"].append("XRPC indexer API is down (502/unreachable)")
+    
+    # Check responder output quality
+    responder_quality = check_responder_quality()
+    status["metrics"]["responder"] = responder_quality
+    if responder_quality.get("flagged", 0) > 0:
+        total = responder_quality.get("total", 0)
+        flagged = responder_quality["flagged"]
+        if total > 0 and flagged / total > 0.5:
+            status["issues"].append(
+                f"Responder quality: {flagged}/{total} responses flagged"
+            )
     
     # Set overall health
     status["healthy"] = len(status["issues"]) == 0
