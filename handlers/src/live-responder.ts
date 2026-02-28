@@ -622,10 +622,11 @@ async function runXLoop(dryRun: boolean, interval: number) {
   while (true) {
     try {
       // Get user ID (cached - never changes)
+      const sleepTime = () => Math.max(interval, xBackoff * 1000);
       if (!cachedXUserId) {
         const meData = await xFetch("https://api.twitter.com/2/users/me");
         if (!meData) {
-          await new Promise((r) => setTimeout(r, interval));
+          await new Promise((r) => setTimeout(r, sleepTime()));
           continue;
         }
         cachedXUserId = meData.data?.id || null;
@@ -636,7 +637,7 @@ async function runXLoop(dryRun: boolean, interval: number) {
       const userId = cachedXUserId;
       if (!userId) {
         log("x", "No user ID");
-        await new Promise((r) => setTimeout(r, interval));
+        await new Promise((r) => setTimeout(r, sleepTime()));
         continue;
       }
 
@@ -650,7 +651,7 @@ async function runXLoop(dryRun: boolean, interval: number) {
 
       const data = await xFetch(`https://api.twitter.com/2/users/${userId}/mentions`, params);
       if (!data) {
-        await new Promise((r) => setTimeout(r, interval));
+        await new Promise((r) => setTimeout(r, sleepTime()));
         continue;
       }
       xBackoff = 60; // reset backoff on successful fetch
