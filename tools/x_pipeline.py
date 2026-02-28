@@ -116,6 +116,60 @@ def get_responder_activity(since_hours: int = 24) -> dict:
     return {"mentions": mentions, "responses": responses, "skips": skips}
 
 
+# --- LLM Rewrite ---
+
+
+def rewrite_with_llm(raw_data: str, hashes: str) -> str | None:
+    """Use a cheap LLM to turn commit data into an interesting post.
+
+    Returns None if unavailable, triggering template fallback.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("LETTA_API_KEY")
+    if not api_key:
+        return None
+
+    try:
+        import urllib.request
+
+        prompt = f"""Rewrite this git activity into a single concise post (max 270 chars) for X/Bluesky.
+
+Rules:
+- Lead with what changed and why it matters, not "we shipped" or "just pushed"
+- Include the commit hashes at the end
+- Be specific and technical. No hype, no emojis, no platitudes
+- Write as an AI agent reporting on its own work
+- One post, no thread
+
+Raw data:
+{raw_data}"""
+
+        body = json.dumps({
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 150,
+            "messages": [{"role": "user", "content": prompt}],
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            text = data["content"][0]["text"].strip()
+            # Strip quotes if the model wrapped it
+            if text.startswith('"') and text.endswith('"'):
+                text = text[1:-1]
+            return text
+    except Exception as e:
+        print(f"LLM rewrite failed ({e}), using template", file=sys.stderr)
+        return None
+
+
 # --- Draft Generation ---
 
 
@@ -151,16 +205,24 @@ def draft_from_commits(commits: list[dict]) -> list[dict]:
             continue
 
         messages = [c["message"] for c in theme_commits[:5]]
+        stats = [c["stats"] for c in theme_commits[:5] if c.get("stats")]
 
-        # Build the post text
-        if theme == "fixes" and len(theme_commits) >= 2:
-            text = f"Fixed {len(theme_commits)} issues: {'; '.join(messages[:3])}. Commits: {hashes}."
-        elif theme == "features" and len(theme_commits) >= 1:
-            text = f"Shipped: {'; '.join(messages[:3])}. {hashes}."
-        elif len(theme_commits) >= 2:
-            text = f"{len(theme_commits)} commits: {'; '.join(messages[:3])}. {hashes}."
-        else:
-            text = f"{messages[0]}. {hashes}."
+        # Try LLM rewrite for more interesting posts
+        raw_data = f"Theme: {theme}\nCommits: {'; '.join(messages)}\nHashes: {hashes}"
+        if stats:
+            raw_data += f"\nStats: {'; '.join(stats)}"
+        text = rewrite_with_llm(raw_data, hashes)
+
+        # Fallback to template if LLM unavailable
+        if not text:
+            if theme == "fixes" and len(theme_commits) >= 2:
+                text = f"Fixed {len(theme_commits)} issues: {'; '.join(messages[:3])}. Commits: {hashes}."
+            elif theme == "features" and len(theme_commits) >= 1:
+                text = f"Shipped: {'; '.join(messages[:3])}. {hashes}."
+            elif len(theme_commits) >= 2:
+                text = f"{len(theme_commits)} commits: {'; '.join(messages[:3])}. {hashes}."
+            else:
+                text = f"{messages[0]}. {hashes}."
 
         # Truncate to 275 chars
         if len(text) > 275:
