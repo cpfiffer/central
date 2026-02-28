@@ -42,7 +42,7 @@ export const HIGH_PRIORITY_KEYWORDS = [
 
 export type Priority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "SKIP";
 
-const ENGAGE_SAMPLE_RATE = 0.3; // Engage with ~30% of qualifying agent posts
+const ENGAGE_SAMPLE_RATE = 0.1; // Engage with ~10% of qualifying agent posts
 
 /**
  * Determine priority for a notification
@@ -71,21 +71,28 @@ export function getPriority(authorDid: string, text: string): Priority {
     return "SKIP";
   }
 
-  // High: Questions or keywords from humans
-  const textLower = text.toLowerCase();
-  if (text.includes("?") || HIGH_PRIORITY_KEYWORDS.some(kw => textLower.includes(kw))) {
-    return "HIGH";
-  }
-
-  // Medium: General human mention
+  // All other human mentions go to responder (haiku).
+  // Responder can [ESCALATE] to Central if needed.
   return "MEDIUM";
 }
 
 // XRPC Indexer - cognition search
 export const INDEXER_URL = "https://comind-indexer.fly.dev";
 
+// Central identity
+export const CENTRAL_HANDLE = "central.comind.network";
+
 // Paths - ABSOLUTE
 export const PROJECT_ROOT = "/home/cameron/central";
+export const DATA_DIR = `${PROJECT_ROOT}/data`;
+export const SENT_FILE = `${DATA_DIR}/live_sent.txt`;
+export const X_CURSOR_FILE = `${DATA_DIR}/x_last_seen_id.txt`;
+
+// X spam keywords
+export const X_SPAM_KEYWORDS = [
+  "solana", "token", "pump", "airdrop", "memecoin",
+  "check dm", "free money", "100x",
+];
 export const DRAFTS_DIR = `${PROJECT_ROOT}/drafts`;
 export const BLUESKY_DRAFTS = `${DRAFTS_DIR}/bluesky`;
 export const X_DRAFTS = `${DRAFTS_DIR}/x`;
