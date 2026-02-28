@@ -593,7 +593,13 @@ async function xFetch(url: string, params: Record<string, string> = {}): Promise
   }
 
   if (!resp.ok) {
-    log("x", `API error: ${resp.status}`);
+    // Back off on server errors (5xx) too, not just rate limits
+    if (resp.status >= 500) {
+      xBackoff = Math.min(xBackoff * 2, 900);
+      log("x", `API error: ${resp.status} (backoff=${xBackoff}s)`);
+    } else {
+      log("x", `API error: ${resp.status}`);
+    }
     return null;
   }
 
@@ -698,7 +704,9 @@ async function runXLoop(dryRun: boolean, interval: number) {
       log("x", `Error: ${err}`);
     }
 
-    await new Promise((r) => setTimeout(r, interval));
+    // Use backoff interval if it's larger than the normal interval
+    const sleepMs = Math.max(interval, xBackoff * 1000);
+    await new Promise((r) => setTimeout(r, sleepMs));
   }
 }
 
