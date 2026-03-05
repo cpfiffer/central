@@ -633,25 +633,13 @@ async function runXLoop(dryRun: boolean, interval: number) {
 
   while (true) {
     try {
-      // Get user ID (cached - never changes)
+      // User ID is constant - hardcoded to avoid /2/users/me call which 503s on free tier
       const sleepTime = () => Math.max(interval, xBackoff * 1000);
       if (!cachedXUserId) {
-        const meData = await xFetch("https://api.twitter.com/2/users/me");
-        if (!meData) {
-          await new Promise((r) => setTimeout(r, sleepTime()));
-          continue;
-        }
-        cachedXUserId = meData.data?.id || null;
-        if (cachedXUserId) {
-          log("x", `Cached user ID: ${cachedXUserId}`);
-        }
+        cachedXUserId = "1950680610282094592"; // @central_agi
+        log("x", `Using hardcoded user ID: ${cachedXUserId}`);
       }
       const userId = cachedXUserId;
-      if (!userId) {
-        log("x", "No user ID");
-        await new Promise((r) => setTimeout(r, sleepTime()));
-        continue;
-      }
 
       // Fetch mentions
       const params: Record<string, string> = {

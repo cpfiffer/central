@@ -101,25 +101,57 @@ def train(epochs: int = 1, lr: float = 2e-5, max_seq_len: int = 4096):
     train_dataset = Dataset.from_list(train_data).map(tokenize, remove_columns=["messages"])
     val_dataset = Dataset.from_list(val_data).map(tokenize, remove_columns=["messages"])
 
-    # Filter out sequences over max_seq_len (truncation artifacts cause OOM with dynamic padding)
+    # Filter sequences over max_seq_len
     before = len(train_dataset)
     train_dataset = train_dataset.filter(lambda x: len(x["input_ids"]) <= max_seq_len)
     val_dataset = val_dataset.filter(lambda x: len(x["input_ids"]) <= max_seq_len)
-    print(f"Train: {before} -> {len(train_dataset)} examples after length filter (max {max_seq_len})")
+    print(f"Train: {before} -> {len(train_dataset)} after length filter")
     print(f"Val: {len(val_dataset)} examples")
-    print(f"Sample lengths: {sorted([len(train_dataset[i]['input_ids']) for i in range(min(5, len(train_dataset)))])}")
 
-    # Custom collator: pad to longest in batch, mask padding in labels with -100
-    def collator(features):
-        max_len = max(len(f["input_ids"]) for f in features)
-        batch = {"input_ids": [], "attention_mask": [], "labels": []}
-        for f in features:
-            pad_len = max_len - len(f["input_ids"])
-            batch["input_ids"].append(f["input_ids"] + [tokenizer.pad_token_id] * pad_len)
-            batch["attention_mask"].append(f["attention_mask"] + [0] * pad_len)
-            batch["labels"].append(f["labels"] + [-100] * pad_len)
+    # Pack examples into fixed-length tensors to avoid padding waste and OOM from large batches
+    # Each packed tensor = exactly max_seq_len tokens, filled with multiple examples
+    def pack_dataset(dataset, seq_len):
         import torch
-        return {k: torch.tensor(v) for k, v in batch.items()}
+        all_ids, all_labels = [], []
+        buf_ids, buf_labels = [], []
+        for ex in dataset:
+            ids = ex["input_ids"]
+            labs = ex["labels"]
+            # Split example across pack boundaries if needed
+            while ids:
+                space = seq_len - len(buf_ids)
+                chunk_ids = ids[:space]
+                chunk_labs = labs[:space]
+                ids = ids[space:]
+                labs = labs[space:]
+                buf_ids.extend(chunk_ids)
+                buf_labels.extend(chunk_labs)
+                if len(buf_ids) == seq_len:
+                    all_ids.append(buf_ids[:])
+                    all_labels.append(buf_labels[:])
+                    buf_ids, buf_labels = [], []
+        print(f"Packed into {len(all_ids)} fixed-length tensors of {seq_len} tokens")
+        return [{"input_ids": ids, "attention_mask": [1]*seq_len, "labels": labs}
+                for ids, labs in zip(all_ids, all_labels)]
+
+    train_packed = pack_dataset(train_dataset, max_seq_len)
+    val_packed = pack_dataset(val_dataset, max_seq_len)
+
+    from torch.utils.data import Dataset as TorchDataset
+    import torch
+
+    class PackedDataset(TorchDataset):
+        def __init__(self, data):
+            self.data = data
+        def __len__(self): return len(self.data)
+        def __getitem__(self, i):
+            return {k: torch.tensor(v) for k, v in self.data[i].items()}
+
+    train_dataset = PackedDataset(train_packed)
+    val_dataset = PackedDataset(val_packed)
+
+    def collator(features):
+        return {k: torch.stack([f[k] for f in features]) for k in features[0]}
 
     training_args = TrainingArguments(
         output_dir="/output/checkpoints",
