@@ -516,6 +516,18 @@ function runBlueskyLoop(dryRun: boolean) {
         clearInterval(pingInterval);
       }
     }, 20000);
+
+    // Stale connection watchdog: if no message in 5 min, force reconnect
+    let lastMessageAt = Date.now();
+    ws.on("message", () => { lastMessageAt = Date.now(); });
+    const watchdog = setInterval(() => {
+      if (Date.now() - lastMessageAt > 5 * 60 * 1000) {
+        log("bsky", "No events in 5 min, forcing reconnect...");
+        clearInterval(watchdog);
+        clearInterval(pingInterval);
+        ws.terminate();
+      }
+    }, 60000);
   }
 
   connect();
