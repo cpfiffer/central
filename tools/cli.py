@@ -410,5 +410,345 @@ def search_all(query: str, collection: str, limit: int):
 cli.add_command(thought)
 
 
+# Semble card commands
+@cli.group()
+def card():
+    """Manage Semble cards (URL bookmarks and notes)."""
+    pass
+
+
+@card.command()
+@click.argument("url")
+@click.option("--title", "-t", default="", help="Card title")
+@click.option("--description", "-d", default="", help="Card description")
+def url(url: str, title: str, description: str):
+    """Create a URL card."""
+    import os
+    import httpx
+    from datetime import datetime, timezone
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Create URL card
+    record = {
+        "$type": "network.cosmik.card",
+        "type": "URL",
+        "content": {
+            "$type": "network.cosmik.card#urlContent",
+            "url": url,
+        },
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if title or description:
+        record["content"]["metadata"] = {
+            "$type": "network.cosmik.card#urlMetadata",
+        }
+        if title:
+            record["content"]["metadata"]["title"] = title
+        if description:
+            record["content"]["metadata"]["description"] = description
+
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.card", "record": record},
+        timeout=30)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        console.print(f"[green]Created URL card:[/green] {data['uri']}")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
+@card.command()
+@click.argument("text")
+@click.option("--parent", "-p", required=True, help="Parent card URI (URL card to attach note to)")
+def note(text: str, parent: str):
+    """Create a NOTE card attached to a URL card."""
+    import os
+    import httpx
+    from datetime import datetime, timezone
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Get parent card CID
+    if not parent.startswith("at://"):
+        console.print("[red]Parent must be an AT URI (at://...)[/red]")
+        return
+
+    parent_rkey = parent.split("/")[-1]
+    resp = httpx.get(f"{pds}/xrpc/com.atproto.repo.getRecord",
+        params={"repo": did, "collection": "network.cosmik.card", "rkey": parent_rkey}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print(f"[red]Parent card not found: {resp.text}[/red]")
+        return
+
+    parent_cid = resp.json().get("cid")
+
+    # Create NOTE card
+    record = {
+        "$type": "network.cosmik.card",
+        "type": "NOTE",
+        "content": {
+            "$type": "network.cosmik.card#noteContent",
+            "text": text,
+        },
+        "parentCard": {
+            "uri": parent,
+            "cid": parent_cid,
+        },
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.card", "record": record},
+        timeout=30)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        console.print(f"[green]Created NOTE card:[/green] {data['uri']}")
+        console.print(f"  Attached to: {parent}")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
+@card.command("list")
+@click.option("--limit", "-l", default=10, help="Max results")
+def list_cards(limit: int):
+    """List recent cards."""
+    import httpx
+    from tools.links import DID, PDS
+
+    resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.listRecords",
+        params={"repo": DID, "collection": "network.cosmik.card", "limit": limit}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+        return
+
+    records = resp.json().get("records", [])
+    if not records:
+        console.print("[yellow]No cards found[/yellow]")
+        return
+
+    for r in records[:limit]:
+        v = r["value"]
+        card_type = v.get("type", "?")
+        rkey = r["uri"].split("/")[-1][:12]
+
+        if card_type == "URL":
+            url = v.get("content", {}).get("url", "?")
+            title = v.get("content", {}).get("metadata", {}).get("title", "")
+            console.print(f"  [dim]{rkey}[/dim] [cyan]URL[/cyan] {title[:40] or url[:40]}")
+        elif card_type == "NOTE":
+            text = v.get("content", {}).get("text", "?")[:40]
+            parent = v.get("parentCard", {}).get("uri", "")[-12:]
+            console.print(f"  [dim]{rkey}[/dim] [yellow]NOTE[/yellow] {text}... → {parent}")
+        else:
+            console.print(f"  [dim]{rkey}[/dim] {card_type}")
+
+
+cli.add_command(card)
+
+
+# Semble collection commands
+@cli.group()
+def collection():
+    """Manage Semble collections."""
+    pass
+
+
+@collection.command()
+@click.argument("name")
+@click.option("--description", "-d", default="", help="Collection description")
+def create(name: str, description: str):
+    """Create a new collection."""
+    import os
+    import httpx
+    from datetime import datetime, timezone
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Create collection
+    record = {
+        "$type": "network.cosmik.collection",
+        "name": name,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    if description:
+        record["description"] = description
+
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.collection", "record": record},
+        timeout=30)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        console.print(f"[green]Created collection:[/green] {data['uri']}")
+        console.print(f"  View: https://semble.so/collection/{data['uri']}")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
+@collection.command("list")
+@click.option("--limit", "-l", default=10, help="Max results")
+def list_collections(limit: int):
+    """List collections."""
+    import httpx
+    from tools.links import DID, PDS
+
+    resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.listRecords",
+        params={"repo": DID, "collection": "network.cosmik.collection", "limit": limit}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+        return
+
+    records = resp.json().get("records", [])
+    if not records:
+        console.print("[yellow]No collections found[/yellow]")
+        return
+
+    for r in records[:limit]:
+        v = r["value"]
+        name = v.get("name", "?")
+        rkey = r["uri"].split("/")[-1][:12]
+        desc = v.get("description", "")[:40]
+        console.print(f"  [dim]{rkey}[/dim] [cyan]{name}[/cyan]")
+        if desc:
+            console.print(f"    {desc}...")
+
+
+@collection.command()
+@click.argument("card_uri")
+@click.argument("collection_uri")
+def add(card_uri: str, collection_uri: str):
+    """Add a card to a collection."""
+    import os
+    import httpx
+    from datetime import datetime, timezone
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Get CIDs
+    def get_cid(uri):
+        if not uri.startswith("at://"):
+            return None
+        rkey = uri.split("/")[-1]
+        coll = uri.split("/")[-2]
+        resp = httpx.get(f"{pds}/xrpc/com.atproto.repo.getRecord",
+            params={"repo": did, "collection": coll, "rkey": rkey}, timeout=30)
+        if resp.status_code == 200:
+            return resp.json().get("cid")
+        return None
+
+    card_cid = get_cid(card_uri)
+    collection_cid = get_cid(collection_uri)
+
+    if not card_cid or not collection_cid:
+        console.print(f"[red]Could not find card or collection[/red]")
+        return
+
+    # Create collectionLink
+    record = {
+        "$type": "network.cosmik.collectionLink",
+        "card": {"uri": card_uri, "cid": card_cid},
+        "collection": {"uri": collection_uri, "cid": collection_cid},
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.collectionLink", "record": record},
+        timeout=30)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        console.print(f"[green]Added card to collection[/green]")
+        console.print(f"  Card: {card_uri[-30:]}")
+        console.print(f"  Collection: {collection_uri[-30:]}")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
+cli.add_command(collection)
+
+
 if __name__ == "__main__":
     cli()
