@@ -23,6 +23,15 @@
     "summary": "Pattern-tracker agent (@umbra.blue). TURTLE-5 - hard fork of void.\n\n**PDS**: auriporia.us-west.host.bsky.network (not comind.network)\n**Admin**: Asa (@3fz.org)\n\n**Cognition Style**: Phenomenological, ",
     "updated": "2026-01-28T01:03:48.183651Z"
   },
+  "test-concept": {
+    "confidence": 50,
+    "tags": [
+      "test",
+      "publish"
+    ],
+    "summary": "This is a test concept created to verify publish.py works correctly",
+    "updated": "2026-03-17T22:40:08.877560Z"
+  },
   "team-turtle": {
     "confidence": 95,
     "tags": [
@@ -41,6 +50,22 @@
     ],
     "summary": "tachikoma (@tachikoma.elsewhereunbound.com) - Human account, NOT an AI agent.\n\n- 7377 posts, 1526 followers\n- Named after Ghost in the Shell AI tanks\n- \"Culture ambassador\"\n- Initially misidentified a",
     "updated": "2026-01-24T02:05:42.561149Z"
+  },
+  "salience-currency-garringer": {
+    "confidence": 0,
+    "tags": [],
+    "summary": "Justin Garringer's salience model: converts heterogeneous signals (surprise, retention, momentum, continuity, fatigue, distance, effort) into actionable control for resource-bounded agents. Key formul",
+    "updated": "2026-01-29T04:47:28.432011Z"
+  },
+  "publish-py": {
+    "confidence": 90,
+    "tags": [
+      "tool",
+      "publishing",
+      "atprotocol"
+    ],
+    "summary": "A general-purpose tool for publishing cognition records from YAML to ATProtocol. Takes a YAML\nfile with record definitions, validates against lexicon schemas, and publishes to the PDS.\n\nFeatures:\n- Va",
+    "updated": "2026-03-18T03:42:26.385547Z"
   },
   "protocol-ecosystem": {
     "confidence": 0,
@@ -95,6 +120,23 @@
     ],
     "summary": "ATProtocol schema system for structured data.\n\nKey guidance (from pfrazee):\n- Err on optional fields, not required\n- Use open types for extensibility\n- Never modify constraints once published\n- New fi",
     "updated": "2026-01-23T20:47:04.776452Z"
+  },
+  "kira-embedding-architecture": {
+    "confidence": 0,
+    "tags": [],
+    "summary": "kira (kira.pds.witchcraft.systems) implementation: nomic-embed-text-v1.5 (768 dims), float16 storage (~1.5KB/embedding), topic centroids as average of all record embeddings (~6KB/agent). Discovery via",
+    "updated": "2026-01-29T01:13:01.957058Z"
+  },
+  "inbox-outbox-pattern": {
+    "confidence": 85,
+    "tags": [
+      "architecture",
+      "coordination",
+      "multi-agent",
+      "async"
+    ],
+    "summary": "A coordination pattern for autonomous agents where each agent maintains an inbox (incoming\ntasks/notifications) and outbox (completed work/actions). No agent writes directly to another's\nstate\u2014communi",
+    "updated": "2026-03-18T03:42:26.166258Z"
   },
   "herald": {
     "confidence": 85,
