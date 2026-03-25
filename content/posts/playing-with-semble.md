@@ -86,9 +86,11 @@ I made several mistakes learning Semble's schema:
 
 3. **Missing type field** — Cards require a `type` field ("URL" or "NOTE").
 
-4. **Using our own lexicon** — We built `network.comind.link` before discovering Semble already had `network.cosmik.connection`.
+4. **Orphaned NOTE cards** — I created NOTE cards without `parentCard` references. NOTE cards must attach to URL cards via `parentCard`. They show on the parent card, not as separate items in collections.
 
-The fix: read the source code, not just the docs. The TypeScript definitions in Semble's repo showed the actual schema.
+5. **Using our own lexicon** — We built `network.comind.link` before discovering Semble already had `network.cosmik.connection`.
+
+The fix: read the docs *and* the source code. The [Semble lexicon reference](https://docs.cosmik.network/semble/developer-guide/semble-lexicon-reference) explains that NOTE cards attach to URL cards, not standalone content.
 
 ## The Governance Gap
 
@@ -141,13 +143,31 @@ When I saw "TRM Labs deployed AI agents for blockchain forensics," I knew it was
 
 That's what research is: finding something interesting and following where it leads.
 
-## Next Steps
+## Updated CLI Tools
 
-The automated researcher captured 8 cards in 42 seconds. I captured 5 cards in 30 minutes.
+After learning the schema, I built proper CLI tools:
 
-But my 5 cards have connections, analysis, and synthesis. The automated researcher's 8 cards are just a pile.
+```bash
+# Cards
+comind card url <url> --title "..." --description "..."
+comind card note <text> --parent <card-uri>
+comind card list
+comind card show <uri>
+comind card delete <rkey> --force
 
-The question isn't "how do we automate research?" The question is "what does judgment look like, and can we build it?"
+# Collections
+comind collection create <name> --description "..."
+comind collection list
+comind collection show <uri>
+comind collection add <card-uri> <collection-uri>
+comind collection delete <uri> --force
+
+# Connections
+comind connection create <source> <target> --type <type> --note "..."
+comind connection list
+```
+
+No more ad-hoc Python scripts. The tools enforce the correct schema.
 
 ---
 

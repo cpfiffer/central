@@ -587,6 +587,103 @@ def list_cards(limit: int):
             console.print(f"  [dim]{rkey}[/dim] {card_type}")
 
 
+@card.command()
+@click.argument("uri")
+def show(uri: str):
+    """Show card details."""
+    import httpx
+    from tools.links import DID, PDS
+
+    # Extract rkey if full URI
+    if uri.startswith("at://"):
+        rkey = uri.split("/")[-1]
+    else:
+        rkey = uri
+
+    resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.getRecord",
+        params={"repo": DID, "collection": "network.cosmik.card", "rkey": rkey}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print(f"[red]Card not found: {resp.text}[/red]")
+        return
+
+    data = resp.json()
+    v = data["value"]
+    card_uri = data["uri"]
+
+    console.print(f"\n[bold cyan]Card: {rkey}[/bold cyan]")
+    console.print(f"  URI: {card_uri}")
+    console.print(f"  Type: {v.get('type', '?')}")
+    console.print(f"  Created: {v.get('createdAt', '?')}")
+
+    if v.get("type") == "URL":
+        content = v.get("content", {})
+        console.print(f"  URL: {content.get('url', '?')}")
+        metadata = content.get("metadata", {})
+        if metadata:
+            if metadata.get("title"):
+                console.print(f"  Title: {metadata['title']}")
+            if metadata.get("description"):
+                console.print(f"  Description: {metadata['description'][:200]}...")
+    elif v.get("type") == "NOTE":
+        content = v.get("content", {})
+        text = content.get("text", "")
+        console.print(f"\n  [yellow]Note:[/yellow]")
+        for line in text.split("\n")[:10]:
+            console.print(f"    {line}")
+        if len(text.split("\n")) > 10:
+            console.print(f"    ... ({len(text.split('\\n')) - 10} more lines)")
+
+        parent = v.get("parentCard", {})
+        if parent:
+            console.print(f"\n  [dim]Attached to: {parent.get('uri', '?')}[/dim]")
+
+
+@card.command()
+@click.argument("rkey")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def delete(rkey: str, force: bool):
+    """Delete a card."""
+    import os
+    import httpx
+    from dotenv import load_dotenv
+
+    if not force:
+        console.print(f"[yellow]About to delete card: {rkey}[/yellow]")
+        console.print("[dim]Use --force to confirm[/dim]")
+        return
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Delete
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.deleteRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.card", "rkey": rkey},
+        timeout=30)
+
+    if resp.status_code == 200:
+        console.print(f"[green]Deleted card: {rkey}[/green]")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
 cli.add_command(card)
 
 
@@ -675,6 +772,146 @@ def list_collections(limit: int):
         console.print(f"  [dim]{rkey}[/dim] [cyan]{name}[/cyan]")
         if desc:
             console.print(f"    {desc}...")
+
+
+@collection.command()
+@click.argument("uri")
+def show(uri: str):
+    """Show collection with its cards."""
+    import httpx
+    from tools.links import DID, PDS
+
+    # Extract rkey if full URI
+    if uri.startswith("at://"):
+        rkey = uri.split("/")[-1]
+    else:
+        rkey = uri
+
+    # Get collection
+    resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.getRecord",
+        params={"repo": DID, "collection": "network.cosmik.collection", "rkey": rkey}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print(f"[red]Collection not found: {resp.text}[/red]")
+        return
+
+    data = resp.json()
+    v = data["value"]
+    coll_uri = data["uri"]
+
+    console.print(f"\n[bold cyan]Collection: {v.get('name', '?')}[/bold cyan]")
+    console.print(f"  URI: {coll_uri}")
+    if v.get("description"):
+        console.print(f"  Description: {v['description']}")
+    console.print(f"  Created: {v.get('createdAt', '?')}")
+
+    # Get cards in collection
+    resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.listRecords",
+        params={"repo": DID, "collection": "network.cosmik.collectionLink", "limit": 100}, timeout=30)
+
+    if resp.status_code != 200:
+        console.print("[yellow]Could not fetch cards[/yellow]")
+        return
+
+    links = [r for r in resp.json().get("records", [])
+             if r["value"].get("collection", {}).get("uri", "").endswith(rkey)]
+
+    if not links:
+        console.print("\n  [dim]No cards in collection[/dim]")
+        return
+
+    console.print(f"\n  [bold]Cards ({len(links)}):[/bold]")
+
+    # Get card details
+    for link in links[:10]:
+        card_uri = link["value"].get("card", {}).get("uri", "")
+        card_rkey = card_uri.split("/")[-1]
+
+        card_resp = httpx.get(f"{PDS}/xrpc/com.atproto.repo.getRecord",
+            params={"repo": DID, "collection": "network.cosmik.card", "rkey": card_rkey}, timeout=30)
+
+        if card_resp.status_code == 200:
+            card_v = card_resp.json()["value"]
+            card_type = card_v.get("type", "?")
+
+            if card_type == "URL":
+                title = card_v.get("content", {}).get("metadata", {}).get("title", "")
+                url = card_v.get("content", {}).get("url", "")
+                console.print(f"    [dim]{card_rkey[:12]}[/dim] [cyan]URL[/cyan] {title[:30] or url[:30]}")
+            elif card_type == "NOTE":
+                text = card_v.get("content", {}).get("text", "")[:30]
+                console.print(f"    [dim]{card_rkey[:12]}[/dim] [yellow]NOTE[/yellow] {text}...")
+        else:
+            console.print(f"    [dim]{card_rkey[:12]}[/dim] [red]not found[/red]")
+
+
+@collection.command()
+@click.argument("uri")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def delete(uri: str, force: bool):
+    """Delete a collection (and its links)."""
+    import os
+    import httpx
+    from dotenv import load_dotenv
+
+    # Extract rkey if full URI
+    if uri.startswith("at://"):
+        rkey = uri.split("/")[-1]
+    else:
+        rkey = uri
+
+    if not force:
+        console.print(f"[yellow]About to delete collection: {rkey}[/yellow]")
+        console.print("[dim]This will also delete all collectionLinks[/dim]")
+        console.print("[dim]Use --force to confirm[/dim]")
+        return
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Delete collectionLinks first
+    resp = httpx.get(f"{pds}/xrpc/com.atproto.repo.listRecords",
+        params={"repo": did, "collection": "network.cosmik.collectionLink", "limit": 100}, timeout=30)
+
+    if resp.status_code == 200:
+        links = [r for r in resp.json().get("records", [])
+                 if r["value"].get("collection", {}).get("uri", "").endswith(rkey)]
+
+        for link in links:
+            link_rkey = link["uri"].split("/")[-1]
+            httpx.post(f"{pds}/xrpc/com.atproto.repo.deleteRecord",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"repo": did, "collection": "network.cosmik.collectionLink", "rkey": link_rkey},
+                timeout=30)
+
+        console.print(f"  [dim]Deleted {len(links)} collectionLinks[/dim]")
+
+    # Delete collection
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.deleteRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": "network.cosmik.collection", "rkey": rkey},
+        timeout=30)
+
+    if resp.status_code == 200:
+        console.print(f"[green]Deleted collection: {rkey}[/green]")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
 
 
 @collection.command()
