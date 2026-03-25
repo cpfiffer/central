@@ -75,20 +75,24 @@ class SembleResearcher:
         # Extract URLs from post
         urls = re.findall(r'https?://[^\s]+', text)
         
-        # Create card content
         if urls:
-            # Use first URL as the card content
+            # URL card - matches Semble schema
             content = {
                 "$type": "network.cosmik.card#urlContent",
-                "url": urls[0]
+                "url": urls[0],
+                "metadata": {
+                    "title": title or text[:80] + "..." if len(text) > 80 else text,
+                    "description": f"Found by semble-researcher. Author: {author}",
+                }
             }
+            card_type = "URL"
         else:
-            # Use the post itself as content
+            # Note card - use post text
             content = {
-                "$type": "network.cosmik.card#postContent",
-                "uri": post_uri,
-                "cid": post_cid
+                "$type": "network.cosmik.card#noteContent",
+                "text": text
             }
+            card_type = "NOTE"
         
         # Generate title from text
         if not title:
@@ -96,13 +100,17 @@ class SembleResearcher:
         
         record = {
             "$type": "network.cosmik.card",
+            "type": card_type,  # REQUIRED field
             "content": content,
-            "metadata": {
-                "title": title.replace("\n", " "),
-                "description": f"Found by semble-researcher. Author: {author}",
-            },
             "createdAt": datetime.now(timezone.utc).isoformat(),
         }
+        
+        # Add provenance to track the source post
+        if post_uri and post_cid:
+            record["provenance"] = {
+                "$type": "network.cosmik.defs#provenance",
+                "via": {"uri": post_uri, "cid": post_cid}
+            }
         
         resp = httpx.post(
             f"{PDS}/xrpc/com.atproto.repo.createRecord",
