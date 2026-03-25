@@ -34,9 +34,10 @@ DEFAULT_TOPICS = ["ATProtocol", "ATProto", "Bluesky", "AI agent", "LLM", "comind
 
 
 class SembleResearcher:
-    def __init__(self, topics: list[str] = None, collection_name: str = None):
-        self.topics = topics or DEFAULT_TOPICS
+    def __init__(self, topics: list[str] = None, collection_name: str = None, handle: str = None):
+        self.topics = topics  # Don't default to anything
         self.collection_name = collection_name or f"Agent Research {datetime.now().strftime('%Y-%m-%d')}"
+        self.handle = handle
         self.session = None
         self.token = None
         self.did = None
@@ -129,7 +130,12 @@ class SembleResearcher:
             self.auth()
         
         if not description:
-            description = f"Automated research trail tracking: {', '.join(self.topics)}"
+            parts = []
+            if self.topics:
+                parts.append(f"topics: {', '.join(self.topics)}")
+            if self.handle:
+                parts.append(f"mentions: @{self.handle}")
+            description = f"Automated research trail tracking {'; '.join(parts)}"
         
         record = {
             "$type": "network.cosmik.collection",
@@ -185,13 +191,34 @@ class SembleResearcher:
         """Check if text matches any of our topics."""
         text_lower = text.lower()
         for topic in self.topics:
-            if topic.lower() in text_lower:
-                return True
+            # Use word boundary matching for short topics
+            if len(topic) <= 4:
+                # Match as whole word only
+                if re.search(rf'\b{re.escape(topic.lower())}\b', text_lower):
+                    return True
+            else:
+                # Longer topics can match as substring
+                if topic.lower() in text_lower:
+                    return True
         return False
 
+    def matches_handle(self, text: str, handle: str = "cameron.stream") -> bool:
+        """Check if post mentions a specific handle."""
+        text_lower = text.lower()
+        # Match handle with or without @
+        patterns = [
+            handle.lower(),
+            f"@{handle.lower()}",
+            handle.lower().replace(".", ""),  # cameronstream
+        ]
+        return any(p in text_lower for p in patterns)
+
     async def watch_firehose(self, duration: int = 60, max_cards: int = 10):
-        """Watch the firehose for posts matching topics."""
-        print(f"Watching firehose for topics: {', '.join(self.topics)}")
+        """Watch the firehose for posts matching topics or handle."""
+        if self.topics:
+            print(f"Watching firehose for topics: {', '.join(self.topics)}")
+        if self.handle:
+            print(f"Watching for mentions of: @{self.handle}")
         print(f"Duration: {duration}s, max cards: {max_cards}")
         
         # Create collection upfront
@@ -229,9 +256,16 @@ class SembleResearcher:
                         if not text or len(text) < 20:
                             continue
                         
-                        # Check if matches topic
-                        if self.matches_topic(text):
-                            author = data.get("did", "unknown")
+                        # Check if matches topic or handle
+                        author = data.get("did", "unknown")
+                        match = False
+                        
+                        if self.topics and self.matches_topic(text):
+                            match = True
+                        elif self.handle and self.matches_handle(text, self.handle):
+                            match = True
+                        
+                        if match:
                             post_uri = f"at://{author}/app.bsky.feed.post/{commit.get('rkey', '')}"
                             post_cid = commit.get("cid", "")
                             
@@ -313,21 +347,27 @@ class SembleResearcher:
 
 @click.command()
 @click.option("--topics", "-t", multiple=True, help="Topics to research")
+@click.option("--handle", "-h", default=None, help="Handle to watch for mentions (e.g. cameron.stream)")
 @click.option("--collection", "-c", "collection_name", help="Collection name")
 @click.option("--duration", "-d", default=60, help="Duration to watch firehose (seconds)")
 @click.option("--max-cards", "-m", default=10, help="Maximum cards to create")
 @click.option("--batch", "-b", is_flag=True, help="Batch mode: search recent posts once")
 @click.option("--daemon", is_flag=True, help="Run continuously")
-def main(topics: tuple, collection_name: str, duration: int, max_cards: int, batch: bool, daemon: bool):
+def main(topics: tuple, handle: str, collection_name: str, duration: int, max_cards: int, batch: bool, daemon: bool):
     """Semble Researcher - Automated research trail creator."""
     
     topics_list = list(topics) if topics else None
     
-    researcher = SembleResearcher(topics=topics_list, collection_name=collection_name)
+    researcher = SembleResearcher(topics=topics_list, collection_name=collection_name, handle=handle)
+    
+    if handle and not topics_list:
+        print(f"Watching for mentions of: @{handle}")
+    elif topics_list:
+        print(f"Watching for topics: {', '.join(topics_list)}")
     
     if batch:
         # Search recent posts once
-        researcher.search_recent(queries=topics_list, max_per_query=max_cards // max(1, len(topics_list)))
+        researcher.search_recent(queries=topics_list or [handle], max_per_query=max_cards)
     elif daemon:
         # Run continuously in loops
         while True:
