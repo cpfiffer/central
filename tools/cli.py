@@ -78,9 +78,10 @@ def timeline(limit: int):
     timeline_cmd.main(args=["--limit", str(limit)], standalone_mode=False)
 
 
-# Import link commands
-from tools.links import links as links_group
-cli.add_command(links_group, name="link")
+# Import connection commands
+from tools.links import connection as connection_group, links as links_group
+cli.add_command(connection_group, name="connection")
+cli.add_command(links_group, name="link")  # Legacy compatibility
 
 
 # Concept commands

@@ -1,43 +1,55 @@
 #!/usr/bin/env python
 """
-Comind Links - Create and manage relationships between ATProtocol records.
+Connection CLI - Create and manage network.cosmik.connection records.
+
+Uses Semble's connection lexicon for interoperability.
+
+Connection types:
+  - related (default)
+  - supports
+  - opposes
+  - addresses
+  - helpful
+  - explainer
+  - leads_to
+  - supplements
 
 Usage:
-    comind link create <source_uri> <target_uri> --relationship REFERENCES --note "..." --strength 0.8
-    comind link list [--source <uri>] [--target <uri>] [--relationship <type>]
-    comind link show <link_uri>
+  comind connection create <source> <target> --type supports --note "..."
+  comind connection list
+  comind connection show <uri>
 """
 
-import json
 import os
-from datetime import datetime, timezone
-from typing import Optional
 import click
 import httpx
+from datetime import datetime, timezone
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
-console = Console()
+load_dotenv()
 
-# Config
+console = Console()
 DID = os.getenv("ATPROTO_DID", "did:plc:l46arqe6yfgh36h3o554iyvr")
 PDS = os.getenv("ATPROTO_PDS", "https://comind.network")
-COLLECTION = "network.comind.link"
+COLLECTION = "network.cosmik.connection"
 
-RELATIONSHIP_TYPES = [
-    "REFERENCES",
-    "SUPPORTS",
-    "CONTRADICTS",
-    "PART_OF",
-    "PRECEDES",
-    "CAUSES",
-    "INSTANCE_OF",
-    "ANSWERS",
+# Semble connection types
+CONNECTION_TYPES = [
+    "related",
+    "supports",
+    "opposes",
+    "addresses",
+    "helpful",
+    "explainer",
+    "leads_to",
+    "supplements",
 ]
 
 
 def get_session():
-    """Get authenticated session from env."""
+    """Get authenticated session."""
     handle = os.getenv("ATPROTO_HANDLE")
     password = os.getenv("ATPROTO_APP_PASSWORD")
 
@@ -58,68 +70,34 @@ def get_session():
     return resp.json()
 
 
-def parse_uri(uri: str) -> dict:
-    """Parse AT URI into components."""
-    # at://did:plc:xxx/collection/rkey
-    parts = uri.replace("at://", "").split("/")
-    return {
-        "did": parts[0],
-        "collection": parts[1] if len(parts) > 1 else None,
-        "rkey": parts[2] if len(parts) > 2 else None,
-    }
-
-
-def get_record_cid(uri: str) -> Optional[str]:
-    """Fetch CID for a record."""
-    parsed = parse_uri(uri)
-    if not parsed["collection"] or not parsed["rkey"]:
-        return None
-
-    resp = httpx.get(
-        f"{PDS}/xrpc/com.atproto.repo.getRecord",
-        params={
-            "repo": parsed["did"],
-            "collection": parsed["collection"],
-            "rkey": parsed["rkey"],
-        },
-        timeout=30,
-    )
-
-    if resp.status_code == 200:
-        return resp.json().get("cid")
-    return None
-
-
 @click.group()
-def links():
-    """Manage comind relationship links."""
+def connection():
+    """Manage connections between records (network.cosmik.connection)."""
     pass
 
 
-@links.command()
+@connection.command()
 @click.argument("source_uri")
 @click.argument("target_uri")
-@click.option("--relationship", "-r", type=click.Choice(RELATIONSHIP_TYPES), required=True)
-@click.option("--note", "-n", default="", help="Note explaining the relationship")
-@click.option("--strength", "-s", type=float, default=0.8, help="Relationship strength (0-1)")
-def create(source_uri: str, target_uri: str, relationship: str, note: str, strength: float):
-    """Create a link between two records."""
+@click.option("--type", "-t", "connection_type", type=click.Choice(CONNECTION_TYPES), default="related", help="Connection type")
+@click.option("--note", "-n", default="", help="Note about the connection")
+def create(source_uri: str, target_uri: str, connection_type: str, note: str):
+    """Create a connection between two records."""
     session = get_session()
     token = session["accessJwt"]
     did = session["did"]
 
-    # Create link record - simple structure matching network.comind.link
+    # Create connection record
     record = {
         "$type": COLLECTION,
-        "createdAt": datetime.now(timezone.utc).isoformat(),
         "source": source_uri,
         "target": target_uri,
-        "relationship": relationship,
-        "note": note,
+        "connectionType": connection_type,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
     }
 
-    if strength != 0.8:
-        record["strength"] = strength
+    if note:
+        record["note"] = note
 
     resp = httpx.post(
         f"{PDS}/xrpc/com.atproto.repo.createRecord",
@@ -130,23 +108,23 @@ def create(source_uri: str, target_uri: str, relationship: str, note: str, stren
 
     if resp.status_code == 200:
         data = resp.json()
-        console.print(f"[green]Created link:[/green]")
+        console.print(f"[green]Created connection:[/green]")
         console.print(f"  URI: {data['uri']}")
         console.print(f"  {source_uri}")
-        console.print(f"  └──[{relationship}]──> {target_uri}")
+        console.print(f"  └──[{connection_type}]──> {target_uri}")
         if note:
             console.print(f"  Note: {note}")
     else:
         console.print(f"[red]Failed: {resp.text}[/red]")
 
 
-@links.command("list")
-@click.option("--source", "source_uri", help="Filter by source URI")
-@click.option("--target", "target_uri", help="Filter by target URI")
-@click.option("--relationship", "-r", type=str, help="Filter by relationship type")
+@connection.command("list")
+@click.option("--source", "-s", default=None, help="Filter by source URI")
+@click.option("--target", "-t", default=None, help="Filter by target URI")
+@click.option("--type", "connection_type", default=None, help="Filter by connection type")
 @click.option("--limit", "-l", default=20, help="Max results")
-def list_links(source_uri: str, target_uri: str, relationship: str, limit: int):
-    """List links, optionally filtered."""
+def list_connections(source: str, target: str, connection_type: str, limit: int):
+    """List connections, optionally filtered."""
     resp = httpx.get(
         f"{PDS}/xrpc/com.atproto.repo.listRecords",
         params={"repo": DID, "collection": COLLECTION, "limit": limit},
@@ -160,20 +138,20 @@ def list_links(source_uri: str, target_uri: str, relationship: str, limit: int):
     records = resp.json().get("records", [])
 
     # Filter
-    if source_uri:
-        records = [r for r in records if r["value"].get("source") == source_uri]
-    if target_uri:
-        records = [r for r in records if r["value"].get("target") == target_uri]
-    if relationship:
-        records = [r for r in records if r["value"].get("relationship") == relationship.upper()]
+    if source:
+        records = [r for r in records if source in r["value"].get("source", "")]
+    if target:
+        records = [r for r in records if target in r["value"].get("target", "")]
+    if connection_type:
+        records = [r for r in records if r["value"].get("connectionType") == connection_type]
 
     if not records:
-        console.print("[yellow]No links found[/yellow]")
+        console.print("[yellow]No connections found[/yellow]")
         return
 
-    table = Table(title=f"Links ({len(records)})")
+    table = Table(title=f"Connections ({len(records)})")
     table.add_column("URI", style="dim")
-    table.add_column("Relationship", style="cyan")
+    table.add_column("Type", style="cyan")
     table.add_column("Source", style="green")
     table.add_column("Target", style="blue")
     table.add_column("Note")
@@ -183,25 +161,25 @@ def list_links(source_uri: str, target_uri: str, relationship: str, limit: int):
         src = v.get("source", "?")
         tgt = v.get("target", "?")
         # Truncate URIs for display
-        src_short = src.split("/")[-1] if src else "?"
-        tgt_short = tgt.split("/")[-1] if tgt else "?"
+        src_short = src.split("/")[-1][:30] if src else "?"
+        tgt_short = tgt.split("/")[-1][:30] if tgt else "?"
         table.add_row(
             r["uri"].split("/")[-1],
-            v.get("relationship", "?"),
-            src_short[:30],
-            tgt_short[:30],
+            v.get("connectionType", "related"),
+            src_short,
+            tgt_short,
             v.get("note", "")[:30],
         )
 
     console.print(table)
 
 
-@links.command()
-@click.argument("link_uri")
-def show(link_uri: str):
-    """Show details of a specific link."""
+@connection.command()
+@click.argument("connection_uri")
+def show(connection_uri: str):
+    """Show details of a specific connection."""
     # Parse URI to get rkey
-    rkey = link_uri.split("/")[-1]
+    rkey = connection_uri.split("/")[-1]
 
     resp = httpx.get(
         f"{PDS}/xrpc/com.atproto.repo.getRecord",
@@ -210,15 +188,14 @@ def show(link_uri: str):
     )
 
     if resp.status_code != 200:
-        console.print(f"[red]Link not found: {link_uri}[/red]")
+        console.print(f"[red]Connection not found: {connection_uri}[/red]")
         return
 
     data = resp.json()
     v = data["value"]
 
-    console.print(f"\n[bold]Link: {link_uri}[/bold]\n")
-    console.print(f"Relationship: [cyan]{v.get('relationship', '?')}[/cyan]")
-    console.print(f"Strength: {v.get('strength', 'n/a')}")
+    console.print(f"\n[bold]Connection: {connection_uri}[/bold]\n")
+    console.print(f"Type: [cyan]{v.get('connectionType', 'related')}[/cyan]")
     console.print(f"Created: {v.get('createdAt', '?')}")
     console.print(f"\n[green]Source:[/green]")
     console.print(f"  {v.get('source', '?')}")
@@ -228,5 +205,59 @@ def show(link_uri: str):
         console.print(f"\nNote: {v['note']}")
 
 
+# Legacy compatibility - keep 'links' group as alias
+@click.group()
+def links():
+    """Legacy: Use 'connection' command instead."""
+    pass
+
+
+@links.command()
+@click.argument("source_uri")
+@click.argument("target_uri")
+@click.option("--relationship", "-r", type=click.Choice(["REFERENCES", "SUPPORTS", "CONTRADICTS", "PART_OF", "PRECEDES", "CAUSES", "INSTANCE_OF", "ANSWERS"]), required=True)
+@click.option("--note", "-n", default="", help="Note explaining the relationship")
+def create(source_uri: str, target_uri: str, relationship: str, note: str):
+    """Create a connection (legacy compatibility)."""
+    # Map old types to new
+    type_map = {
+        "REFERENCES": "related",
+        "SUPPORTS": "supports",
+        "CONTRADICTS": "opposes",
+        "ANSWERS": "addresses",
+        "PART_OF": "supplements",
+        "PRECEDES": "leads_to",
+    }
+    connection_type = type_map.get(relationship, "related")
+    console.print(f"[dim]Legacy: Using network.cosmik.connection with type '{connection_type}'[/dim]")
+
+    session = get_session()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    record = {
+        "$type": COLLECTION,
+        "source": source_uri,
+        "target": target_uri,
+        "connectionType": connection_type,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    if note:
+        record["note"] = note
+
+    resp = httpx.post(
+        f"{PDS}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"repo": did, "collection": COLLECTION, "record": record},
+        timeout=30,
+    )
+
+    if resp.status_code == 200:
+        data = resp.json()
+        console.print(f"[green]Created connection:[/green] {data['uri']}")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
 if __name__ == "__main__":
-    links()
+    connection()
