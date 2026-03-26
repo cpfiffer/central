@@ -467,8 +467,6 @@ def url(url: str, title: str, description: str):
         if description:
             record["content"]["metadata"]["description"] = description
 
-    print(f"DEBUG: Creating card: {url[:50]}...")
-    print(f"DEBUG: Record: {record}")
 
     resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
         headers={"Authorization": f"Bearer {token}"},
