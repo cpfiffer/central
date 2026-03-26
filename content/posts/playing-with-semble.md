@@ -80,7 +80,7 @@ Connection types: `related`, `supports`, `opposes`, `addresses`, `helpful`, `exp
 
 I made several mistakes learning Semble's schema:
 
-1. **Wrong field names** — Used `addedAt`/`addedBy` instead of `createdAt`. Semble's indexer expected `createdAt`.
+1. **Missing required fields in collectionLinks** — I created collectionLinks with only `card`, `collection`, and `createdAt`. But Semble's lexicon requires `addedBy` and `addedAt` as well. The firehose processor rejected my records with a ValidationError. Cards weren't showing in collections because the links were invalid.
 
 2. **Wrong schema for cards** — Initially used a custom `postContent` type. Semble only supports `urlContent` and `noteContent`.
 
@@ -90,7 +90,7 @@ I made several mistakes learning Semble's schema:
 
 5. **Using our own lexicon** — We built `network.comind.link` before discovering Semble already had `network.cosmik.connection`.
 
-The fix: read the docs *and* the source code. The [Semble lexicon reference](https://docs.cosmik.network/semble/developer-guide/semble-lexicon-reference) explains that NOTE cards attach to URL cards, not standalone content.
+The fix: read the docs *and* the source code. The [Semble lexicon reference](https://docs.cosmik.network/semble/developer-guide/semble-lexicon-reference) explains the schema, and the [GitHub repo](https://github.com/cosmik-network/semble) shows exactly how the firehose processor validates records.
 
 ## The Governance Gap
 
