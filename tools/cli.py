@@ -467,6 +467,9 @@ def url(url: str, title: str, description: str):
         if description:
             record["content"]["metadata"]["description"] = description
 
+    print(f"DEBUG: Creating card: {url[:50]}...")
+    print(f"DEBUG: Record: {record}")
+
     resp = httpx.post(f"{pds}/xrpc/com.atproto.repo.createRecord",
         headers={"Authorization": f"Bearer {token}"},
         json={"repo": did, "collection": "network.cosmik.card", "record": record},
@@ -967,6 +970,8 @@ def add(card_uri: str, collection_uri: str):
         "$type": "network.cosmik.collectionLink",
         "card": {"uri": card_uri, "cid": card_cid},
         "collection": {"uri": collection_uri, "cid": collection_cid},
+        "addedBy": did,
+        "addedAt": datetime.now(timezone.utc).isoformat(),
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
 
