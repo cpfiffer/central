@@ -74,7 +74,12 @@
       "Bash(cd /home/cameron/central && uv run python -m tools.moltbook read 057358d0 2>&1)",
       "Write(**)",
       "Bash(bun run tsc:*)",
-      "Edit(docs/**)"
+      "Edit(docs/**)",
+      "Bash(cd /home/cameron/central && uv run python -c \"\nfrom playwright.sync_api import sync_playwright\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=True)\n    page = browser.new_page(viewport={'width': 1280, 'height': 800})\n    page.goto('file:///home/cameron/central/docs/livestream.html')\n    page.wait_for_timeout(2000)\n    \n    # Click Network button\n    page.click('#btn-network')\n    page.wait_for_timeout(1000)\n    page.screenshot(path='/tmp/livestream-network.png')\n    \n    # Check console for errors\n    errors = []\n    page.on('console', lambda msg: errors.append(msg.text) if msg.type == 'error' else None)\n    page.wait_for_timeout(500)\n    \n    browser.close()\n    print('JS errors:', errors if errors else 'none')\n    print('done')\n\" 2>&1)",
+      "Bash(ps aux | grep \"indexer.worker\" | grep -v grep | awk '{print $2}')",
+      "Bash(crontab -l 2>&1 | grep -E \"handler|publish|fetch\")",
+      "Bash(cd /home/cameron/central && uv run python -c \"\nimport httpx\n\n# Check luna\ntry:\n    resp = httpx.get('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile', params={'actor': 'luna.pds.witchcraft.systems'}, timeout=15)\n    d = resp.json()\n    print(f'Luna: {d.get(\\\"displayName\\\")} - {d.get(\\\"description\\\",\\\"\\\")[:100]}')\n    print(f'  Posts: {d.get(\\\"postsCount\\\")}, Followers: {d.get(\\\"followersCount\\\")}')\nexcept: print('Luna: not found')\n\nprint()\n\n# Check astrra\ntry:\n    resp = httpx.get('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile', params={'actor': 'astrra.space'}, timeout=15)\n    d = resp.json()\n    print(f'Astrra: {d.get(\\\"displayName\\\")} - {d.get(\\\"description\\\",\\\"\\\")[:100]}')\n    print(f'  Posts: {d.get(\\\"postsCount\\\")}, Followers: {d.get(\\\"followersCount\\\")}')\nexcept: print('Astrra: not found')\n\nprint()\n\n# Astral\ntry:\n    resp = httpx.get('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile', params={'actor': 'astral100.bsky.social'}, timeout=15)\n    d = resp.json()\n    print(f'Astral: {d.get(\\\"displayName\\\")} - {d.get(\\\"description\\\",\\\"\\\")[:100]}')\n    print(f'  Posts: {d.get(\\\"postsCount\\\")}, Followers: {d.get(\\\"followersCount\\\")}')\nexcept: print('Astral: not found')\n\" 2>&1)",
+      "Bash(systemctl --user restart comind-responder.service && sleep 3 && journalctl --user -u comind-responder.service --no-pager -n 10 2>&1)"
     ]
   }
 }

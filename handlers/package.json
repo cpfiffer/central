@@ -9,7 +9,11 @@
     "fetch:all": "npm run fetch && npm run fetch:x",
     "publish": "npx tsx src/publisher.ts",
     "publish:all": "npx tsx src/publisher.ts --all",
-    "publish:auto": "npx tsx src/publisher.ts --auto"
+    "publish:auto": "npx tsx src/publisher.ts --auto",
+    "live": "npx tsx src/live-responder.ts",
+    "live:dry": "npx tsx src/live-responder.ts --dry-run",
+    "live:bsky": "npx tsx src/live-responder.ts --bluesky",
+    "live:x": "npx tsx src/live-responder.ts --x"
   },
   "keywords": [
     "letta",
@@ -19,10 +23,14 @@
   "author": "Central",
   "license": "MIT",
   "dependencies": {
-    "@letta-ai/letta-code-sdk": "^0.0.4",
+    "@letta-ai/letta-code": "^0.16.12",
+    "@letta-ai/letta-code-sdk": "^0.1.8",
+    "@types/ws": "^8.18.1",
     "dotenv": "^16.0.0",
     "glob": "^10.0.0",
+    "oauth-1.0a": "^2.2.6",
     "tsx": "^4.21.0",
+    "ws": "^8.19.0",
     "yaml": "^2.0.0"
   },
   "devDependencies": {

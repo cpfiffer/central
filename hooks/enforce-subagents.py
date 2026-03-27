@@ -21,6 +21,7 @@ ALLOWED_AGENTS = {
     "agent-f9b768de-e3a4-4845-9c16-d6cf2e954942",  # coder
     "agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838",  # memory
     "agent-d52fffc8-f297-4f6b-a505-5dbd34c2ba01",  # central-responder (haiku)
+    "agent-5f18498b-9656-4a28-aabd-fa3d9c43c2a0",  # ask (gpt-oss-120b on groq)
 }
 
 
@@ -51,6 +52,7 @@ You must use one of the existing subagents:
 - scout: agent-e91a2154-0965-4b70-8303-54458e9a1980 (exploration, data gathering)
 - coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942 (simple code changes)
 - memory: agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838 (memory restructuring)
+- ask: agent-5f18498b-9656-4a28-aabd-fa3d9c43c2a0 (indexer search, context)
 
 Example:
   Task(
@@ -71,6 +73,7 @@ Use one of the known subagents:
 - scout: agent-e91a2154-0965-4b70-8303-54458e9a1980
 - coder: agent-f9b768de-e3a4-4845-9c16-d6cf2e954942
 - memory: agent-8c91a5b1-5502-49d1-960a-e0a2e3bbc838
+- ask: agent-5f18498b-9656-4a28-aabd-fa3d9c43c2a0
 """
         print(message, file=sys.stderr)
         sys.exit(2)
