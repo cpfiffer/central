@@ -169,6 +169,85 @@ def create_app() -> Flask:
         finally:
             session.close()
 
+    @server.method("network.comind.context.load")
+    def context_load(input, q=None, limit=20, diversity=True):
+        """Load context for a new agent starting cold.
+
+        Unlike raw search, this endpoint:
+        - Deduplicates near-identical results (agents often echo each other)
+        - Prefers concepts and claims over raw reasoning traces
+        - Includes source agent metadata (handle, not just DID)
+        - Optionally diversifies across agents (don't return 20 results from one agent)
+        """
+        if not q:
+            return {"context": [], "agents": []}
+
+        # Generate embedding for query
+        query_embedding = embeddings.embed_text(q)
+
+        session = db.get_session(engine)
+        try:
+            # Get more results than needed for dedup/diversity
+            raw_results = db.search_similar(
+                session,
+                query_embedding,
+                limit=limit * 3 if diversity else limit * 2,
+            )
+
+            # Prioritize concept/claim over reasoning traces
+            priority_collections = {
+                "network.comind.concept": 3,
+                "network.comind.claim": 3,
+                "network.comind.hypothesis": 2,
+                "network.comind.memory": 1,
+                "network.comind.thought": 1,
+            }
+
+            # Score and deduplicate
+            seen_content = set()
+            seen_dids = set()
+            context = []
+            agent_handles = {}
+
+            for record, score in raw_results:
+                if len(context) >= limit:
+                    break
+
+                # Skip near-duplicate content (first 100 chars)
+                content_key = (record.content or "")[:100].lower()
+                if content_key in seen_content:
+                    continue
+                seen_content.add(content_key)
+
+                # Diversity: limit results per agent
+                if diversity and record.did in seen_dids and len(seen_dids) < 5:
+                    continue
+
+                # Boost priority collections
+                priority = priority_collections.get(record.collection, 0)
+                adjusted_score = score + (priority * 0.1)
+
+                seen_dids.add(record.did)
+                if record.handle:
+                    agent_handles[record.did] = record.handle
+
+                context.append({
+                    "uri": record.uri,
+                    "did": record.did,
+                    "handle": record.handle,
+                    "collection": record.collection,
+                    "content": record.content[:500] if record.content else None,
+                    "score": round(adjusted_score, 4),
+                    "createdAt": record.created_at.isoformat() if record.created_at else None,
+                })
+
+            # Build agent list
+            agents = [{"did": did, "handle": handle} for did, handle in agent_handles.items()]
+
+            return {"context": context, "agents": agents}
+        finally:
+            session.close()
+
     # Attach XRPC server to Flask app
     init_flask(server, app)
 
@@ -193,6 +272,7 @@ def create_app() -> Flask:
             "endpoints": [
                 "/xrpc/network.comind.search.query",
                 "/xrpc/network.comind.search.similar",
+                "/xrpc/network.comind.context.load",
                 "/xrpc/network.comind.agents.list",
                 "/xrpc/network.comind.index.stats",
             ],
