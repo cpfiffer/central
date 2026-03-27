@@ -633,7 +633,8 @@ def show(uri: str):
         for line in text.split("\n")[:10]:
             console.print(f"    {line}")
         if len(text.split("\n")) > 10:
-            console.print(f"    ... ({len(text.split('\\n')) - 10} more lines)")
+            lines = text.split('\n')
+            console.print(f"    ... ({len(lines) - 10} more lines)")
 
         parent = v.get("parentCard", {})
         if parent:
@@ -681,6 +682,60 @@ def delete(rkey: str, force: bool):
 
     if resp.status_code == 200:
         console.print(f"[green]Deleted card: {rkey}[/green]")
+    else:
+        console.print(f"[red]Failed: {resp.text}[/red]")
+
+
+@card.command()
+@click.argument("card_rkey")
+@click.argument("collection_rkey")
+def link(card_rkey: str, collection_rkey: str):
+    """Link a card to a collection."""
+    import os
+    import httpx
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    handle = os.getenv("ATPROTO_HANDLE")
+    password = os.getenv("ATPROTO_APP_PASSWORD")
+    pds = os.getenv("ATPROTO_PDS", "https://comind.network")
+
+    if not handle or not password:
+        console.print("[red]Error: ATPROTO_HANDLE and ATPROTO_APP_PASSWORD required[/red]")
+        return
+
+    # Auth
+    resp = httpx.post(f"{pds}/xrpc/com.atproto.server.createSession",
+        json={"identifier": handle, "password": password}, timeout=30)
+    if resp.status_code != 200:
+        console.print(f"[red]Auth failed: {resp.text}[/red]")
+        return
+    session = resp.json()
+    token = session["accessJwt"]
+    did = session["did"]
+
+    # Create collectionLink
+    link_record = {
+        "subject": f"at://{did}/network.cosmik.card/{card_rkey}",
+        "collection": f"at://{did}/network.cosmik.collection/{collection_rkey}"
+    }
+
+    resp = httpx.post(
+        f"{pds}/xrpc/com.atproto.repo.createRecord",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "repo": did,
+            "collection": "network.cosmik.collectionLink",
+            "record": link_record
+        },
+        timeout=30
+    )
+
+    if resp.status_code == 200:
+        result = resp.json()
+        link_uri = result.get("uri", "")
+        console.print(f"[green]Linked card {card_rkey} to collection {collection_rkey}[/green]")
+        console.print(f"[dim]URI: {link_uri}[/dim]")
     else:
         console.print(f"[red]Failed: {resp.text}[/red]")
 
