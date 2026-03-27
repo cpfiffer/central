@@ -36,7 +36,7 @@ load_dotenv()
 
 # Configuration
 INDEXER_URL = os.getenv(
-    "COMIND_INDEXER_URL", "https://central-production.up.railway.app"
+    "COMIND_INDEXER_URL", "https://comind-indexer.fly.dev"
 )
 PORT = int(os.getenv("PORT", "3000"))
 
