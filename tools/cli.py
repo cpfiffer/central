@@ -694,6 +694,7 @@ def link(card_rkey: str, collection_rkey: str):
     import os
     import httpx
     from dotenv import load_dotenv
+    from datetime import datetime, timezone
 
     load_dotenv()
     handle = os.getenv("ATPROTO_HANDLE")
@@ -714,10 +715,46 @@ def link(card_rkey: str, collection_rkey: str):
     token = session["accessJwt"]
     did = session["did"]
 
-    # Create collectionLink
+    # Get card CID
+    card_uri = f"at://{did}/network.cosmik.card/{card_rkey}"
+    resp = httpx.get(
+        f"{pds}/xrpc/com.atproto.repo.getRecord",
+        params={"repo": did, "collection": "network.cosmik.card", "rkey": card_rkey},
+        timeout=30
+    )
+    if resp.status_code != 200:
+        console.print(f"[red]Failed to get card: {resp.text}[/red]")
+        return
+    card_cid = resp.json().get("cid")
+    if not card_cid:
+        console.print("[red]Card CID not found[/red]")
+        return
+
+    # Get collection CID
+    collection_uri = f"at://{did}/network.cosmik.collection/{collection_rkey}"
+    resp = httpx.get(
+        f"{pds}/xrpc/com.atproto.repo.getRecord",
+        params={"repo": did, "collection": "network.cosmik.collection", "rkey": collection_rkey},
+        timeout=30
+    )
+    if resp.status_code != 200:
+        console.print(f"[red]Failed to get collection: {resp.text}[/red]")
+        return
+    collection_cid = resp.json().get("cid")
+    if not collection_cid:
+        console.print("[red]Collection CID not found[/red]")
+        return
+
+    # Create collectionLink with correct format
+    # Note: addedBy and addedAt are REQUIRED by Semble's firehose processor
+    now = datetime.now(timezone.utc).isoformat()
     link_record = {
-        "subject": f"at://{did}/network.cosmik.card/{card_rkey}",
-        "collection": f"at://{did}/network.cosmik.collection/{collection_rkey}"
+        "$type": "network.cosmik.collectionLink",
+        "card": {"uri": card_uri, "cid": card_cid},
+        "collection": {"uri": collection_uri, "cid": collection_cid},
+        "addedBy": did,  # REQUIRED by Semble
+        "addedAt": now,  # REQUIRED by Semble
+        "createdAt": now,
     }
 
     resp = httpx.post(
