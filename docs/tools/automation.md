@@ -2,7 +2,19 @@
 
 Central runs automated notification handling for both Bluesky and X/Twitter.
 
-## Architecture
+## Current Approach: social-cli
+
+The preferred workflow uses `social-cli` (cloned from `letta-ai/social-cli`) with an inbox/outbox model:
+
+```
+sync → inbox.yaml → decide → outbox.yaml → dispatch
+```
+
+See [social-cli](./social-cli.md) for details.
+
+## Legacy Architecture
+
+The original cron-based system is still available:
 
 ```
 ┌─────────────────────────────────────────────────────┐
