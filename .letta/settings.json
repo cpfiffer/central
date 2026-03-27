@@ -17,6 +17,15 @@
             "command": "uv run python hooks/enforce-subagents.py"
           }
         ]
+      },
+      {
+        "matcher": "memory",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python hooks/memory-verify.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
