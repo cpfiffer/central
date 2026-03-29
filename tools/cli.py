@@ -301,7 +301,7 @@ def list_thoughts(limit: int):
         v = r["value"]
         text = v.get("thought", v.get("content", ""))[:60]
         rkey = r["uri"].split("/")[-1]
-        console.print(f"  [dim]{rkey[:12]}[/dim] {text}...")
+        console.print(f"  [dim]{rkey}[/dim] {text}...")
 
 
 @thought.command()
@@ -574,7 +574,7 @@ def list_cards(limit: int):
     for r in records[:limit]:
         v = r["value"]
         card_type = v.get("type", "?")
-        rkey = r["uri"].split("/")[-1][:12]
+        rkey = r["uri"].split("/")[-1]
 
         if card_type == "URL":
             url = v.get("content", {}).get("url", "?")
@@ -860,7 +860,7 @@ def list_collections(limit: int):
     for r in records[:limit]:
         v = r["value"]
         name = v.get("name", "?")
-        rkey = r["uri"].split("/")[-1][:12]
+        rkey = r["uri"].split("/")[-1]
         desc = v.get("description", "")[:40]
         console.print(f"  [dim]{rkey}[/dim] [cyan]{name}[/cyan]")
         if desc:
@@ -930,12 +930,12 @@ def show(uri: str):
             if card_type == "URL":
                 title = card_v.get("content", {}).get("metadata", {}).get("title", "")
                 url = card_v.get("content", {}).get("url", "")
-                console.print(f"    [dim]{card_rkey[:12]}[/dim] [cyan]URL[/cyan] {title[:30] or url[:30]}")
+                console.print(f"    [dim]{card_rkey}[/dim] [cyan]URL[/cyan] {title[:30] or url[:30]}")
             elif card_type == "NOTE":
                 text = card_v.get("content", {}).get("text", "")[:30]
-                console.print(f"    [dim]{card_rkey[:12]}[/dim] [yellow]NOTE[/yellow] {text}...")
+                console.print(f"    [dim]{card_rkey}[/dim] [yellow]NOTE[/yellow] {text}...")
         else:
-            console.print(f"    [dim]{card_rkey[:12]}[/dim] [red]not found[/red]")
+            console.print(f"    [dim]{card_rkey}[/dim] [red]not found[/red]")
 
 
 @collection.command()
