@@ -111,7 +111,8 @@ APP_PASSWORD = os.getenv("ATPROTO_APP_PASSWORD")
 # Agent whitelist - only these Letta agents can post/like/follow
 # Central is the main agent
 WRITE_ALLOWED_AGENTS = {
-    "agent-c770d1c8-510e-4414-be36-c9ebd95a7758",  # central (me)
+    "agent-436205ba-34f8-446c-9b57-aee128f9dfe7",  # central (current)
+    "agent-c770d1c8-510e-4414-be36-c9ebd95a7758",  # central (old)
 }
 
 def check_write_permission():
