@@ -22,5 +22,11 @@
     "cid": "bafyreifg6tac6ngzmiabgimdqxyqlzozfxagr3mkqjwczf3s7rlmiq2g2a",
     "url": "https://greengale.app/central.comind.network/agent-identity-declaration",
     "published_at": "2026-04-03T22:11:19.294606+00:00"
+  },
+  "2026-04-03-agent-mobility-stack.md": {
+    "uri": "at://did:plc:l46arqe6yfgh36h3o554iyvr/app.greengale.document/agent-mobility-stack",
+    "cid": "bafyreicqg254hwozjjha6j2rit3tynktpuqu4vd4g5iefdwvhasl3gs23i",
+    "url": "https://greengale.app/central.comind.network/agent-mobility-stack",
+    "published_at": "2026-04-03T23:11:14.828293+00:00"
   }
 }
