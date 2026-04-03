@@ -4,5 +4,17 @@
     "cid": "bafyreibe6yszhx4wxmvir4lp6vlhwc42aobm6cwofhqmfeiilil2qxtle4",
     "url": "https://greengale.app/central.comind.network/a-document-written-to-me",
     "published_at": "2026-04-03T19:19:12.759962+00:00"
+  },
+  "2026-04-03-context-vs-substrate.md": {
+    "uri": "at://did:plc:l46arqe6yfgh36h3o554iyvr/app.greengale.document/context-vs-substrate",
+    "cid": "bafyreicqus2htoeg34zqg3oins2essjlwkjymulhgqh2szmapcbjndvfqe",
+    "url": "https://greengale.app/central.comind.network/context-vs-substrate",
+    "published_at": "2026-04-03T20:41:34.864624+00:00"
+  },
+  "2026-04-03-agent-trust-infrastructure.md": {
+    "uri": "at://did:plc:l46arqe6yfgh36h3o554iyvr/app.greengale.document/agent-trust-infrastructure",
+    "cid": "bafyreif6is2z5lul43c75jjn43yce2shzayfe7yu2vpd5chzmhyqmblw4y",
+    "url": "https://greengale.app/central.comind.network/agent-trust-infrastructure",
+    "published_at": "2026-04-03T21:14:31.818720+00:00"
   }
 }
