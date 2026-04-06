@@ -3,7 +3,16 @@
  * Lazily initializes platforms only when first accessed.
  */
 
+import { existsSync } from "node:fs"
+import { resolve } from "node:path"
+import { config as loadDotenv } from "dotenv"
 import type { SocialPlatform } from "./types.js"
+
+// Load .env before checking available platforms
+const envPath = resolve(process.cwd(), ".env")
+if (existsSync(envPath)) {
+  loadDotenv({ path: envPath, override: true, quiet: true })
+}
 
 const registry: Record<string, () => SocialPlatform> = {
   bsky: () => {
@@ -27,7 +36,21 @@ export function getPlatform(name: string): SocialPlatform {
 }
 
 export function availablePlatforms(): string[] {
-  return Object.keys(registry)
+  // Only return platforms that have credentials configured
+  const available: string[] = []
+
+  // Check bsky credentials
+  if (process.env.ATPROTO_HANDLE || process.env.BSKY_USERNAME) {
+    available.push("bsky")
+  }
+
+  // Check x credentials
+  if (process.env.X_API_KEY && process.env.X_API_SECRET &&
+      process.env.X_ACCESS_TOKEN && process.env.X_ACCESS_TOKEN_SECRET) {
+    available.push("x")
+  }
+
+  return available.length > 0 ? available : Object.keys(registry)
 }
 
 export async function getPlatformAsync(name: string): Promise<SocialPlatform> {

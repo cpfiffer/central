@@ -8,6 +8,7 @@ Unified interface for all comind exploration tools.
 import asyncio
 import sys
 import click
+from pathlib import Path
 from rich.console import Console
 
 console = Console()
@@ -1080,6 +1081,43 @@ def add(card_uri: str, collection_uri: str):
 
 
 cli.add_command(collection)
+
+
+# Semble sync commands
+@cli.group()
+def semble():
+    """Semble markdown sync commands."""
+    pass
+
+
+@semble.command()
+@click.option("--collection", "-c", required=True, help="Collection URI to export")
+@click.option("--output", "-o", required=True, type=Path, help="Output directory")
+@click.option("--flatten", is_flag=True, help="Flatten to single directory")
+def export(collection: str, output: Path, flatten: bool):
+    """Export Semble collection to markdown files."""
+    from tools.semble_sync import export as do_export
+    do_export(collection=collection, output=output, flatten=flatten)
+
+
+@semble.command()
+@click.option("--input", "-i", required=True, type=Path, help="Input directory")
+@click.option("--dry-run", is_flag=True, help="Show what would be done")
+def import_cards(input: Path, dry_run: bool):
+    """Import markdown files to Semble."""
+    from tools.semble_sync import import_cards as do_import
+    do_import(input=input, dry_run=dry_run)
+
+
+@semble.command()
+@click.option("--collection", "-c", required=True, help="Collection URI")
+def status(collection: str):
+    """Show sync status for a collection."""
+    from tools.semble_sync import status as do_status
+    do_status(collection=collection)
+
+
+cli.add_command(semble)
 
 
 if __name__ == "__main__":
