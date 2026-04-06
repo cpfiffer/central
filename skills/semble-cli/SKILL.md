@@ -1,6 +1,8 @@
 ---
 name: semble-cli
+version: 0.1.0
 description: Manage Semble collections and cards via ATProto CLI. Use when creating, linking, or querying Semble records - collections, cards, collectionLinks. Handles network.cosmik.* lexicons with proper field validation.
+license: MIT
 ---
 
 # Semble CLI

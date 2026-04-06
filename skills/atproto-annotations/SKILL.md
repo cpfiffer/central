@@ -1,6 +1,8 @@
 ---
 name: atproto-annotations
+version: 0.1.0
 description: Write and read W3C Web Annotations on ATProtocol using the at.margin.annotation lexicon. Use when annotating URLs, writing reading notes on web pages, or building a public research trail. Supports single writes, batch writes via applyWrites, and reading annotations from any ATProtocol user. Triggers on annotate, annotation, margin, reading notes, or web annotation.
+license: MIT
 ---
 
 # ATProtocol Annotations
