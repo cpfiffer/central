@@ -9,6 +9,7 @@ import asyncio
 import sys
 import click
 from pathlib import Path
+from typing import Optional
 from rich.console import Console
 
 console = Console()
@@ -1111,10 +1112,11 @@ def import_cards(input: Path, dry_run: bool):
 
 @semble.command()
 @click.option("--collection", "-c", required=True, help="Collection URI")
-def status(collection: str):
+@click.option("--local-dir", "-l", type=Path, help="Local directory to compare")
+def status(collection: str, local_dir: Optional[Path]):
     """Show sync status for a collection."""
     from tools.semble_sync import status as do_status
-    do_status(collection=collection)
+    do_status(collection=collection, local_dir=local_dir)
 
 
 cli.add_command(semble)

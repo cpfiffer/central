@@ -386,10 +386,64 @@ def import_cards(input: Path, dry_run: bool):
     asyncio.run(do_import())
 
 
-def status(collection: str):
-    """Show sync status for a collection."""
+def status(collection: str, local_dir: Optional[Path] = None):
+    """Show sync status for a collection.
+
+    Compares local files with remote cards to identify:
+    - Cards only on remote (need download)
+    - Cards only local (need upload)
+    - Cards in both (check for conflicts)
+    """
     console.print(f"[blue]Collection:[/blue] {collection}")
-    console.print("[yellow]Status check not implemented yet[/yellow]")
+
+    async def do_status():
+        async with SembleClient() as client:
+            # Get remote cards
+            remote_cards = await client.list_cards(collection)
+            console.print(f"[green]Remote cards:[/green] {len(remote_cards)}")
+
+            if local_dir and local_dir.exists():
+                # Get local files
+                local_files = list(local_dir.glob("*.md"))
+                console.print(f"[green]Local files:[/green] {len(local_files)}")
+
+                # Build maps
+                remote_uris = {card.uri: card for card in remote_cards}
+                local_uris = {}
+
+                for md_file in local_files:
+                    try:
+                        content = md_file.read_text()
+                        if content.startswith("---"):
+                            parts = content.split("---", 2)
+                            if len(parts) >= 3:
+                                fm = yaml.safe_load(parts[1])
+                                if fm.get("uri"):
+                                    local_uris[fm["uri"]] = md_file
+                    except Exception:
+                        pass
+
+                # Find differences
+                remote_only = set(remote_uris.keys()) - set(local_uris.keys())
+                local_only = set(local_uris.keys()) - set(remote_uris.keys())
+                both = set(remote_uris.keys()) & set(local_uris.keys())
+
+                if remote_only:
+                    console.print(f"\n[yellow]Remote only (need download):[/yellow]")
+                    for uri in remote_only:
+                        card = remote_uris[uri]
+                        console.print(f"  - {card.title or uri.split('/')[-1]}")
+
+                if local_only:
+                    console.print(f"\n[yellow]Local only (need upload):[/yellow]")
+                    for uri in local_only:
+                        f = local_uris[uri]
+                        console.print(f"  - {f.name}")
+
+                if both:
+                    console.print(f"\n[green]In sync:[/green] {len(both)} cards")
+
+    asyncio.run(do_status())
 
 
 if __name__ == "__main__":
