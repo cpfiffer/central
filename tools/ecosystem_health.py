@@ -220,7 +220,7 @@ async def monitor_ecosystem(
         report = {
             "timestamp": datetime.now().isoformat(),
             "duration_seconds": metrics.duration_seconds,
-            "total_records": metrics.total_records,
+            "total_records": metrics.total_events,
             "namespace_diversity_ratio": metrics.namespace_diversity_ratio,
             "shannon_entropy": metrics.shannon_entropy,
             "collection_count": metrics.collection_count,
