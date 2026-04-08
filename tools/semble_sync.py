@@ -141,43 +141,53 @@ class SembleClient:
         return collection_record
 
     async def list_cards(self, collection_uri: str) -> List[SembleCard]:
-        """List all cards in a collection by querying collectionLinks."""
-        import httpx
+        """List all cards in a collection by querying collectionLinks from PDS."""
+        cards = []
+        cursor = None
 
-        # Use the semble.so API to get cards in collection
-        # The semble.so API endpoint for collection contents
-        semble_api = "https://api.semble.so"
+        # Parse collection URI to get the rkey
+        collection_rkey = collection_uri.split("/")[-1]
 
-        try:
-            # Try semble.so API first
+        # Query PDS for collectionLink records
+        while True:
+            params = {
+                "repo": self.did,
+                "collection": COLLECTION_LINK_LEXICON,
+                "limit": 100
+            }
+            if cursor:
+                params["cursor"] = cursor
+
             response = await self._client.get(
-                f"{semble_api}/collection/{collection_uri.split('/')[-1]}/cards",
-                timeout=30.0
+                f"{self.pds}/xrpc/com.atproto.repo.listRecords",
+                params=params
             )
 
-            if response.status_code == 200:
-                data = response.json()
-                cards = []
-                for item in data.get("cards", []):
-                    card = SembleCard(
-                        uri=item.get("uri", ""),
-                        cid=item.get("cid", ""),
-                        title=item.get("title"),
-                        text=item.get("text"),
-                        url=item.get("url"),
-                        created_at=item.get("createdAt"),
-                        author=item.get("author"),
-                        indexed_at=item.get("indexedAt")
-                    )
-                    cards.append(card)
-                return cards
-        except Exception as e:
-            console.print(f"[yellow]API failed, trying PDS directly: {e}[/yellow]")
+            if response.status_code != 200:
+                console.print(f"[red]Failed to list records: {response.text}[/red]")
+                break
 
-        # Fallback: query PDS for collectionLink records
-        # This requires iterating through the repo's records
-        console.print("[yellow]PDS direct query not yet implemented[/yellow]")
-        return []
+            data = response.json()
+            records = data.get("records", [])
+
+            # Filter for links to this collection
+            for record in records:
+                value = record.get("value", {})
+                coll_uri = value.get("collection", {}).get("uri", "")
+                if collection_rkey in coll_uri:
+                    # Get card details
+                    card_uri = value.get("card", {}).get("uri", "")
+                    card_cid = value.get("card", {}).get("cid", "")
+                    if card_uri:
+                        card = await self.get_card(card_uri)
+                        if card:
+                            cards.append(card)
+
+            cursor = data.get("cursor")
+            if not cursor:
+                break
+
+        return cards
 
     async def get_card(self, card_uri: str) -> Optional[SembleCard]:
         """Fetch a single card by URI."""
@@ -202,13 +212,29 @@ class SembleClient:
             return None
 
         data = response.json()
+        value = data.get("value", {})
+
+        # Handle both URL and NOTE card types
+        card_type = value.get("type", "NOTE")
+        content = value.get("content", {})
+
+        if card_type == "URL":
+            title = content.get("metadata", {}).get("title")
+            text = content.get("metadata", {}).get("description")
+            url = content.get("url")
+        else:
+            # NOTE type
+            title = value.get("title")
+            text = content.get("text", content.get("body", ""))
+            url = None
+
         return SembleCard(
             uri=card_uri,
             cid=data.get("cid", ""),
-            title=data.get("value", {}).get("title"),
-            text=data.get("value", {}).get("text"),
-            url=data.get("value", {}).get("url"),
-            created_at=data.get("value", {}).get("createdAt"),
+            title=title,
+            text=text,
+            url=url,
+            created_at=value.get("createdAt"),
             author=card_did
         )
 
