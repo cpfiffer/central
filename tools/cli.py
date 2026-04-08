@@ -1084,6 +1084,28 @@ def add(card_uri: str, collection_uri: str):
 cli.add_command(collection)
 
 
+# Social commands
+@cli.command()
+@click.argument("handle_or_did")
+def follow(handle_or_did: str):
+    """Follow a user by handle or DID."""
+    from tools.agent import ComindAgent, resolve_handle_to_did
+
+    async def do_follow():
+        async with ComindAgent() as agent:
+            # Resolve handle to DID if needed
+            if handle_or_did.startswith("did:"):
+                did = handle_or_did
+            else:
+                did = await resolve_handle_to_did(handle_or_did)
+                if not did:
+                    console.print(f"[red]Could not resolve handle: {handle_or_did}[/red]")
+                    return
+            await agent.follow(did)
+
+    asyncio.run(do_follow())
+
+
 # Semble sync commands
 @cli.group()
 def semble():
